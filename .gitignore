@@ -1,8 +1,38 @@
+# Dependências
 node_modules/
+
+# Build
 build/
 dist/
+
+# Cobertura de testes
 coverage/
+
+# Sistema operacional
 .DS_Store
+Thumbs.db
+
+# Logs
 *.log
-.env*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Variáveis de ambiente (NUNCA subir ao Git)
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+.env.*
 !.env.example
+
+# Arquivos de teste locais (podem conter dados sensíveis)
+test-*.js
+test-*.cjs
+test-*.mjs
+*.test.local.*
+
+# Arquivos temporários
+*.tmp
+*.bak
