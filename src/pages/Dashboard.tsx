@@ -144,8 +144,10 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (leads.length > 0 && stages.length > 0) {
+      fetchDashboardData();
+    }
+  }, [leads, stages]);
 
   if (!stats) return <div className="p-8 flex items-center justify-center min-h-[400px]">
     <div className="flex flex-col items-center gap-4">
