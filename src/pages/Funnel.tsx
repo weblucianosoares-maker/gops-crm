@@ -86,28 +86,42 @@ export default function Funnel() {
     <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden">
       {/* Kanban Area */}
       <main className="flex-1 flex flex-col min-w-0 bg-white">
-        <header className="flex justify-between items-center w-full px-8 py-4 bg-white border-b shrink-0">
-          <div className="flex items-center gap-6">
-            <h2 className="text-xl font-bold text-blue-900">Funil de Vendas</h2>
-            <div className="bg-slate-100 h-8 w-px"></div>
-            <div className="flex gap-8">
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Oportunidades</span>
-                <span className="text-sm font-bold text-slate-900">{activeCount} em aberto</span>
+        <header className="w-full px-8 py-4 bg-white border-b shrink-0">
+          <div className="flex justify-between items-start">
+            <div className="flex items-start gap-6">
+              <div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Oportunidades</span>
+                  <div className="flex flex-col gap-0.5 mt-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-700">{activeCount} no total</span>
+                      <span className="text-xs font-bold text-blue-600">{formatCurrency(totalValue)}</span>
+                    </div>
+                    {columns.filter(col => col.count > 0).map(col => (
+                      <div key={col.name} className="flex items-center gap-2">
+                        <span className="text-[11px] text-slate-500">{col.count} {col.label.toLowerCase()}</span>
+                        <span className="text-[11px] font-bold text-blue-600">
+                          {formatCurrency(leads.filter(l => l.status === col.name).reduce((sum, l) => sum + Number(l.deal_value || 0), 0))}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="flex flex-col">
+              <div className="bg-slate-100 h-16 w-px mt-1"></div>
+              <div className="flex flex-col mt-1">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Total Negociado</span>
-                <span className="text-sm font-bold text-blue-600">{formatCurrency(totalValue)}</span>
+                <span className="text-lg font-extrabold text-blue-600 mt-0.5">{formatCurrency(totalValue)}</span>
               </div>
             </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => setIsSelectionModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-            >
-              <Icons.Plus className="w-4 h-4" /> Nova Oportunidade
-            </button>
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => setIsSelectionModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+              >
+                <Icons.Plus className="w-4 h-4" /> Nova Oportunidade
+              </button>
+            </div>
           </div>
         </header>
 

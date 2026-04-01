@@ -35,7 +35,14 @@ import {
   Clock,
   Trash2,
   Edit2,
-  AlertCircle
+  AlertCircle,
+  UserPlus,
+  Shield,
+  Camera,
+  Lock,
+  Eye,
+  EyeOff,
+  Image
 } from "lucide-react";
 
 export const Icons = {
@@ -80,5 +87,12 @@ export const Icons = {
   Clock: Clock,
   Trash: Trash2,
   Edit: Edit2,
-  AlertCircle: AlertCircle
+  AlertCircle: AlertCircle,
+  UserPlus: UserPlus,
+  Shield: Shield,
+  Camera: Camera,
+  Lock: Lock,
+  Eye: Eye,
+  EyeOff: EyeOff,
+  Image: Image
 };

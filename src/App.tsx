@@ -9,6 +9,7 @@ import Carriers from "./pages/Carriers";
 import Settings from "./pages/Settings";
 
 import { LeadsProvider } from "./lib/leadsContext";
+import { BrokerProvider } from "./lib/brokerContext";
 
 function AppContent() {
   const location = useLocation();
@@ -48,10 +49,12 @@ function AppContent() {
 
 export default function App() {
   return (
-    <LeadsProvider>
-      <Router>
-        <AppContent />
-      </Router>
-    </LeadsProvider>
+    <BrokerProvider>
+      <LeadsProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </LeadsProvider>
+    </BrokerProvider>
   );
 }

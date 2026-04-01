@@ -3,6 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/src/lib/utils";
 import { Icons } from "./Icons";
 import { useLeads } from "../lib/leadsContext";
+import { useBroker } from "../lib/brokerContext";
 import { useAlerts } from "../hooks/useAlerts";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -148,6 +149,43 @@ function GlobalAlertBar() {
   );
 }
 
+function BrokerProfileBadge() {
+  const { currentBroker, loading } = useBroker();
+
+  if (loading) {
+    return (
+      <>
+        <div className="text-right hidden sm:block">
+          <div className="h-4 w-24 bg-slate-200 rounded animate-pulse mb-1"></div>
+          <div className="h-3 w-16 bg-slate-100 rounded animate-pulse ml-auto"></div>
+        </div>
+        <div className="w-10 h-10 rounded-xl bg-slate-200 animate-pulse"></div>
+      </>
+    );
+  }
+
+  const name = currentBroker?.name || "Sem Corretor";
+  const role = currentBroker?.role === 'admin' ? 'Admin / Corretor' : 'Corretor';
+  const initials = name.split(' ').filter(Boolean).map(p => p[0]).slice(0, 2).join('').toUpperCase() || "SC";
+  const avatarUrl = currentBroker?.avatar_url;
+
+  return (
+    <>
+      <div className="text-right hidden sm:block">
+        <p className="text-sm font-black text-blue-900">{name}</p>
+        <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest">{role}</p>
+      </div>
+      <div className="w-10 h-10 rounded-xl bg-blue-100 border-2 border-white shadow-sm flex items-center justify-center text-blue-700 font-bold text-xs overflow-hidden">
+        {avatarUrl ? (
+          <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
+        ) : (
+          initials
+        )}
+      </div>
+    </>
+  );
+}
+
 export function TopBar({ title, onMenuClick }: { title: string; onMenuClick?: () => void }) {
   const { alerts } = useAlerts();
   const [showNotifications, setShowNotifications] = React.useState(false);
@@ -222,17 +260,7 @@ export function TopBar({ title, onMenuClick }: { title: string; onMenuClick?: ()
             <Icons.Settings className="w-5 h-5 text-slate-500 hover:text-blue-700 cursor-pointer transition-all" />
           </NavLink>
           <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-black text-blue-900">Ricardo Alves</p>
-              <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Admin / Broker</p>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-blue-100 border-2 border-white shadow-sm flex items-center justify-center text-blue-700 font-bold overflow-hidden">
-              <img 
-                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" 
-                alt="User profile" 
-                className="w-full h-full object-cover"
-              />
-            </div>
+            <BrokerProfileBadge />
           </div>
         </div>
       </div>
