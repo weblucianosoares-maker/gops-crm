@@ -469,7 +469,7 @@ export default function Leads() {
 
         {/* Global Search Box */}
         <div className="md:col-span-2 bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-1.5 hover:border-blue-300 transition-colors">
-          <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5">
+          <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
             <Icons.Search className="w-3 h-3 text-blue-600"/> Pesquisa Global (Nome, CPF, Empresa, etc)
           </label>
           <div className="relative">
