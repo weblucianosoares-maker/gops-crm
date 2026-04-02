@@ -69,7 +69,7 @@ export default function Leads() {
               rawName = rawName.replace(/^[*#,]/g, '').trim();
               if (rawName.startsWith('- ')) rawName = rawName.substring(2).trim();
 
-              let status = row.status || row.Status || 'Novo';
+              let status = '';
               const nameUpper = rawName.toUpperCase();
               if (nameUpper.includes('NÃO TEM INTERESSE') || nameUpper.includes('SEM INTERESSE') || nameUpper.includes('NÃO QUER CONTATO')) {
                 status = 'Desqualificado';

@@ -83,7 +83,7 @@ export default function Funnel() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden">
+    <div className="flex min-h-[calc(100vh-64px)] w-full">
       {/* Kanban Area */}
       <main className="flex-1 flex flex-col min-w-0 bg-white">
         <header className="w-full px-8 py-4 bg-white border-b shrink-0">
@@ -126,7 +126,7 @@ export default function Funnel() {
         </header>
 
         <DragDropContext onDragEnd={onDragEnd}>
-          <section className="flex-1 overflow-x-auto p-8 flex gap-6 bg-slate-50 custom-scrollbar">
+          <section className="flex-1 overflow-x-auto p-8 flex items-start gap-6 bg-slate-50 custom-scrollbar">
             {loadingStages ? (
               <div className="flex-1 flex items-center justify-center">
                 <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
@@ -145,7 +145,7 @@ export default function Funnel() {
                       {...provided.droppableProps}
                       ref={provided.innerRef}
                       className={cn(
-                        "min-w-[320px] max-w-[320px] flex flex-col h-full rounded-xl p-4 border transition-colors",
+                        "min-w-[320px] max-w-[320px] flex flex-col h-auto rounded-xl p-4 border transition-colors",
                         snapshot.isDraggingOver ? "bg-blue-50/50 border-blue-200" : "bg-slate-100/50 border-slate-200/50"
                       )}
                     >
@@ -157,7 +157,7 @@ export default function Funnel() {
                         <span className="text-[10px] font-black text-slate-400 bg-slate-200/50 px-2 py-0.5 rounded-full">{col.count}</span>
                       </div>
 
-                      <div className="flex flex-col gap-4 overflow-y-auto pr-1 custom-scrollbar pb-10 flex-1">
+                      <div className="flex flex-col gap-4 pb-10 flex-1">
                         {leads
                           .filter(l => l.status === col.name)
                           .map((lead, index) => (
