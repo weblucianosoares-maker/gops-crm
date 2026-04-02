@@ -1,3 +1,4 @@
+// Version: 2026-04-02-19-45 (Forcing Vercel Refresh)
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icons } from "./Icons";
@@ -203,19 +204,27 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
                   <button onClick={loadMessages} className="p-2 bg-white rounded-lg border hover:text-blue-600"><Icons.History className={cn("w-5 h-5", loadingChat && "animate-spin")} /></button>
                </div>
 
-               <div className="flex-1 overflow-y-auto p-6 space-y-3 flex flex-col-reverse custom-scrollbar z-10">
-                  {messages.length === 0 && !loadingChat && <div className="m-auto text-slate-400 text-xs font-black uppercase">Nenhuma conversa encontrada</div>}
-                  {(messages || []).map((msg, idx) => {
-                    const isFromMe = msg.key?.fromMe;
-                    const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || "[Mídia]";
-                    return (
-                      <div key={msg.key?.id || idx} className={cn("max-w-[85%] p-3 rounded-2xl text-sm shadow-sm relative", isFromMe ? "bg-[#dcf8c6] self-end rounded-tr-none" : "bg-white self-start rounded-tl-none")}>
-                         <p className="whitespace-pre-wrap text-slate-800 font-medium">{text}</p>
-                         <p className="text-[9px] text-slate-400 text-right mt-1 font-bold">{msg.messageTimestamp ? new Date(msg.messageTimestamp * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ""}</p>
-                      </div>
-                    );
+                <div className="flex-1 overflow-y-auto p-6 space-y-3 flex flex-col-reverse custom-scrollbar z-10">
+                  {(!messages || messages.length === 0) && !loadingChat && (
+                    <div className="m-auto text-slate-400 text-xs font-black uppercase text-center">
+                      <Icons.MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                      Nenhuma conversa encontrada
+                    </div>
+                  )}
+                  {Array.isArray(messages) && messages.map((msg, idx) => {
+                    try {
+                      if (!msg || !msg.key) return null;
+                      const isFromMe = msg.key?.fromMe;
+                      const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || "[Mídia]";
+                      return (
+                        <div key={msg.key?.id || `msg-${idx}`} className={cn("max-w-[85%] p-3 rounded-2xl text-sm shadow-sm relative", isFromMe ? "bg-[#dcf8c6] self-end rounded-tr-none" : "bg-white self-start rounded-tl-none")}>
+                           <p className="whitespace-pre-wrap text-slate-800 font-medium">{text}</p>
+                           <p className="text-[9px] text-slate-400 text-right mt-1 font-bold">{msg.messageTimestamp ? new Date(msg.messageTimestamp * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ""}</p>
+                        </div>
+                      );
+                    } catch (e) { return null; }
                   })}
-                  {loadingChat && <div className="mx-auto bg-white/80 px-4 py-1 rounded-full text-[10px] font-black uppercase shadow-sm">Carregando...</div>}
+                  {loadingChat && <div className="mx-auto bg-white/80 px-4 py-1 rounded-full text-[10px] font-black uppercase shadow-sm">Carregando mensagens...</div>}
                </div>
 
                <div className="bg-[#f0f0f0] p-4 flex items-center gap-3 border-t z-10">
