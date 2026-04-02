@@ -416,6 +416,29 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
                   />
                 </div>
 
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-black text-slate-400 ml-1">Tipo de Contato</label>
+                  <select 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 focus:bg-white focus:border-blue-500 transition-all outline-none"
+                    value={lead.contact_type || ""}
+                    onChange={e => setLead({...lead, contact_type: e.target.value})}
+                  >
+                    <option value="">Não definido</option>
+                    {contactTypes?.filter(t => t.active).map(t => (
+                      <option key={t.id} value={t.name}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-black text-slate-400 ml-1">Origem (Fonte)</label>
+                  <input 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 focus:bg-white focus:border-blue-500 transition-all outline-none"
+                    placeholder="Ex: WhatsApp, Google, etc."
+                    value={lead.source || ""}
+                    onChange={e => setLead({...lead, source: e.target.value})}
+                  />
+                </div>
+
                 <div className="md:col-span-2 space-y-6 pt-6 border-t border-slate-100">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-1.5">
@@ -897,28 +920,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
                     )}
                   </select>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-black text-slate-400 ml-1">Tipo de Contato</label>
-                  <select 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 focus:bg-white focus:border-blue-500 transition-all outline-none"
-                    value={lead.contact_type || ""}
-                    onChange={e => setLead({...lead, contact_type: e.target.value})}
-                  >
-                    <option value="">Não definido</option>
-                    {contactTypes?.filter(t => t.active).map(t => (
-                      <option key={t.id} value={t.name}>{t.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-black text-slate-400 ml-1">Origem (Fonte)</label>
-                  <input 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 focus:bg-white focus:border-blue-500 transition-all outline-none"
-                    placeholder="Ex: WhatsApp, Google, etc."
-                    value={lead.source || ""}
-                    onChange={e => setLead({...lead, source: e.target.value})}
-                  />
-                </div>
+
                 <div className="space-y-1.5">
                   <label className="text-[10px] uppercase font-black text-slate-400 ml-1">Valor da Proposta (R$)</label>
                   <div className="relative">
