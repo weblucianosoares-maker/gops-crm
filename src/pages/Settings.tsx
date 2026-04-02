@@ -12,7 +12,7 @@ const COLOR_OPTIONS = [
 ];
 
 // ─── Brokers Section ────────────────────────────────
-function BrokersSection() {
+function BrokersSection({ isOpen, onToggle }: { isOpen: boolean, onToggle: () => void }) {
   const [brokers, setBrokers] = useState<any[]>([]);
   const [carriers, setCarriers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -158,7 +158,10 @@ function BrokersSection() {
 
   return (
     <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+      <button 
+        onClick={onToggle}
+        className="w-full text-left p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50 hover:bg-slate-100/50 transition-colors group"
+      >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-200">
             <Icons.UserPlus className="w-5 h-5" />
@@ -168,15 +171,33 @@ function BrokersSection() {
             <p className="text-xs text-slate-500">Cadastre e gerencie os corretores da equipe</p>
           </div>
         </div>
-        <button
-          onClick={() => setIsAdding(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-xs font-black uppercase tracking-wider rounded-lg hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100"
-        >
-          <Icons.Plus className="w-3.5 h-3.5" /> Novo Corretor
-        </button>
-      </div>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isOpen) onToggle();
+              setIsAdding(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-xs font-black uppercase tracking-wider rounded-lg hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100"
+          >
+            <Icons.Plus className="w-3.5 h-3.5" /> Novo Corretor
+          </button>
+          <Icons.ChevronDown className={cn(
+            "w-5 h-5 text-slate-400 transition-transform duration-300",
+            isOpen ? "rotate-180" : ""
+          )} />
+        </div>
+      </button>
 
-      <div className="p-6">
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            <div className="p-6">
         {loading ? (
           <div className="py-12 flex justify-center">
             <div className="w-8 h-8 border-4 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin"></div>
@@ -459,24 +480,27 @@ function BrokersSection() {
           )}
         </AnimatePresence>
 
-        {!brokers.length && !loading && !isAdding && (
-          <div className="py-16 text-center space-y-4">
-            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-300">
-              <Icons.UserPlus className="w-10 h-10" />
+          {!brokers.length && !loading && !isAdding && (
+            <div className="py-16 text-center space-y-4">
+              <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-300">
+                <Icons.UserPlus className="w-10 h-10" />
+              </div>
+              <div>
+                <p className="font-bold text-slate-600">Nenhum corretor cadastrado</p>
+                <p className="text-sm text-slate-400 mt-1">Cadastre o primeiro corretor da equipe.</p>
+              </div>
             </div>
-            <div>
-              <p className="font-bold text-slate-600">Nenhum corretor cadastrado</p>
-              <p className="text-sm text-slate-400 mt-1">Cadastre o primeiro corretor da equipe.</p>
-            </div>
-          </div>
-        )}
-      </div>
-    </section>
-  );
+          )}
+        </div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+</section>
+);
 }
 
 // ─── Carriers Settings Section ─────────────────────
-function CarriersSettingsSection() {
+function CarriersSettingsSection({ isOpen, onToggle }: { isOpen: boolean, onToggle: () => void }) {
   const [carriers, setCarriers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -535,7 +559,10 @@ function CarriersSettingsSection() {
 
   return (
     <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+      <button 
+        onClick={onToggle}
+        className="w-full text-left p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50 hover:bg-slate-100/50 transition-colors group"
+      >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center text-white shadow-lg shadow-teal-200">
             <Icons.Shield className="w-5 h-5" />
@@ -545,15 +572,33 @@ function CarriersSettingsSection() {
             <p className="text-xs text-slate-500">Cadastre as operadoras de planos de saúde</p>
           </div>
         </div>
-        <button
-          onClick={() => setIsAdding(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white text-xs font-black uppercase tracking-wider rounded-lg hover:bg-teal-700 transition-all shadow-md shadow-teal-100"
-        >
-          <Icons.Plus className="w-3.5 h-3.5" /> Nova Operadora
-        </button>
-      </div>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isOpen) onToggle();
+              setIsAdding(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white text-xs font-black uppercase tracking-wider rounded-lg hover:bg-teal-700 transition-all shadow-md shadow-teal-100"
+          >
+            <Icons.Plus className="w-3.5 h-3.5" /> Nova Operadora
+          </button>
+          <Icons.ChevronDown className={cn(
+            "w-5 h-5 text-slate-400 transition-transform duration-300",
+            isOpen ? "rotate-180" : ""
+          )} />
+        </div>
+      </button>
 
-      <div className="p-6">
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            <div className="p-6">
         {loading ? (
           <div className="py-12 flex justify-center">
             <div className="w-8 h-8 border-4 border-teal-600/20 border-t-teal-600 rounded-full animate-spin"></div>
@@ -714,12 +759,15 @@ function CarriersSettingsSection() {
           </div>
         )}
       </div>
-    </section>
-  );
+    </motion.div>
+  )}
+</AnimatePresence>
+</section>
+);
 }
 
 // ─── Contact Types Settings Section ─────────────────────
-function ContactTypesSettingsSection() {
+function ContactTypesSettingsSection({ isOpen, onToggle }: { isOpen: boolean, onToggle: () => void }) {
   const { contactTypes, fetchContactTypes, loadingContactTypes } = useLeads();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ name: "", active: true });
@@ -769,7 +817,10 @@ function ContactTypesSettingsSection() {
 
   return (
     <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+      <button 
+        onClick={onToggle}
+        className="w-full text-left p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50 hover:bg-slate-100/50 transition-colors group"
+      >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-200">
             <Icons.Users className="w-5 h-5" />
@@ -779,15 +830,33 @@ function ContactTypesSettingsSection() {
             <p className="text-xs text-slate-500">Agrupe ou diferencie leads (Amigo, Cliente, etc.)</p>
           </div>
         </div>
-        <button
-          onClick={() => setIsAdding(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white text-xs font-black uppercase tracking-wider rounded-lg hover:bg-orange-600 transition-all shadow-md shadow-orange-200"
-        >
-          <Icons.Plus className="w-3.5 h-3.5" /> Novo Tipo
-        </button>
-      </div>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isOpen) onToggle();
+              setIsAdding(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white text-xs font-black uppercase tracking-wider rounded-lg hover:bg-orange-600 transition-all shadow-md shadow-orange-200"
+          >
+            <Icons.Plus className="w-3.5 h-3.5" /> Novo Tipo
+          </button>
+          <Icons.ChevronDown className={cn(
+            "w-5 h-5 text-slate-400 transition-transform duration-300",
+            isOpen ? "rotate-180" : ""
+          )} />
+        </div>
+      </button>
 
-      <div className="p-6">
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            <div className="p-6">
         {loadingContactTypes ? (
           <div className="py-12 flex justify-center">
             <div className="w-8 h-8 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin"></div>
@@ -945,17 +1014,25 @@ function ContactTypesSettingsSection() {
           </div>
         )}
       </div>
-    </section>
-  );
+    </motion.div>
+  )}
+</AnimatePresence>
+</section>
+);
 }
 
 // ─── Main Settings Page ─────────────────────────────
 export default function Settings() {
   const { stages, fetchStages, loadingStages } = useLeads();
+  const [activeSection, setActiveSection] = useState<string | null>("funnel");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ label: "", name: "", color: "" });
   const [isAdding, setIsAdding] = useState(false);
   const [newForm, setNewForm] = useState({ name: "", label: "", color: COLOR_OPTIONS[0] });
+
+  const toggleSection = (section: string) => {
+    setActiveSection(prev => prev === section ? null : section);
+  };
 
   const handleEdit = (stage: any) => {
     setEditingId(stage.id);
@@ -1046,7 +1123,10 @@ export default function Settings() {
 
       {/* ── Section 1: Etapas do Funil ── */}
       <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+        <button 
+          onClick={() => toggleSection("funnel")}
+          className="w-full text-left p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50 hover:bg-slate-100/50 transition-colors group"
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200">
               <Icons.Filter className="w-5 h-5" />
@@ -1056,15 +1136,33 @@ export default function Settings() {
               <p className="text-xs text-slate-500">Gerencie as colunas do seu pipeline de vendas</p>
             </div>
           </div>
-          <button 
-            onClick={() => setIsAdding(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-xs font-black uppercase tracking-wider rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-100"
-          >
-            <Icons.Plus className="w-3.5 h-3.5" /> Nova Etapa
-          </button>
-        </div>
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                if (activeSection !== "funnel") toggleSection("funnel");
+                setIsAdding(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-xs font-black uppercase tracking-wider rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-100"
+            >
+              <Icons.Plus className="w-3.5 h-3.5" /> Nova Etapa
+            </button>
+            <Icons.ChevronDown className={cn(
+              "w-5 h-5 text-slate-400 transition-transform duration-300",
+              activeSection === "funnel" ? "rotate-180" : ""
+            )} />
+          </div>
+        </button>
 
-        <div className="p-6">
+        <AnimatePresence>
+          {activeSection === "funnel" && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+            >
+              <div className="p-6">
           {loadingStages ? (
             <div className="py-12 flex justify-center">
               <div className="w-8 h-8 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
@@ -1252,16 +1350,28 @@ export default function Settings() {
             </div>
           )}
         </div>
+        </motion.div>
+        )}
+        </AnimatePresence>
       </section>
 
       {/* ── Section 2: Corretores ── */}
-      <BrokersSection />
+      <BrokersSection 
+        isOpen={activeSection === "brokers"} 
+        onToggle={() => toggleSection("brokers")} 
+      />
 
       {/* ── Section 3: Operadoras de Saúde ── */}
-      <CarriersSettingsSection />
+      <CarriersSettingsSection 
+        isOpen={activeSection === "carriers"} 
+        onToggle={() => toggleSection("carriers")} 
+      />
 
       {/* ── Section 4: Tipos de Contato ── */}
-      <ContactTypesSettingsSection />
+      <ContactTypesSettingsSection 
+        isOpen={activeSection === "contact_types"} 
+        onToggle={() => toggleSection("contact_types")} 
+      />
     </div>
   );
 }
