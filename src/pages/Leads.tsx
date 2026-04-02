@@ -16,9 +16,11 @@ export default function Leads() {
   const [importResult, setImportResult] = useState<{imported: number, duplicated: number} | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
+  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedLead, setSelectedLead] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const [newLead, setNewLead] = useState({ 
     name: '', email: '', phone: '', source: 'Manual', status: stages[0]?.name || 'Novo', contact_type: '',
     has_current_plan: false, interested_lives: 1, current_lives: 0,
@@ -291,9 +293,47 @@ export default function Leads() {
     if (statusFilter !== "Todos") {
       result = result.filter((l: any) => l.status === statusFilter);
     }
+
+    if (searchTerm.trim()) {
+      const s = searchTerm.toLowerCase().trim();
+      result = result.filter((l: any) => {
+        return (
+          l.name?.toLowerCase().includes(s) ||
+          l.email?.toLowerCase().includes(s) ||
+          l.phone?.includes(s) ||
+          l.cpf?.includes(s) ||
+          l.cnpj?.includes(s) ||
+          l.nickname?.toLowerCase().includes(s) ||
+          l.company_name?.toLowerCase().includes(s) ||
+          l.source?.toLowerCase().includes(s) ||
+          l.contact_type?.toLowerCase().includes(s)
+        );
+      });
+    }
+
+    if (sortConfig) {
+      result.sort((a, b) => {
+        let aVal = a[sortConfig.key] || "";
+        let bVal = b[sortConfig.key] || "";
+        if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+        if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+        
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
     
     return result;
-  }, [leads, filter, ufFilter, statusFilter]);
+  }, [leads, filter, ufFilter, statusFilter, sortConfig]);
+
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
 
   const totalPages = Math.ceil(filteredLeads.length / perPage);
   const paginatedLeads = React.useMemo(() => {
@@ -392,8 +432,7 @@ export default function Leads() {
           </div>
         </div>
       </div>
-
-      {/* Filters Section */}
+      {/* Filters & Search Section */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-1.5 hover:border-blue-300 transition-colors">
           <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5"><Icons.MapPin className="w-3 h-3 text-blue-600"/> Estado (UF)</label>
@@ -408,6 +447,7 @@ export default function Leads() {
             ))}
           </select>
         </div>
+
         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-1.5 hover:border-blue-300 transition-colors">
           <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5"><Icons.Target className="w-3 h-3 text-blue-600"/> Status no Funil</label>
           <select
@@ -421,6 +461,23 @@ export default function Leads() {
             ))}
           </select>
         </div>
+
+        {/* Global Search Box */}
+        <div className="md:col-span-2 bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-1.5 hover:border-blue-300 transition-colors">
+          <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5">
+            <Icons.Search className="w-3 h-3 text-blue-600"/> Pesquisa Global (Nome, CPF, Empresa, etc)
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Pesquise qualquer informação do lead..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-700"
+            />
+            <Icons.Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          </div>
+        </div>
       </div>
 
       {/* Main Content Grid */}
@@ -429,11 +486,46 @@ export default function Leads() {
           <table className="w-full text-left border-separate border-spacing-y-2">
             <thead>
               <tr className="text-[0.6875rem] uppercase tracking-[0.1em] text-slate-400">
-                <th className="px-6 py-4 font-semibold">Nome do Lead</th>
-                <th className="px-6 py-4 font-semibold">Tipo</th>
-                <th className="px-6 py-4 font-semibold">Origem</th>
-                <th className="px-6 py-4 font-semibold text-center">Último Contato</th>
-                <th className="px-6 py-4 font-semibold text-center">Status</th>
+                <th onClick={() => handleSort("name")} className="px-6 py-4 font-semibold cursor-pointer select-none group hover:text-blue-600 transition-colors">
+                  <div className="flex items-center gap-1">
+                    Nome do Lead
+                    {sortConfig?.key === "name" ? (
+                      sortConfig.direction === 'asc' ? <Icons.ChevronUp className="w-3 h-3 text-blue-600" /> : <Icons.ChevronDown className="w-3 h-3 text-blue-600" />
+                    ) : <Icons.ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-50" />}
+                  </div>
+                </th>
+                <th onClick={() => handleSort("contact_type")} className="px-6 py-4 font-semibold cursor-pointer select-none group hover:text-blue-600 transition-colors">
+                  <div className="flex items-center gap-1">
+                    Tipo
+                    {sortConfig?.key === "contact_type" ? (
+                      sortConfig.direction === 'asc' ? <Icons.ChevronUp className="w-3 h-3 text-blue-600" /> : <Icons.ChevronDown className="w-3 h-3 text-blue-600" />
+                    ) : <Icons.ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-50" />}
+                  </div>
+                </th>
+                <th onClick={() => handleSort("source")} className="px-6 py-4 font-semibold cursor-pointer select-none group hover:text-blue-600 transition-colors">
+                  <div className="flex items-center gap-1">
+                    Origem
+                    {sortConfig?.key === "source" ? (
+                      sortConfig.direction === 'asc' ? <Icons.ChevronUp className="w-3 h-3 text-blue-600" /> : <Icons.ChevronDown className="w-3 h-3 text-blue-600" />
+                    ) : <Icons.ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-50" />}
+                  </div>
+                </th>
+                <th onClick={() => handleSort("lastcontact")} className="px-6 py-4 font-semibold text-center cursor-pointer select-none group hover:text-blue-600 transition-colors">
+                  <div className="flex items-center justify-center gap-1">
+                    Último Contato
+                    {sortConfig?.key === "lastcontact" ? (
+                      sortConfig.direction === 'asc' ? <Icons.ChevronUp className="w-3 h-3 text-blue-600" /> : <Icons.ChevronDown className="w-3 h-3 text-blue-600" />
+                    ) : <Icons.ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-50" />}
+                  </div>
+                </th>
+                <th onClick={() => handleSort("status")} className="px-6 py-4 font-semibold text-center cursor-pointer select-none group hover:text-blue-600 transition-colors">
+                  <div className="flex items-center justify-center gap-1">
+                    Status
+                    {sortConfig?.key === "status" ? (
+                      sortConfig.direction === 'asc' ? <Icons.ChevronUp className="w-3 h-3 text-blue-600" /> : <Icons.ChevronDown className="w-3 h-3 text-blue-600" />
+                    ) : <Icons.ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-50" />}
+                  </div>
+                </th>
                 <th className="px-6 py-4 font-semibold text-right">Ações</th>
               </tr>
             </thead>

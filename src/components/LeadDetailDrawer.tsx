@@ -347,6 +347,11 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
                       </span>
                     );
                   })()}
+                  {lead.contact_type && (
+                    <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 border border-orange-200">
+                      {lead.contact_type}
+                    </span>
+                  )}
                   <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Desde {lead.created_at ? new Date(lead.created_at).toLocaleDateString('pt-BR') : "N/D"}</span>
                 </div>
               </div>
