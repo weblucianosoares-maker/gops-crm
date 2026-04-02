@@ -571,7 +571,7 @@ export default function Leads() {
                       <span className="text-[10px] text-slate-400 font-medium italic">Sem tipo</span>
                     )}
                   </td>
-                  <td className="px-6 py-5">
+                  <td className="px-6 py-5 whitespace-nowrap">
                     <span className="text-sm font-medium text-slate-600">{lead.source}</span>
                   </td>
                   <td className="px-6 py-5 text-center">
@@ -582,8 +582,8 @@ export default function Leads() {
                       const currentStage = stages.find(s => s.name === lead.status);
                       return (
                         <span className={cn(
-                          "text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full",
-                          currentStage ? currentStage.color : "bg-blue-100 text-blue-700"
+                          "text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg whitespace-nowrap shadow-sm",
+                          currentStage ? currentStage.color : "bg-blue-50 text-blue-600"
                         )}>
                           {currentStage ? currentStage.label : (lead.status || "Novo")}
                         </span>
