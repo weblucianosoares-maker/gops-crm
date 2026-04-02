@@ -24,6 +24,8 @@ export default function Dashboard() {
   const [proposals, setProposals] = useState<any[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [birthdaysMonth, setBirthdaysMonth] = useState(0);
+  const [birthdaysWeek, setBirthdaysWeek] = useState(0);
+  const [birthdaysDay, setBirthdaysDay] = useState(0);
 
   const fetchDashboardData = async () => {
     try {
@@ -48,7 +50,11 @@ export default function Dashboard() {
       .filter(l => riskStages.includes(l.status))
       .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
     
-    setStats({ totalLeads, vidasVendidas, receitaEmRisco });
+    const receitaStandby = leads
+      .filter(l => l.status === 'Stand-by')
+      .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
+    
+    setStats({ totalLeads, vidasVendidas, receitaEmRisco, receitaStandby });
 
     // Funnel Dinâmico
     const newFunnelData = stages.map(stage => ({
@@ -91,11 +97,15 @@ export default function Dashboard() {
     now.setHours(0,0,0,0);
     const currentMonth = now.getMonth();
     let monthCount = 0;
+    let dayCount = 0;
     const upcoming: any[] = [];
 
     const checkEvent = (dateStr: string, name: string, type: string, parentName?: string) => {
       if (!dateStr) return;
       const d = new Date(dateStr);
+      
+      // Contar aniversariantes do dia (ignorar ano)
+      if (d.getDate() === now.getDate() && d.getMonth() === now.getMonth()) dayCount++;
       
       // Contar aniversariantes do mês (ignorar ano)
       if (d.getMonth() === currentMonth) monthCount++;
@@ -137,6 +147,8 @@ export default function Dashboard() {
     });
 
     setBirthdaysMonth(monthCount);
+    setBirthdaysDay(dayCount);
+    setBirthdaysWeek(upcoming.filter(e => (e.type === "Aniversário" || e.type === "Aniv. Dependente") && e.diff <= 7).length);
     setUpcomingEvents(upcoming.sort((a,b) => a.diff - b.diff));
     } catch (error) {
       console.error("Dashboard error:", error);
@@ -185,11 +197,23 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-blue-600 p-8 rounded-xl text-white relative overflow-hidden group shadow-lg shadow-blue-100 lg:col-span-1"
+          className="bg-blue-600 p-8 rounded-xl text-white relative overflow-hidden group shadow-lg shadow-blue-100"
         >
           <div className="relative z-10">
-            <p className="text-[0.6875rem] uppercase tracking-widest text-blue-100 font-bold mb-2">Receita em Risco</p>
-            <h3 className="text-3xl font-extrabold tracking-tight">{formatCurrency(stats.receitaEmRisco)}</h3>
+            <p className="text-[0.6875rem] uppercase tracking-widest text-blue-100 font-bold mb-2">Receitas em Negociação</p>
+            <h3 className="text-2xl font-extrabold tracking-tight truncate">{formatCurrency(stats.receitaEmRisco)}</h3>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="bg-amber-500 p-8 rounded-xl text-white relative overflow-hidden group shadow-lg shadow-amber-100"
+        >
+          <div className="relative z-10">
+            <p className="text-[0.6875rem] uppercase tracking-widest text-amber-50 font-bold mb-2">Receita em Standby</p>
+            <h3 className="text-2xl font-extrabold tracking-tight truncate">{formatCurrency(stats.receitaStandby)}</h3>
           </div>
         </motion.div>
 
@@ -202,12 +226,25 @@ export default function Dashboard() {
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-pink-50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110 duration-500" />
           <div className="flex items-center gap-6 relative z-10">
-            <div className="w-16 h-16 rounded-2xl bg-pink-100 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-2xl bg-pink-100 flex items-center justify-center shrink-0">
               <Icons.Cake className="w-8 h-8 text-pink-600" />
             </div>
-            <div>
-              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-1">Aniversariantes do Mês</h3>
-              <p className="text-4xl font-black text-slate-900">{birthdaysMonth}</p>
+            <div className="flex-1">
+              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-3">Aniversariantes</h3>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-0.5">
+                  <p className="text-[10px] font-black text-slate-400 uppercase">No Dia</p>
+                  <p className="text-2xl font-black text-pink-600">{birthdaysDay}</p>
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-[10px] font-black text-slate-400 uppercase">Semana</p>
+                  <p className="text-2xl font-black text-pink-600">{birthdaysWeek}</p>
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-[10px] font-black text-slate-400 uppercase">No Mês</p>
+                  <p className="text-2xl font-black text-pink-600">{birthdaysMonth}</p>
+                </div>
+              </div>
             </div>
           </div>
         </motion.div>

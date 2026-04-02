@@ -1,0 +1,90 @@
+{
+  "counts": {
+    "Novo": 637,
+    "Conversando": 0,
+    "isNull": 0,
+    "isEmpty": 0
+  },
+  "firstLeads": [
+    {
+      "name": "Wermmeson",
+      "status": "Desqualificado"
+    },
+    {
+      "name": "Miguel Ângelo",
+      "status": "Desqualificado"
+    },
+    {
+      "name": "José Eduardo Vieira Campos",
+      "status": "Proposta Aprovada"
+    },
+    {
+      "name": "Wermmeson",
+      "status": "Desqualificado"
+    },
+    {
+      "name": "Miguel Ângelo",
+      "status": "Desqualificado"
+    },
+    {
+      "name": "Wermmeson",
+      "status": "Desqualificado"
+    },
+    {
+      "name": "Leandro",
+      "status": "Desqualificado"
+    },
+    {
+      "name": "Raphael Santana",
+      "status": "Desqualificado"
+    },
+    {
+      "name": "Julio Almeida",
+      "status": "Desqualificado"
+    },
+    {
+      "name": "Miguel Ângelo",
+      "status": "Desqualificado"
+    },
+    {
+      "name": "Rafael Hipnose",
+      "status": "Desqualificado"
+    },
+    {
+      "name": "Ronaldo Rocha Mentor🏁",
+      "status": "Desqualificado"
+    },
+    {
+      "name": "Mateus Soares Menezes",
+      "status": "Proposta Operadora"
+    },
+    {
+      "name": "Thiago Fernandes Britto",
+      "status": "Parado"
+    },
+    {
+      "name": "Wescley de Lima Vidal",
+      "status": "Proposta Operadora"
+    },
+    {
+      "name": "RFWS3 - LLQI - Renato César Silva",
+      "status": "Lead"
+    },
+    {
+      "name": "Acelerador Empresarial Equipe Marcus Marques",
+      "status": "Lead"
+    },
+    {
+      "name": "Aline R MMR NITERÓI",
+      "status": "Lead"
+    },
+    {
+      "name": "Amâncio São Pedro Da Aldeia",
+      "status": "Lead"
+    },
+    {
+      "name": "Amanda Passos 🌸 Start",
+      "status": "Lead"
+    }
+  ]
+}
