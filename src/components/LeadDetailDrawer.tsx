@@ -65,8 +65,9 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
     try {
       await evolutionService.sendMessage(lead.phone, currentMsg);
       loadMessages();
-    } catch (e) {
-      alert("Erro ao enviar mensagem.");
+    } catch (e: any) {
+      console.error("DEBUG - Erro detalhado:", e);
+      alert(`Erro ao enviar: ${e.message || "Verifique a conexão da instância"}`);
     }
   };
 
@@ -199,7 +200,13 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
                <div className="bg-[#ededed] px-6 py-3 flex items-center justify-between border-b border-slate-200 z-10">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-slate-300 flex items-center justify-center font-bold">{(lead.name || "N").substring(0,2).toUpperCase()}</div>
-                    <div><p className="text-sm font-black">{lead.name}</p><p className="text-[10px] text-green-600 font-black uppercase animate-pulse">Online via Evolution</p></div>
+                    <div>
+                      <p className="text-sm font-black text-slate-700">{lead.name}</p>
+                      <p className="text-[10px] text-green-600 font-bold uppercase tracking-tight flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                        Online via Evolution Hub
+                      </p>
+                    </div>
                   </div>
                   <button onClick={loadMessages} className="p-2 bg-white rounded-lg border hover:text-blue-600"><Icons.History className={cn("w-5 h-5", loadingChat && "animate-spin")} /></button>
                </div>
