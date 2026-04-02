@@ -24,9 +24,7 @@ export const evolutionService = {
             presence: 'composing',
             linkPreview: false
           },
-          textMessage: {
-            text: text
-          }
+          text: text
         })
       });
       
