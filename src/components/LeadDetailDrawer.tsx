@@ -162,8 +162,8 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
                     <div className="space-y-1"><label className="text-[10px] uppercase font-black text-slate-400">Email</label><input className="w-full bg-white border p-2.5 rounded-lg text-sm" value={lead.email || ""} onChange={e => setLead({...lead, email: e.target.value})} /></div>
                     <div className="space-y-1"><label className="text-[10px] uppercase font-black text-slate-400">Telefone</label><input className="w-full bg-white border p-2.5 rounded-lg text-sm" value={formatPhone(lead.phone) || ""} onChange={e => setLead({...lead, phone: e.target.value})} /></div>
                     <div className="space-y-1"><label className="text-[10px] uppercase font-black text-slate-400">Status</label>
-                      <select className="w-full bg-white border p-2.5 rounded-lg text-sm" value={lead.status} onChange={e => setLead({...lead, status: e.target.value})}>
-                        {stages.map(s => <option key={s.id} value={s.name}>{s.label}</option>)}
+                      <select className="w-full bg-white border p-2.5 rounded-lg text-sm font-bold text-slate-700" value={String(lead.status || "")} onChange={e => setLead({...lead, status: e.target.value})}>
+                        {(stages || []).map(s => <option key={s.id} value={s.name}>{s.label}</option>)}
                       </select>
                     </div>
                   </div>
@@ -177,7 +177,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
                       <button onClick={handleAddDependent} className="w-full bg-blue-600 text-white p-2 rounded-lg text-xs font-bold">Salvar</button>
                     </div>
                   )}
-                  {dependents.map(dep => <div key={dep.id} className="bg-white p-3 border rounded-xl flex justify-between"><span className="text-sm font-bold">{dep.name}</span><button onClick={() => handleRemoveDependent(dep.id)}><Icons.X className="w-4 h-4 text-slate-300" /></button></div>)}
+                  {(dependents || []).map(dep => <div key={dep.id} className="bg-white p-3 border rounded-xl flex justify-between"><span className="text-sm font-bold text-slate-700">{dep.name}</span><button onClick={() => handleRemoveDependent(dep.id)}><Icons.X className="w-4 h-4 text-slate-300" /></button></div>)}
                </section>
 
                <section className="space-y-4">
@@ -186,7 +186,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
                     <textarea value={newNote} onChange={e => setNewNote(e.target.value)} className="w-full border p-3 rounded-xl text-sm" placeholder="Adicionar nota..." />
                     <button onClick={handleAddNote} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold float-right">Registrar</button>
                     <div className="clear-both space-y-3 pt-4">
-                      {history.map(h => <div key={h.id} className="bg-white p-3 border rounded-xl"><p className="text-[10px] text-slate-400 uppercase font-black">{new Date(h.created_at).toLocaleString('pt-BR')}</p><p className="text-sm mt-1">{h.content}</p></div>)}
+                      {(history || []).map(h => <div key={h.id} className="bg-white p-3 border rounded-xl"><p className="text-[10px] text-slate-400 uppercase font-black">{new Date(h.created_at).toLocaleString('pt-BR')}</p><p className="text-sm mt-1 text-slate-600 font-medium">{h.content}</p></div>)}
                     </div>
                   </div>
                </section>
@@ -205,13 +205,13 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
 
                <div className="flex-1 overflow-y-auto p-6 space-y-3 flex flex-col-reverse custom-scrollbar z-10">
                   {messages.length === 0 && !loadingChat && <div className="m-auto text-slate-400 text-xs font-black uppercase">Nenhuma conversa encontrada</div>}
-                  {messages.map((msg, idx) => {
+                  {(messages || []).map((msg, idx) => {
                     const isFromMe = msg.key?.fromMe;
-                    const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || "[Mídia]";
+                    const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || "[Mídia]";
                     return (
-                      <div key={msg.key?.id || idx} className={cn("max-w-[85%] p-3 rounded-2xl text-sm shadow-sm relative", isFromMe ? "bg-[#dcf8c6] self-end" : "bg-white self-start")}>
-                         <p className="whitespace-pre-wrap">{text}</p>
-                         <p className="text-[9px] text-slate-400 text-right mt-1">{msg.messageTimestamp ? new Date(msg.messageTimestamp * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ""}</p>
+                      <div key={msg.key?.id || idx} className={cn("max-w-[85%] p-3 rounded-2xl text-sm shadow-sm relative", isFromMe ? "bg-[#dcf8c6] self-end rounded-tr-none" : "bg-white self-start rounded-tl-none")}>
+                         <p className="whitespace-pre-wrap text-slate-800 font-medium">{text}</p>
+                         <p className="text-[9px] text-slate-400 text-right mt-1 font-bold">{msg.messageTimestamp ? new Date(msg.messageTimestamp * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ""}</p>
                       </div>
                     );
                   })}
