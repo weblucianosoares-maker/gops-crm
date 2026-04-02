@@ -260,7 +260,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
                </section>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col h-full bg-[#e5ddd5] relative overflow-hidden">
+            <div className="flex-1 flex flex-col bg-[#e5ddd5] relative overflow-hidden">
                <div className="absolute inset-0 opacity-[0.06] pointer-events-none" style={{ backgroundImage: 'url("https://wweb.dev/assets/whatsapp-chat-back.png")' }}></div>
                
                <div className="bg-[#ededed] px-6 py-3 flex items-center justify-between border-b border-slate-200 z-10">
