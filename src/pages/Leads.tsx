@@ -20,6 +20,8 @@ export default function Leads() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedLead, setSelectedLead] = useState<any>(null);
+  const [leadToDelete, setLeadToDelete] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [newLead, setNewLead] = useState({ 
     name: '', email: '', phone: '', source: 'Manual', status: stages[0]?.name || 'Novo', contact_type: '',
@@ -278,6 +280,24 @@ export default function Leads() {
     }
   };
 
+  const handleDeleteLead = async () => {
+    if (!leadToDelete) return;
+    setIsDeleting(true);
+    
+    const { error } = await supabase
+      .from('leads')
+      .delete()
+      .eq('id', leadToDelete.id);
+      
+    setIsDeleting(false);
+    if (error) {
+      alert("Erro ao excluir lead: " + error.message);
+    } else {
+      setLeadToDelete(null);
+      fetchLeads();
+    }
+  };
+
   const availableUFs = React.useMemo(() => {
     const ufs = new Set(leads.map((l: any) => l.address_state).filter(Boolean));
     return Array.from(ufs).sort();
@@ -347,6 +367,17 @@ export default function Leads() {
     setCurrentPage(1);
   }, [filter, ufFilter, statusFilter, perPage, searchTerm]);
 
+  useEffect(() => {
+    if (isModalOpen || selectedLead) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isModalOpen, selectedLead]);
+
   return (
     <div className="px-8 pb-8 pt-2 space-y-8">
       {/* Popup de Resultado da Importação */}
@@ -387,6 +418,49 @@ export default function Leads() {
                 >
                   Entendi
                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de Confirmação de Exclusão */}
+      <AnimatePresence>
+        {leadToDelete && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-100"
+            >
+              <div className="p-8 text-center space-y-5">
+                <div className="w-20 h-20 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                  <Icons.Trash className="w-10 h-10" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-slate-900 leading-tight">Excluir este Lead?</h3>
+                  <p className="text-slate-500 text-sm mt-2 px-4">
+                    Você está prestes a remover o lead <span className="font-bold text-slate-900">{leadToDelete.name}</span>. Esta ação não pode ser desfeita.
+                  </p>
+                </div>
+                
+                <div className="flex flex-col gap-3 pt-2">
+                  <button 
+                    onClick={handleDeleteLead}
+                    disabled={isDeleting}
+                    className="w-full py-4 bg-red-600 text-white font-black uppercase text-xs tracking-widest rounded-xl hover:bg-red-700 transition-all shadow-lg shadow-red-200 disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isDeleting ? <Icons.Upload className="w-4 h-4 animate-spin" /> : "Sim, Excluir Lead"}
+                  </button>
+                  <button 
+                    onClick={() => setLeadToDelete(null)}
+                    disabled={isDeleting}
+                    className="w-full py-4 bg-slate-100 text-slate-600 font-black uppercase text-xs tracking-widest rounded-xl hover:bg-slate-200 transition-all"
+                  >
+                    Cancelar
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -597,6 +671,15 @@ export default function Leads() {
                       </button>
                       <button className="text-slate-400 hover:text-blue-600 transition-colors p-2 hover:bg-blue-50 rounded-lg">
                         <Icons.FileText className="w-5 h-5" />
+                      </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLeadToDelete(lead);
+                        }}
+                        className="text-slate-400 hover:text-red-600 transition-colors p-2 hover:bg-red-50 rounded-lg"
+                      >
+                        <Icons.Trash className="w-5 h-5" />
                       </button>
                     </div>
                   </td>

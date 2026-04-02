@@ -161,7 +161,7 @@ export default function Funnel() {
                         {leads
                           .filter(l => l.status === col.name)
                           .map((lead, index) => (
-                            <Draggable key={lead.id} draggableId={lead.id} index={index}>
+                            <Draggable key={String(lead.id)} draggableId={String(lead.id)} index={index}>
                               {(draggableProvided, draggableSnapshot) => (
                                 <div
                                   ref={draggableProvided.innerRef}
