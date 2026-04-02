@@ -11,6 +11,8 @@ import { LeadDetailDrawer } from "../components/LeadDetailDrawer";
 export default function Leads() {
   const { leads, filter, fetchLeads, stages } = useLeads();
   const [isUploading, setIsUploading] = useState(false);
+  const [ufFilter, setUfFilter] = useState("Todos");
+  const [statusFilter, setStatusFilter] = useState("Todos");
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -264,9 +266,24 @@ export default function Leads() {
     }
   };
 
+  const availableUFs = React.useMemo(() => {
+    const ufs = new Set(leads.map((l: any) => l.address_state).filter(Boolean));
+    return Array.from(ufs).sort();
+  }, [leads]);
+
   const filteredLeads = React.useMemo(() => {
-    return filter === "Todos" ? leads : leads.filter(l => l.source === filter);
-  }, [leads, filter]);
+    let result = filter === "Todos" ? leads : leads.filter((l: any) => l.source === filter);
+
+    if (ufFilter !== "Todos") {
+      result = result.filter((l: any) => l.address_state === ufFilter);
+    }
+    
+    if (statusFilter !== "Todos") {
+      result = result.filter((l: any) => l.status === statusFilter);
+    }
+    
+    return result;
+  }, [leads, filter, ufFilter, statusFilter]);
 
   const totalPages = Math.ceil(filteredLeads.length / perPage);
   const paginatedLeads = React.useMemo(() => {
@@ -276,7 +293,7 @@ export default function Leads() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filter, perPage]);
+  }, [filter, ufFilter, statusFilter, perPage]);
 
   return (
     <div className="px-8 pb-8 pt-2 space-y-8">
@@ -319,6 +336,36 @@ export default function Leads() {
               <p className="text-[10px] text-blue-600 mt-1 font-medium">{leads.length} leads processados</p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Filters Section */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-1.5 hover:border-blue-300 transition-colors">
+          <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5"><Icons.MapPin className="w-3 h-3 text-blue-600"/> Estado (UF)</label>
+          <select
+            value={ufFilter}
+            onChange={(e) => setUfFilter(e.target.value)}
+            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 transition-all text-sm font-bold text-slate-700 cursor-pointer"
+          >
+            <option value="Todos">Todos os Estados</option>
+            {availableUFs.map((uf: any) => (
+              <option key={uf} value={uf}>{uf}</option>
+            ))}
+          </select>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-1.5 hover:border-blue-300 transition-colors">
+          <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5"><Icons.Target className="w-3 h-3 text-blue-600"/> Status no Funil</label>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 transition-all text-sm font-bold text-slate-700 cursor-pointer"
+          >
+            <option value="Todos">Todos os Status</option>
+            {stages.map((stage: any) => (
+              <option key={stage.id} value={stage.name}>{stage.label}</option>
+            ))}
+          </select>
         </div>
       </div>
 
