@@ -108,7 +108,7 @@ export default function Leads() {
                 phone: normalizedPhone,
                 source: cleanString(source),
                 status: cleanString(status),
-                lastcontact: cleanString(row.lastContact || row['Último Contato'] || new Date().toLocaleDateString('pt-BR')),
+                lastcontact: cleanString(row.lastContact || row['Último Contato'] || null),
                 initials: cleanString(initials),
                 birthday: row.birthday === 'true' || row.Aniversário === 'true' || !!row.Birthday
               };
@@ -236,7 +236,7 @@ export default function Leads() {
       source: newLead.source,
       status: newLead.status,
       initials: initials,
-      lastcontact: new Date().toLocaleDateString('pt-BR'),
+      lastcontact: null,
       birthday: false,
       current_lives: newLead.current_lives,
       current_carrier: newLead.current_carrier,

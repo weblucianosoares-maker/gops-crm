@@ -128,6 +128,16 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
     if (!error) {
       setNewNote("");
       fetchHistory(lead.id);
+      // Atualizar a data de último contato na ficha do lead
+      const today = new Date().toLocaleDateString('pt-BR');
+      await supabase
+        .from('leads')
+        .update({ lastcontact: today })
+        .eq('id', lead.id);
+      
+      // Atualizar o estado local para refletir a mudança imediatamente se necessário
+      setLead(prev => ({ ...prev, lastcontact: today }));
+      onUpdate();
     }
   };
 

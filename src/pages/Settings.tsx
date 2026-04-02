@@ -796,11 +796,15 @@ function ContactTypesSettingsSection({ isOpen, onToggle }: { isOpen: boolean, on
     const { error } = await supabase
       .from('contact_types')
       .insert([{ name: newForm.name.trim(), active: newForm.active }]);
+    
     if (!error) {
       setIsAdding(false);
       setNewForm({ name: "", active: true });
       fetchContactTypes();
-    } else alert("Erro ao adicionar tipo.");
+    } else {
+      console.error('Erro ao adicionar tipo:', error);
+      alert("Erro ao adicionar tipo: " + (error.message || "Erro desconhecido"));
+    }
   };
 
   const handleDelete = async (id: string) => {
