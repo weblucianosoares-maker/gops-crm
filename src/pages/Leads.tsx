@@ -13,6 +13,7 @@ export default function Leads() {
   const [isUploading, setIsUploading] = useState(false);
   const [ufFilter, setUfFilter] = useState("Todos");
   const [statusFilter, setStatusFilter] = useState("Todos");
+  const [importResult, setImportResult] = useState<{imported: number, duplicated: number} | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,7 +46,9 @@ export default function Leads() {
             s = s.replace(/(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '$1'); 
             return s;
           };
-          const existingPhones = new Set(leads.map((l: any) => l.phone).filter(Boolean).map(p => p.replace(/\D/g, '')));
+          const existingPhones = new Set(leads.map((l: any) => l.phone).filter(Boolean).map((p: string) => p.replace(/\D/g, '')));
+          const existingEmails = new Set(leads.map((l: any) => l.email?.toLowerCase().trim()).filter(Boolean));
+          const existingNames = new Set(leads.map((l: any) => l.name?.toLowerCase().trim()).filter(Boolean));
           let duplicateCount = 0;
 
           const parsedData = results.data
@@ -109,12 +112,20 @@ export default function Leads() {
               };
             })
             .filter((lead: any) => {
-              if (!lead.phone) return true; 
-              if (existingPhones.has(lead.phone)) {
+              let isDuplicate = false;
+              if (lead.phone && existingPhones.has(lead.phone)) isDuplicate = true;
+              else if (!lead.phone && lead.email && existingEmails.has(lead.email.toLowerCase().trim())) isDuplicate = true;
+              else if (!lead.phone && !lead.email && lead.name && existingNames.has(lead.name.toLowerCase().trim())) isDuplicate = true;
+
+              if (isDuplicate) {
                 duplicateCount++;
                 return false;
               }
-              existingPhones.add(lead.phone);
+
+              if (lead.phone) existingPhones.add(lead.phone);
+              if (lead.email) existingEmails.add(lead.email.toLowerCase().trim());
+              if (lead.name) existingNames.add(lead.name.toLowerCase().trim());
+              
               return true;
             });
 
@@ -136,9 +147,7 @@ export default function Leads() {
           }
           
           await fetchLeads();
-          if (duplicateCount > 0) {
-            alert(`Importação concluída: ${parsedData.length} leads importados com sucesso! ${duplicateCount} cadastros foram ignorados pois já possuíam o telefone cadastrado no sistema.`);
-          }
+          setImportResult({ imported: parsedData.length, duplicated: duplicateCount });
         } catch (error: any) {
           console.error("Erro ao importar CSV:", error);
           alert(`Erro ao importar CSV: ${error?.message || JSON.stringify(error)}`);
@@ -298,6 +307,50 @@ export default function Leads() {
 
   return (
     <div className="px-8 pb-8 pt-2 space-y-8">
+      {/* Popup de Resultado da Importação */}
+      <AnimatePresence>
+        {importResult && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100"
+            >
+              <div className="p-6 text-center space-y-4">
+                <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-inner">
+                  <Icons.Check className="w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900">Atualização Concluída!</h3>
+                  <p className="text-slate-500 text-sm mt-1">
+                    Comparamos a planilha com a sua base atual.
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 mt-6">
+                  <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl text-center shadow-sm">
+                    <p className="text-3xl font-black text-emerald-600">{importResult.imported}</p>
+                    <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider mt-1">Novos Cadastros</p>
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-center shadow-sm">
+                    <p className="text-3xl font-black text-slate-600">{importResult.duplicated}</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1">Já Existentes</p>
+                  </div>
+                </div>
+                
+                <button 
+                  onClick={() => setImportResult(null)}
+                  className="w-full py-3.5 bg-blue-600 text-white font-black uppercase text-xs tracking-wider rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 mt-6"
+                >
+                  Entendi
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Hero Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-end gap-6">
         <div>
