@@ -13,7 +13,7 @@ interface LeadDetailDrawerProps {
 }
 
 export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate }: LeadDetailDrawerProps) {
-  const { stages } = useLeads();
+  const { stages, contactTypes } = useLeads();
   const [lead, setLead] = useState(initialLead);
   const [isSaving, setIsSaving] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
@@ -104,6 +104,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
         savings_value: lead.savings_value,
         savings_percent: lead.savings_percent,
         opening_date: lead.opening_date,
+        contact_type: lead.contact_type,
       })
       .eq('id', lead.id);
 
@@ -785,21 +786,14 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
                     <div className="space-y-1.5">
                       <label className="text-[10px] uppercase font-black text-slate-400 ml-1">Valor Atual Pago (Total R$)</label>
                       <input 
-                        type="number"
+                        type="text"
                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 focus:bg-white focus:border-blue-500 transition-all outline-none"
-                        placeholder="0.00"
-                        value={lead.current_value || ""}
+                        placeholder="R$ 0,00"
+                        value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(lead.current_value?.toString() || "0"))}
                         onChange={e => {
-                          const val = parseFloat(e.target.value) || 0;
-                          const dealVal = parseFloat(lead.deal_value) || 0;
-                          const savings = val - dealVal;
-                          const percent = val > 0 ? (savings / val) * 100 : 0;
-                          setLead({
-                            ...lead, 
-                            current_value: e.target.value,
-                            savings_value: savings,
-                            savings_percent: percent
-                          });
+                          const numericStr = e.target.value.replace(/\D/g, "");
+                          const val = numericStr ? parseInt(numericStr, 10) / 100 : 0;
+                          setLead({ ...lead, current_value: val });
                         }}
                       />
                     </div>
@@ -809,47 +803,58 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
             </section>
 
             {/* Nova Seção: Análise de Economia */}
-            {(lead.current_value > 0 || lead.deal_value > 0) && (
-              <section className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-                <div className="flex items-center gap-3 border-b border-slate-100 pb-2">
-                  <Icons.TrendingUp className="w-5 h-5 text-emerald-600" />
-                  <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Análise de Economia</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex justify-between items-center">
-                    <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Economia Mensal</p>
-                      <p className={cn(
-                        "text-xl font-black",
-                        (lead.savings_value || 0) >= 0 ? "text-emerald-600" : "text-rose-600"
+            {(() => {
+              const currVal = parseFloat(lead.current_value?.toString() || "0");
+              const dealVal = parseFloat(lead.deal_value?.toString() || "0");
+              if (currVal <= 0 && dealVal <= 0) return null;
+              
+              const savings = currVal - dealVal;
+              let percent = 0;
+              if (currVal > 0) percent = (savings / currVal) * 100;
+              else if (dealVal > 0) percent = -100; // was 0, now effectively 100% increase if no previous plan
+
+              return (
+                <section className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+                  <div className="flex items-center gap-3 border-b border-slate-100 pb-2">
+                    <Icons.TrendingUp className="w-5 h-5 text-emerald-600" />
+                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Análise de Economia</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex justify-between items-center">
+                      <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Economia Mensal</p>
+                        <p className={cn(
+                          "text-xl font-black",
+                          savings >= 0 ? "text-emerald-600" : "text-rose-600"
+                        )}>
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(savings)}
+                        </p>
+                      </div>
+                      <div className={cn(
+                        "w-12 h-12 rounded-xl flex items-center justify-center bg-white shadow-sm border",
+                        savings >= 0 ? "border-emerald-100 text-emerald-600" : "border-rose-100 text-rose-600"
                       )}>
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(lead.savings_value || 0)}
+                        {savings >= 0 ? <Icons.TrendingUp className="w-6 h-6" /> : <Icons.TrendingUp className="w-6 h-6 rotate-180" />}
+                      </div>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex justify-between items-center">
+                      <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Performance (%)</p>
+                        <p className={cn(
+                          "text-xl font-black",
+                          percent >= 0 ? "text-emerald-600" : "text-rose-600"
+                        )}>
+                          {percent.toFixed(1)}%
+                        </p>
+                      </div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase text-right max-w-[80px]">
+                        {percent >= 0 ? "Redução de custo" : "Aumento de custo"}
                       </p>
                     </div>
-                    <div className={cn(
-                      "w-12 h-12 rounded-xl flex items-center justify-center bg-white shadow-sm border",
-                      (lead.savings_value || 0) >= 0 ? "border-emerald-100 text-emerald-600" : "border-rose-100 text-rose-600"
-                    )}>
-                      {(lead.savings_value || 0) >= 0 ? <Icons.TrendingUp className="w-6 h-6" /> : <Icons.TrendingUp className="w-6 h-6 rotate-180" />}
-                    </div>
                   </div>
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex justify-between items-center">
-                    <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Performance (%)</p>
-                      <p className={cn(
-                        "text-xl font-black",
-                        (lead.savings_percent || 0) >= 0 ? "text-emerald-600" : "text-rose-600"
-                      )}>
-                        {(lead.savings_percent || 0).toFixed(1)}%
-                      </p>
-                    </div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase text-right max-w-[80px]">
-                      {(lead.savings_percent || 0) >= 0 ? "Redução de custo" : "Aumento de custo"}
-                    </p>
-                  </div>
-                </div>
-              </section>
-            )}
+                </section>
+              );
+            })()}
 
             {/* Section: Sale Profile */}
             <section className="space-y-6">
@@ -888,25 +893,40 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
                   </select>
                 </div>
                 <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-black text-slate-400 ml-1">Tipo de Contato</label>
+                  <select 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 focus:bg-white focus:border-blue-500 transition-all outline-none"
+                    value={lead.contact_type || ""}
+                    onChange={e => setLead({...lead, contact_type: e.target.value})}
+                  >
+                    <option value="">Não definido</option>
+                    {contactTypes?.filter(t => t.active).map(t => (
+                      <option key={t.id} value={t.name}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-black text-slate-400 ml-1">Origem (Fonte)</label>
+                  <input 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 focus:bg-white focus:border-blue-500 transition-all outline-none"
+                    placeholder="Ex: WhatsApp, Google, etc."
+                    value={lead.source || ""}
+                    onChange={e => setLead({...lead, source: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-1.5">
                   <label className="text-[10px] uppercase font-black text-slate-400 ml-1">Valor da Proposta (R$)</label>
                   <div className="relative">
                     <Icons.CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input 
-                      type="number"
+                      type="text"
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm font-bold text-slate-900 focus:bg-white focus:border-blue-500 transition-all outline-none"
-                      placeholder="0.00"
-                      value={lead.deal_value || ""}
+                      placeholder="R$ 0,00"
+                      value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(lead.deal_value?.toString() || "0"))}
                       onChange={e => {
-                        const dealVal = parseFloat(e.target.value) || 0;
-                        const currVal = parseFloat(lead.current_value) || 0;
-                        const savings = currVal - dealVal;
-                        const percent = currVal > 0 ? (savings / currVal) * 100 : 0;
-                        setLead({
-                          ...lead, 
-                          deal_value: e.target.value,
-                          savings_value: savings,
-                          savings_percent: percent
-                        });
+                        const numericStr = e.target.value.replace(/\D/g, "");
+                        const val = numericStr ? parseInt(numericStr, 10) / 100 : 0;
+                        setLead({ ...lead, deal_value: val });
                       }}
                     />
                   </div>

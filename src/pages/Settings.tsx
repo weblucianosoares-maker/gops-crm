@@ -718,6 +718,237 @@ function CarriersSettingsSection() {
   );
 }
 
+// ─── Contact Types Settings Section ─────────────────────
+function ContactTypesSettingsSection() {
+  const { contactTypes, fetchContactTypes, loadingContactTypes } = useLeads();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", active: true });
+  const [isAdding, setIsAdding] = useState(false);
+  const [newForm, setNewForm] = useState({ name: "", active: true });
+
+  const handleEdit = (typeObj: any) => {
+    setEditingId(typeObj.id);
+    setEditForm({ name: typeObj.name || "", active: typeObj.active ?? true });
+  };
+
+  const handleSave = async (id: string) => {
+    if (!editForm.name.trim()) { alert("Nome do tipo é obrigatório."); return; }
+    const { error } = await supabase
+      .from('contact_types')
+      .update({ name: editForm.name, active: editForm.active })
+      .eq('id', id);
+    if (!error) { setEditingId(null); fetchContactTypes(); }
+    else alert("Erro ao salvar tipo.");
+  };
+
+  const handleAdd = async () => {
+    if (!newForm.name.trim()) { alert("Nome do tipo é obrigatório."); return; }
+    const isDuplicate = contactTypes.some((c: any) => c.name.toLowerCase() === newForm.name.trim().toLowerCase());
+    if (isDuplicate) { alert("Já existe um tipo com este nome."); return; }
+    const { error } = await supabase
+      .from('contact_types')
+      .insert([{ name: newForm.name.trim(), active: newForm.active }]);
+    if (!error) {
+      setIsAdding(false);
+      setNewForm({ name: "", active: true });
+      fetchContactTypes();
+    } else alert("Erro ao adicionar tipo.");
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Tem certeza que deseja apagar este tipo?")) return;
+    const { error } = await supabase.from('contact_types').delete().eq('id', id);
+    if (!error) fetchContactTypes();
+    else alert("Erro ao apagar tipo. Verifique se está em uso.");
+  };
+
+  const toggleActive = async (id: string, currentActive: boolean) => {
+    await supabase.from('contact_types').update({ active: !currentActive }).eq('id', id);
+    fetchContactTypes();
+  };
+
+  return (
+    <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-200">
+            <Icons.Users className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="font-bold text-slate-900">Tipos de Contato</h2>
+            <p className="text-xs text-slate-500">Agrupe ou diferencie leads (Amigo, Cliente, etc.)</p>
+          </div>
+        </div>
+        <button
+          onClick={() => setIsAdding(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white text-xs font-black uppercase tracking-wider rounded-lg hover:bg-orange-600 transition-all shadow-md shadow-orange-200"
+        >
+          <Icons.Plus className="w-3.5 h-3.5" /> Novo Tipo
+        </button>
+      </div>
+
+      <div className="p-6">
+        {loadingContactTypes ? (
+          <div className="py-12 flex justify-center">
+            <div className="w-8 h-8 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin"></div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {contactTypes.map((typeObj: any) => (
+              <motion.div
+                layout
+                key={typeObj.id}
+                className={cn(
+                  "p-4 rounded-xl border transition-all",
+                  editingId === typeObj.id ? "border-orange-500 bg-orange-50/30 ring-2 ring-orange-500/10" : "border-slate-100 hover:border-slate-200"
+                )}
+              >
+                {editingId === typeObj.id ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1 space-y-0.5">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Nome do Tipo</p>
+                        <input
+                          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold outline-none focus:border-orange-500"
+                          value={editForm.name}
+                          onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Status</p>
+                        <button
+                          onClick={() => setEditForm({ ...editForm, active: !editForm.active })}
+                          className={cn(
+                            "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
+                            editForm.active ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"
+                          )}
+                        >
+                          {editForm.active ? "Ativo" : "Inativo"}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 justify-end">
+                      <button
+                        onClick={() => handleSave(typeObj.id)}
+                        className="px-3 py-1.5 bg-green-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-green-700"
+                      >Salvar</button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="px-3 py-1.5 bg-slate-100 text-slate-600 text-[10px] font-black uppercase rounded-lg hover:bg-slate-200"
+                      >Cancelar</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-700 font-bold text-sm">
+                        {(typeObj.name || "T").substring(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-900">{typeObj.name}</h3>
+                        <div className="flex items-center gap-3 mt-0.5">
+                          <span className={cn(
+                            "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                            typeObj.active ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"
+                          )}>
+                            {typeObj.active ? "● Ativo" : "○ Inativo"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => toggleActive(typeObj.id, typeObj.active)}
+                        className={cn(
+                          "p-2 rounded-lg transition-all",
+                          typeObj.active
+                            ? "text-green-500 hover:text-slate-500 hover:bg-slate-50"
+                            : "text-slate-400 hover:text-green-500 hover:bg-green-50"
+                        )}
+                        title={typeObj.active ? "Desativar" : "Ativar"}
+                      >
+                        <Icons.CheckCircle className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleEdit(typeObj)}
+                        className="p-2 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-all"
+                      ><Icons.Edit className="w-4 h-4" /></button>
+                      <button
+                        onClick={() => handleDelete(typeObj.id)}
+                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                      ><Icons.Trash className="w-4 h-4" /></button>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        )}
+
+        <AnimatePresence>
+          {isAdding && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mt-6 p-6 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200"
+            >
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Nome do Tipo</label>
+                  <input
+                    placeholder="Ex: Cliente Parceiro"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-orange-500"
+                    value={newForm.name}
+                    onChange={e => setNewForm({ ...newForm, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Status</label>
+                  <button
+                    onClick={() => setNewForm({ ...newForm, active: !newForm.active })}
+                    className={cn(
+                      "w-full px-4 py-2.5 rounded-xl text-sm font-bold transition-all border",
+                      newForm.active
+                        ? "bg-green-50 text-green-700 border-green-200"
+                        : "bg-slate-50 text-slate-500 border-slate-200"
+                    )}
+                  >
+                    {newForm.active ? "● Ativo" : "○ Inativo"}
+                  </button>
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => setIsAdding(false)}
+                  className="px-6 py-2.5 text-slate-600 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-slate-200 transition-all"
+                >Cancelar</button>
+                <button
+                  onClick={handleAdd}
+                  disabled={!newForm.name.trim()}
+                  className="px-6 py-2.5 bg-orange-600 text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-orange-700 transition-all shadow-lg shadow-orange-200 disabled:opacity-50"
+                >Cadastrar Tipo</button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {!contactTypes.length && !loadingContactTypes && !isAdding && (
+          <div className="py-16 text-center space-y-4">
+            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-300">
+              <Icons.Users className="w-10 h-10" />
+            </div>
+            <div>
+              <p className="font-bold text-slate-600">Nenhum tipo cadastrado</p>
+              <p className="text-sm text-slate-400 mt-1">Crie o primeiro tipo (ex: Amigo, Cliente).</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 // ─── Main Settings Page ─────────────────────────────
 export default function Settings() {
   const { stages, fetchStages, loadingStages } = useLeads();
@@ -1028,6 +1259,9 @@ export default function Settings() {
 
       {/* ── Section 3: Operadoras de Saúde ── */}
       <CarriersSettingsSection />
+
+      {/* ── Section 4: Tipos de Contato ── */}
+      <ContactTypesSettingsSection />
     </div>
   );
 }

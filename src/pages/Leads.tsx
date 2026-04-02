@@ -9,7 +9,7 @@ import { useLeads } from "../lib/leadsContext";
 import { LeadDetailDrawer } from "../components/LeadDetailDrawer";
 
 export default function Leads() {
-  const { leads, filter, fetchLeads, stages } = useLeads();
+  const { leads, filter, fetchLeads, stages, contactTypes } = useLeads();
   const [isUploading, setIsUploading] = useState(false);
   const [ufFilter, setUfFilter] = useState("Todos");
   const [statusFilter, setStatusFilter] = useState("Todos");
@@ -19,7 +19,7 @@ export default function Leads() {
   const [isSaving, setIsSaving] = useState(false);
   const [selectedLead, setSelectedLead] = useState<any>(null);
   const [newLead, setNewLead] = useState({ 
-    name: '', email: '', phone: '', source: 'Manual', status: stages[0]?.name || 'Novo', 
+    name: '', email: '', phone: '', source: 'Manual', status: stages[0]?.name || 'Novo', contact_type: '',
     has_current_plan: false, interested_lives: 1, current_lives: 0,
     current_carrier: '', current_product: '', current_value: 0,
     rg: '', address_zip: '', address_street: '', address_neighborhood: '',
@@ -245,7 +245,8 @@ export default function Leads() {
       nickname: newLead.nickname,
       has_cnpj: newLead.has_cnpj,
       is_mei: newLead.is_mei,
-      cnpj: newLead.cnpj
+      cnpj: newLead.cnpj,
+      contact_type: newLead.contact_type
     }]);
 
     setIsSaving(false);
@@ -255,7 +256,7 @@ export default function Leads() {
     } else {
       setIsModalOpen(false);
       setNewLead({ 
-        name: '', email: '', phone: '', source: 'Manual', status: stages[0]?.name || 'Novo', 
+        name: '', email: '', phone: '', source: 'Manual', status: stages[0]?.name || 'Novo', contact_type: '',
         has_current_plan: false, interested_lives: 1, current_lives: 0,
         current_carrier: '', current_product: '', current_value: 0,
         rg: '', address_zip: '', address_street: '', address_neighborhood: '',
@@ -376,6 +377,7 @@ export default function Leads() {
             <thead>
               <tr className="text-[0.6875rem] uppercase tracking-[0.1em] text-slate-400">
                 <th className="px-6 py-4 font-semibold">Nome do Lead</th>
+                <th className="px-6 py-4 font-semibold">Tipo</th>
                 <th className="px-6 py-4 font-semibold">Origem</th>
                 <th className="px-6 py-4 font-semibold text-center">Último Contato</th>
                 <th className="px-6 py-4 font-semibold text-center">Status</th>
@@ -409,6 +411,15 @@ export default function Leads() {
                         </div>
                       )}
                     </div>
+                  </td>
+                  <td className="px-6 py-5">
+                    {lead.contact_type ? (
+                      <span className="inline-flex items-center text-[10px] font-bold text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm border border-orange-200">
+                        {lead.contact_type}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 font-medium italic">Sem tipo</span>
+                    )}
                   </td>
                   <td className="px-6 py-5">
                     <span className="text-sm font-medium text-slate-600">{lead.source}</span>
@@ -725,7 +736,20 @@ export default function Leads() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Tipo de Contato</label>
+                    <select 
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-700"
+                      value={newLead.contact_type || ""}
+                      onChange={e => setNewLead({...newLead, contact_type: e.target.value})}
+                    >
+                      <option value="">Não definido</option>
+                      {contactTypes?.filter(t => t.active).map(t => (
+                        <option key={t.id} value={t.name}>{t.name}</option>
+                      ))}
+                    </select>
+                  </div>
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Origem</label>
                     <input 

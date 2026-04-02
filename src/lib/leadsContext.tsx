@@ -4,12 +4,15 @@ import { supabase } from './supabase';
 interface LeadsContextType {
   leads: any[];
   stages: any[];
+  contactTypes: any[];
   filter: string;
   setFilter: (filter: string) => void;
   fetchLeads: () => Promise<void>;
   fetchStages: () => Promise<void>;
+  fetchContactTypes: () => Promise<void>;
   filterCounts: Record<string, number>;
   loadingStages: boolean;
+  loadingContactTypes: boolean;
 }
 
 const LeadsContext = createContext<LeadsContextType | undefined>(undefined);
@@ -17,8 +20,10 @@ const LeadsContext = createContext<LeadsContextType | undefined>(undefined);
 export function LeadsProvider({ children }: { children: React.ReactNode }) {
   const [leads, setLeads] = useState<any[]>([]);
   const [stages, setStages] = useState<any[]>([]);
+  const [contactTypes, setContactTypes] = useState<any[]>([]);
   const [filter, setFilter] = useState("Todos");
   const [loadingStages, setLoadingStages] = useState(true);
+  const [loadingContactTypes, setLoadingContactTypes] = useState(true);
 
   const fetchStages = async () => {
     setLoadingStages(true);
@@ -31,6 +36,19 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
       setStages(data);
     }
     setLoadingStages(false);
+  };
+
+  const fetchContactTypes = async () => {
+    setLoadingContactTypes(true);
+    const { data, error } = await supabase
+      .from('contact_types')
+      .select('*')
+      .order('name', { ascending: true });
+    
+    if (!error && data) {
+      setContactTypes(data);
+    }
+    setLoadingContactTypes(false);
   };
 
   const fetchLeads = async () => {
@@ -63,6 +81,7 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetchLeads();
     fetchStages();
+    fetchContactTypes();
   }, []);
 
   const filterCounts = useMemo(() => {
@@ -77,12 +96,15 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
     <LeadsContext.Provider value={{ 
       leads, 
       stages, 
+      contactTypes,
       filter, 
       setFilter, 
       fetchLeads, 
       fetchStages, 
+      fetchContactTypes,
       filterCounts, 
-      loadingStages 
+      loadingStages,
+      loadingContactTypes
     }}>
       {children}
     </LeadsContext.Provider>
