@@ -295,7 +295,7 @@ export default function Leads() {
     }
 
     if (searchTerm.trim()) {
-      const s = searchTerm.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      const words = searchTerm.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().split(/\s+/);
       result = result.filter((l: any) => {
         const searchTarget = `
           ${l.name || ""} 
@@ -309,12 +309,12 @@ export default function Leads() {
           ${l.contact_type || ""}
         `.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         
-        return searchTarget.includes(s);
+        return words.every(word => searchTarget.includes(word));
       });
     }
 
     if (sortConfig) {
-      result.sort((a, b) => {
+      result = [...result].sort((a, b) => {
         let aVal = a[sortConfig.key] || "";
         let bVal = b[sortConfig.key] || "";
         if (typeof aVal === 'string') aVal = aVal.toLowerCase();
@@ -345,7 +345,7 @@ export default function Leads() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filter, ufFilter, statusFilter, perPage]);
+  }, [filter, ufFilter, statusFilter, perPage, searchTerm]);
 
   return (
     <div className="px-8 pb-8 pt-2 space-y-8">
