@@ -14,7 +14,7 @@ export const evolutionService = {
       const cleanNumber = number.replace(/\D/g, '');
       const formattedNumber = cleanNumber.startsWith('55') ? cleanNumber : `55${cleanNumber}`;
       
-      const response = await fetch(`${BASE_URL}/message/sendText/${INSTANCE}`, {
+      const response = await fetch(`${BASE_URL}/message/sendText/${encodeURIComponent(INSTANCE)}`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -30,7 +30,11 @@ export const evolutionService = {
         })
       });
       
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Erro detalhado da API Evolution:', errorData);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       return await response.json();
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
@@ -45,7 +49,7 @@ export const evolutionService = {
       const formattedNumber = cleanNumber.startsWith('55') ? cleanNumber : `55${cleanNumber}`;
       const remoteJid = `${formattedNumber}@s.whatsapp.net`;
       
-      const response = await fetch(`${BASE_URL}/chat/findMessages/${INSTANCE}`, {
+      const response = await fetch(`${BASE_URL}/chat/findMessages/${encodeURIComponent(INSTANCE)}`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -68,7 +72,7 @@ export const evolutionService = {
   // Verificar estado da conexão
   async getConnectionStatus() {
     try {
-      const response = await fetch(`${BASE_URL}/instance/connectionState/${INSTANCE}`, {
+      const response = await fetch(`${BASE_URL}/instance/connectionState/${encodeURIComponent(INSTANCE)}`, {
         method: 'GET',
         headers
       });
