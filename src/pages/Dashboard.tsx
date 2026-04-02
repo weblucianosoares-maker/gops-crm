@@ -51,7 +51,7 @@ export default function Dashboard() {
       .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
     
     const receitaStandby = leads
-      .filter(l => l.status === 'Stand-by')
+      .filter(l => l.status === 'Parado')
       .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
     
     setStats({ totalLeads, vidasVendidas, receitaEmRisco, receitaStandby });
@@ -169,39 +169,39 @@ export default function Dashboard() {
   </div>;
 
   return (
-    <div className="p-8 space-y-10">
-      {/* Summary Metrics */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+    <div className="p-6 space-y-8">
+      {/* Summary Metrics - Fixed One Row Layout */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white p-8 rounded-xl relative overflow-hidden group border border-slate-100 shadow-sm"
+          className="bg-white p-5 rounded-xl relative overflow-hidden group border border-slate-100 shadow-sm"
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110 duration-500" />
-          <p className="text-[0.6875rem] uppercase tracking-widest text-slate-500 font-bold mb-2">Total de Leads</p>
-          <h3 className="text-5xl font-extrabold text-blue-900 tracking-tight">{stats.totalLeads.toLocaleString()}</h3>
+          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-110 duration-500" />
+          <p className="text-[0.6rem] uppercase tracking-widest text-slate-500 font-bold mb-1">Total de Leads</p>
+          <h3 className="text-2xl font-black text-blue-900 tracking-tight">{stats.totalLeads.toLocaleString()}</h3>
         </motion.div>
 
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white p-8 rounded-xl relative overflow-hidden group border border-slate-100 shadow-sm"
+          className="bg-white p-5 rounded-xl relative overflow-hidden group border border-slate-100 shadow-sm"
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-green-50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110 duration-500" />
-          <p className="text-[0.6875rem] uppercase tracking-widest text-slate-500 font-bold mb-2">Vidas Ativas</p>
-          <h3 className="text-5xl font-extrabold text-blue-900 tracking-tight">{stats.vidasVendidas}</h3>
+          <div className="absolute top-0 right-0 w-24 h-24 bg-green-50 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-110 duration-500" />
+          <p className="text-[0.6rem] uppercase tracking-widest text-slate-500 font-bold mb-1">Vidas Ativas</p>
+          <h3 className="text-2xl font-black text-blue-900 tracking-tight">{stats.vidasVendidas}</h3>
         </motion.div>
 
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-blue-600 p-8 rounded-xl text-white relative overflow-hidden group shadow-lg shadow-blue-100"
+          className="bg-blue-600 p-5 rounded-xl text-white relative overflow-hidden group shadow-lg shadow-blue-100"
         >
           <div className="relative z-10">
-            <p className="text-[0.6875rem] uppercase tracking-widest text-blue-100 font-bold mb-2">Receitas em Negociação</p>
-            <h3 className="text-2xl font-extrabold tracking-tight truncate">{formatCurrency(stats.receitaEmRisco)}</h3>
+            <p className="text-[0.6rem] uppercase tracking-widest text-blue-100 font-bold mb-1">Negociações</p>
+            <h3 className="text-lg font-black tracking-tight truncate">{formatCurrency(stats.receitaEmRisco)}</h3>
           </div>
         </motion.div>
 
@@ -209,11 +209,11 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="bg-amber-500 p-8 rounded-xl text-white relative overflow-hidden group shadow-lg shadow-amber-100"
+          className="bg-amber-500 p-5 rounded-xl text-white relative overflow-hidden group shadow-lg shadow-amber-100"
         >
           <div className="relative z-10">
-            <p className="text-[0.6875rem] uppercase tracking-widest text-amber-50 font-bold mb-2">Receita em Standby</p>
-            <h3 className="text-2xl font-extrabold tracking-tight truncate">{formatCurrency(stats.receitaStandby)}</h3>
+            <p className="text-[0.6rem] uppercase tracking-widest text-amber-50 font-bold mb-1">Em Standby</p>
+            <h3 className="text-lg font-black tracking-tight truncate">{formatCurrency(stats.receitaStandby)}</h3>
           </div>
         </motion.div>
 
@@ -222,27 +222,27 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-white p-8 rounded-xl relative overflow-hidden group border border-slate-100 shadow-sm md:col-span-2 lg:col-span-2"
+          className="bg-white p-5 rounded-xl relative overflow-hidden group border border-slate-100 shadow-sm"
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-pink-50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110 duration-500" />
-          <div className="flex items-center gap-6 relative z-10">
-            <div className="w-16 h-16 rounded-2xl bg-pink-100 flex items-center justify-center shrink-0">
-              <Icons.Cake className="w-8 h-8 text-pink-600" />
+          <div className="absolute top-0 right-0 w-24 h-24 bg-pink-50 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-110 duration-500" />
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center shrink-0">
+              <Icons.Cake className="w-5 h-5 text-pink-600" />
             </div>
             <div className="flex-1">
-              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-3">Aniversariantes</h3>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-0.5">
-                  <p className="text-[10px] font-black text-slate-400 uppercase">No Dia</p>
-                  <p className="text-2xl font-black text-pink-600">{birthdaysDay}</p>
+              <h3 className="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest mb-1">Aniv.</h3>
+              <div className="flex items-center justify-between text-center">
+                <div className="space-y-0">
+                  <p className="text-[8px] font-black text-slate-400 uppercase">Dia</p>
+                  <p className="text-sm font-black text-pink-600 leading-none">{birthdaysDay}</p>
                 </div>
-                <div className="space-y-0.5">
-                  <p className="text-[10px] font-black text-slate-400 uppercase">Semana</p>
-                  <p className="text-2xl font-black text-pink-600">{birthdaysWeek}</p>
+                <div className="space-y-0 px-2 border-x border-slate-100">
+                  <p className="text-[8px] font-black text-slate-400 uppercase">Sem</p>
+                  <p className="text-sm font-black text-pink-600 leading-none">{birthdaysWeek}</p>
                 </div>
-                <div className="space-y-0.5">
-                  <p className="text-[10px] font-black text-slate-400 uppercase">No Mês</p>
-                  <p className="text-2xl font-black text-pink-600">{birthdaysMonth}</p>
+                <div className="space-y-0">
+                  <p className="text-[8px] font-black text-slate-400 uppercase">Mês</p>
+                  <p className="text-sm font-black text-pink-600 leading-none">{birthdaysMonth}</p>
                 </div>
               </div>
             </div>

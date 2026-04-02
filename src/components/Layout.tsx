@@ -199,6 +199,11 @@ export function TopBar({ title, onMenuClick }: { title: string; onMenuClick?: ()
             <Icons.Menu className="w-5 h-5" />
           </button>
           <h2 className="text-xl font-bold text-blue-900">{title}</h2>
+          {title === "Visão Geral" && (
+            <span className="text-xs font-medium text-slate-400 mt-1 ml-2">
+              {new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date())}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-6">
           <div className="relative group">
