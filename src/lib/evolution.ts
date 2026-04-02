@@ -31,12 +31,12 @@ export const evolutionService = {
       });
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Erro detalhado da API Evolution:', errorData);
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text().catch(() => "Erro desconhecido");
+        console.error('ERRO API EVOLUTION:', errorText);
+        throw new Error(`API: ${errorText || response.statusText}`);
       }
       return await response.json();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao enviar mensagem:', error);
       throw error;
     }
