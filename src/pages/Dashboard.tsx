@@ -31,7 +31,7 @@ export default function Dashboard() {
     try {
       const [beneficiariesRes, contractsRes, remindersRes] = await Promise.all([
         supabase.from('beneficiaries').select('*'),
-        supabase.from('contracts').select('*, leads(name)'),
+        supabase.from('contracts').select('*'),
         supabase.from('reminders').select('*, leads(name)').eq('status', 'pendente')
       ]);
 
@@ -134,7 +134,7 @@ export default function Dashboard() {
     });
 
     contracts.forEach((c: any) => {
-      checkEvent(c.start_date, c.leads?.name || "Contrato", "Vigência");
+      checkEvent(c.start_date, c.client_name || "Contrato", "Vigência");
     });
 
     reminders.forEach((rem: any) => {
