@@ -28,7 +28,14 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loadingChat, setLoadingChat] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+
+  // Efeito para rolar o chat para o final quando mudar mensagens
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, activeTab]);
 
   useEffect(() => {
     if (initialLead) {
@@ -39,24 +46,83 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
     }
   }, [initialLead]);
 
-  useEffect(() => {
-    if (activeTab === 'chat' && lead?.phone) {
-      loadMessages();
-    }
-  }, [activeTab, lead?.phone]);
-
   const loadMessages = async () => {
     if (!lead?.phone) return;
     setLoadingChat(true);
     try {
-      const data = await evolutionService.getMessages(lead.phone);
-      setMessages(Array.isArray(data) ? data : (data?.messages || []));
+      // 1. Buscar do WhatsApp (Evolution API)
+      const apiMessages = await evolutionService.getMessages(lead.phone);
+      
+      // 2. Buscar do Backup Local (Supabase)
+      const { data: localMessages } = await supabase
+        .from('whatsapp_messages')
+        .select('*')
+        .eq('lead_id', lead.id)
+        .order('created_at', { ascending: true });
+
+      // Normalizar e Unificar (Remover duplicados pelo ID)
+      const normalizedApi = (Array.isArray(apiMessages) ? apiMessages : (apiMessages?.messages || [])).map((m: any) => ({
+        id: m.key?.id,
+        fromMe: m.key?.fromMe,
+        text: m.message?.conversation || m.message?.extendedTextMessage?.text || m.message?.imageMessage?.caption || "[Mídia]",
+        timestamp: m.messageTimestamp * 1000,
+        source: 'api'
+      }));
+
+      const normalizedLocal = (localMessages || []).map((m: any) => ({
+        id: m.message_id,
+        fromMe: m.is_from_me,
+        text: m.message_body,
+        timestamp: new Date(m.created_at).getTime(),
+        source: 'local'
+      }));
+
+      // Merge de arrays removendo duplicados por ID
+      const allMessages = [...normalizedApi, ...normalizedLocal].reduce((acc: any[], curr: any) => {
+        if (!acc.find(m => m.id === curr.id)) acc.push(curr);
+        return acc;
+      }, []);
+
+      setMessages(allMessages.sort((a,b) => a.timestamp - b.timestamp));
     } catch (e) {
-      console.error("Erro ao carregar mensagens:", e);
+      console.error("Erro ao carregar histórico:", e);
     } finally {
       setLoadingChat(false);
     }
   };
+
+  useEffect(() => {
+    if (activeTab === 'chat' && lead?.id) {
+      loadMessages();
+
+      // Configurar Realtime para novas mensagens
+      const channel = supabase
+        .channel(`whatsapp-${lead.id}`)
+        .on('postgres_changes', { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'whatsapp_messages',
+          filter: `lead_id=eq.${lead.id}`
+        }, (payload) => {
+          const newMsg = payload.new;
+          setMessages(prev => {
+            if (prev.find(m => m.id === newMsg.message_id)) return prev;
+            return [...prev, {
+              id: newMsg.message_id,
+              fromMe: newMsg.is_from_me,
+              text: newMsg.message_body,
+              timestamp: new Date(newMsg.created_at).getTime(),
+              source: 'realtime'
+            }].sort((a,b) => a.timestamp - b.timestamp);
+          });
+        })
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [activeTab, lead?.id]);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !lead?.phone) return;
@@ -211,26 +277,26 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
                   <button onClick={loadMessages} className="p-2 bg-white rounded-lg border hover:text-blue-600"><Icons.History className={cn("w-5 h-5", loadingChat && "animate-spin")} /></button>
                </div>
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-3 flex flex-col-reverse custom-scrollbar z-10">
+                <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 bg-[#efe7de] dark:bg-slate-900/50 space-y-3 min-h-[400px]">
                   {(!messages || messages.length === 0) && !loadingChat && (
                     <div className="m-auto text-slate-400 text-xs font-black uppercase text-center">
                       <Icons.MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-20" />
                       Nenhuma conversa encontrada
                     </div>
                   )}
-                  {Array.isArray(messages) && messages.map((msg, idx) => {
-                    try {
-                      if (!msg || !msg.key) return null;
-                      const isFromMe = msg.key?.fromMe;
-                      const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || "[Mídia]";
-                      return (
-                        <div key={msg.key?.id || `msg-${idx}`} className={cn("max-w-[85%] p-3 rounded-2xl text-sm shadow-sm relative", isFromMe ? "bg-[#dcf8c6] self-end rounded-tr-none" : "bg-white self-start rounded-tl-none")}>
-                           <p className="whitespace-pre-wrap text-slate-800 font-medium">{text}</p>
-                           <p className="text-[9px] text-slate-400 text-right mt-1 font-bold">{msg.messageTimestamp ? new Date(msg.messageTimestamp * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ""}</p>
-                        </div>
-                      );
-                    } catch (e) { return null; }
-                  })}
+                    {messages.length > 0 ? messages.map((msg, idx) => {
+                      try {
+                        if (!msg) return null;
+                        const isFromMe = msg.fromMe;
+                        const text = msg.text;
+                        return (
+                          <div key={msg.id || `msg-${idx}`} className={cn("max-w-[85%] p-3 rounded-2xl text-sm shadow-sm relative", isFromMe ? "bg-[#dcf8c6] self-end rounded-tr-none" : "bg-white self-start rounded-tl-none")}>
+                             <p className="whitespace-pre-wrap text-slate-800 font-medium">{text}</p>
+                             <p className="text-[9px] text-slate-400 text-right mt-1 font-bold">{msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ""}</p>
+                          </div>
+                        );
+                      } catch (e) { return null; }
+                    }) : null}
                   {loadingChat && <div className="mx-auto bg-white/80 px-4 py-1 rounded-full text-[10px] font-black uppercase shadow-sm">Carregando mensagens...</div>}
                </div>
 

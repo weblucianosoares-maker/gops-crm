@@ -45,22 +45,32 @@ export const evolutionService = {
     try {
       const cleanNumber = number.replace(/\D/g, '');
       const formattedNumber = cleanNumber.startsWith('55') ? cleanNumber : `55${cleanNumber}`;
-      const remoteJid = `${formattedNumber}@s.whatsapp.net`;
       
-      const response = await fetch(`${BASE_URL}/chat/findMessages/${encodeURIComponent(INSTANCE)}`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          where: {
-            remoteJid: remoteJid
-          },
-          count: 50
-        })
-      });
-      
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const data = await response.json();
-      return data;
+      const fetchFromApi = async (num: string) => {
+        const remoteJid = `${num}@s.whatsapp.net`;
+        const response = await fetch(`${BASE_URL}/chat/findMessages/${encodeURIComponent(INSTANCE)}`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            where: { remoteJid },
+            count: 50
+          })
+        });
+        if (!response.ok) return [];
+        return await response.json();
+      };
+
+      let messages = await fetchFromApi(formattedNumber);
+
+      // Fallback para o Nono Dígito (Brasil)
+      // Se houver 13 dígitos e começar por 55 + DDD + 9, tentamos remover o 9.
+      if ((!messages || messages.length === 0) && formattedNumber.length === 13 && formattedNumber.startsWith('55')) {
+        const fallbackNumber = formattedNumber.slice(0, 4) + formattedNumber.slice(5);
+        console.log(`Tentando fallback sem o 9 para: ${fallbackNumber}`);
+        messages = await fetchFromApi(fallbackNumber);
+      }
+
+      return messages;
     } catch (error) {
       console.error('Erro ao buscar mensagens:', error);
       return [];
