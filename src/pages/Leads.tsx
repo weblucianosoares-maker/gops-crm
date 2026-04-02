@@ -295,19 +295,21 @@ export default function Leads() {
     }
 
     if (searchTerm.trim()) {
-      const s = searchTerm.toLowerCase().trim();
+      const s = searchTerm.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
       result = result.filter((l: any) => {
-        return (
-          l.name?.toLowerCase().includes(s) ||
-          l.email?.toLowerCase().includes(s) ||
-          l.phone?.includes(s) ||
-          l.cpf?.includes(s) ||
-          l.cnpj?.includes(s) ||
-          l.nickname?.toLowerCase().includes(s) ||
-          l.company_name?.toLowerCase().includes(s) ||
-          l.source?.toLowerCase().includes(s) ||
-          l.contact_type?.toLowerCase().includes(s)
-        );
+        const searchTarget = `
+          ${l.name || ""} 
+          ${l.email || ""} 
+          ${l.phone || ""} 
+          ${l.cpf || ""} 
+          ${l.cnpj || ""} 
+          ${l.nickname || ""} 
+          ${l.company_name || ""} 
+          ${l.source || ""} 
+          ${l.contact_type || ""}
+        `.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        
+        return searchTarget.includes(s);
       });
     }
 
@@ -325,7 +327,7 @@ export default function Leads() {
     }
     
     return result;
-  }, [leads, filter, ufFilter, statusFilter, sortConfig]);
+  }, [leads, filter, ufFilter, statusFilter, sortConfig, searchTerm]);
 
   const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
@@ -396,8 +398,11 @@ export default function Leads() {
         <div>
           <span className="text-[0.6875rem] uppercase tracking-[0.1em] text-blue-600 font-bold mb-2 block">CRM & Prospecção</span>
           <h1 className="text-5xl font-extrabold tracking-tight text-slate-900 leading-none">
-            {leads.length} <span className="text-2xl font-light text-slate-400">Leads Ativos</span>
+            {filteredLeads.length} <span className="text-2xl font-light text-slate-400">Leads Filtrados</span>
           </h1>
+          {searchTerm && (
+            <p className="text-xs text-slate-400 mt-2">Total na base: {leads.length} leads</p>
+          )}
         </div>
         <div className="flex items-center gap-4">
           <button 
