@@ -214,6 +214,21 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
     if (!error) { onUpdate(); onClose(); }
   };
 
+  const handleDelete = async () => {
+    if (window.confirm(`Tem certeza que deseja excluir o lead "${lead.name}"? Esta ação é irreversível e removerá todo o histórico associado.`)) {
+      setIsSaving(true);
+      const { error } = await supabase.from('leads').delete().eq('id', lead.id);
+      setIsSaving(false);
+      
+      if (error) {
+        alert("Erro ao excluir o lead: " + error.message);
+      } else {
+        onUpdate();
+        onClose();
+      }
+    }
+  };
+
   const handleAddNote = async () => {
     if (!newNote.trim()) return;
     setIsAddingNote(true);
@@ -252,6 +267,13 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
             </div>
           </div>
           <div className="flex items-center gap-3">
+             <button 
+                onClick={handleDelete} 
+                disabled={isSaving} 
+                className="bg-red-50 text-red-600 px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm disabled:opacity-50 hover:bg-red-100 transition-colors"
+             >
+                Excluir
+             </button>
              <button onClick={handleSave} disabled={isSaving} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm disabled:opacity-50">
                 {isSaving ? "Salvando..." : "Salvar"}
              </button>
