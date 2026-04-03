@@ -180,6 +180,10 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
           is_from_me: true,
           created_at: new Date().toISOString()
         }, { onConflict: 'message_id' });
+
+        // ATUALIZAÇÃO CRUCIAL: Trocar o ID temporário pelo ID REAL
+        // Isso evita duplicidade quando o Webhook/Realtime retornar a mesma mensagem
+        setMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: response.key.id, status: 'sent' } : m));
       }
       
       // O Refresh real virá pelo Webhook/loadMessages, mas mantemos o otimista até lá
