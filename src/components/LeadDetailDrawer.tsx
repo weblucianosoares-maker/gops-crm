@@ -62,25 +62,27 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
         .order('created_at', { ascending: true });
 
       // Normalizar e Unificar (Remover duplicados pelo ID)
-      const normalizedApi = (Array.isArray(apiMessages) ? apiMessages : (apiMessages?.messages || [])).map((m: any) => ({
+      const rawApi = Array.isArray(apiMessages) ? apiMessages : (apiMessages?.messages && Array.isArray(apiMessages.messages) ? apiMessages.messages : []);
+      
+      const normalizedApi = rawApi.map((m: any) => ({
         id: m.key?.id,
         fromMe: m.key?.fromMe,
         text: m.message?.conversation || m.message?.extendedTextMessage?.text || m.message?.imageMessage?.caption || "[Mídia]",
-        timestamp: m.messageTimestamp * 1000,
+        timestamp: m.messageTimestamp ? m.messageTimestamp * 1000 : Date.now(),
         source: 'api'
       }));
 
-      const normalizedLocal = (localMessages || []).map((m: any) => ({
+      const normalizedLocal = (Array.isArray(localMessages) ? localMessages : []).map((m: any) => ({
         id: m.message_id,
         fromMe: m.is_from_me,
         text: m.message_body,
-        timestamp: new Date(m.created_at).getTime(),
+        timestamp: m.created_at ? new Date(m.created_at).getTime() : Date.now(),
         source: 'local'
       }));
 
       // Merge de arrays removendo duplicados por ID
       const allMessages = [...normalizedApi, ...normalizedLocal].reduce((acc: any[], curr: any) => {
-        if (!acc.find(m => m.id === curr.id)) acc.push(curr);
+        if (curr.id && !acc.find(m => m.id === curr.id)) acc.push(curr);
         return acc;
       }, []);
 
@@ -125,15 +127,28 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
     }
   }, [activeTab, lead?.id]);
 
-  const handleSendMessage = async () => {
     if (!newMessage.trim() || !lead?.phone) return;
-    const currentMsg = newMessage;
+    const currentMsgText = newMessage;
     setNewMessage("");
+    
+    // Atualização Otimista: Adicionar na tela imediatamente
+    const tempId = `temp-${Date.now()}`;
+    const tempMsg = {
+      id: tempId,
+      fromMe: true,
+      text: currentMsgText,
+      timestamp: Date.now(),
+      status: 'sending'
+    };
+    setMessages(prev => [...prev, tempMsg]);
+
     try {
-      await evolutionService.sendMessage(lead.phone, currentMsg);
-      loadMessages();
+      await evolutionService.sendMessage(lead.phone, currentMsgText);
+      // O Refresh real virá pelo Webhook/loadMessages, mas mantemos o otimista até lá
     } catch (e: any) {
       console.error("DEBUG - Erro detalhado:", e);
+      // Remover a mensagem otimista em caso de erro
+      setMessages(prev => prev.filter(m => m.id !== tempId));
       alert(`Erro ao enviar: ${e.message || "Verifique a conexão da instância"}`);
     }
   };
