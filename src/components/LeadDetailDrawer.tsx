@@ -181,7 +181,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
   return (
     <div className="fixed inset-0 z-[60] overflow-hidden">
       <div onClick={onClose} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
-      <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} className="absolute right-0 top-0 h-full w-full max-w-2xl bg-white shadow-2xl flex flex-col">
+      <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} className="absolute right-0 top-0 h-[100dvh] w-full max-w-2xl bg-white shadow-2xl flex flex-col">
         
         {/* Header */}
         <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
@@ -261,7 +261,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
                </section>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col bg-[#e5ddd5] relative overflow-hidden">
+            <div className="flex-1 flex flex-col bg-[#e5ddd5] relative overflow-hidden h-[calc(100dvh-150px)]">
                <div className="absolute inset-0 opacity-[0.06] pointer-events-none" style={{ backgroundImage: 'url("https://wweb.dev/assets/whatsapp-chat-back.png")' }}></div>
                
                <div className="bg-[#ededed] px-6 py-3 flex items-center justify-between border-b border-slate-200 z-10">
