@@ -139,6 +139,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
     }
   }, [activeTab, lead?.id]);
 
+  const handleSendMessage = async () => {
     if (!newMessage.trim() || !lead?.phone) return;
     const currentMsgText = newMessage;
     setNewMessage("");
