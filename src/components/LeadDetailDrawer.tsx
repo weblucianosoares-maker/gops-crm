@@ -1,4 +1,4 @@
-// Version: 2026-04-02-19-45 (Forcing Vercel Refresh)
+// Version: 2026-04-03-00-00 (Forcing Deployment Refresh)
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icons } from "./Icons";
@@ -61,34 +61,46 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
         .eq('lead_id', lead.id)
         .order('created_at', { ascending: true });
 
-      // Normalizar e Unificar (Remover duplicados pelo ID)
-      const rawApi = Array.isArray(apiMessages) ? apiMessages : (apiMessages?.messages && Array.isArray(apiMessages.messages) ? apiMessages.messages : []);
-      
-      const normalizedApi = rawApi.map((m: any) => ({
-        id: m.key?.id,
-        fromMe: m.key?.fromMe,
-        text: m.message?.conversation || m.message?.extendedTextMessage?.text || m.message?.imageMessage?.caption || "[Mídia]",
-        timestamp: m.messageTimestamp ? m.messageTimestamp * 1000 : Date.now(),
-        source: 'api'
-      }));
+      // Normalizar e Unificar de forma ultra-segura
+      let rawApi: any[] = [];
+      if (apiMessages && Array.isArray(apiMessages)) {
+        rawApi = apiMessages;
+      } else if (apiMessages && typeof apiMessages === 'object' && Array.isArray((apiMessages as any).messages)) {
+        rawApi = (apiMessages as any).messages;
+      }
 
-      const normalizedLocal = (Array.isArray(localMessages) ? localMessages : []).map((m: any) => ({
-        id: m.message_id,
-        fromMe: m.is_from_me,
-        text: m.message_body,
+      const normalizedApi = rawApi.map((m: any) => {
+        try {
+          return {
+            id: m.key?.id || `api-${Math.random()}`,
+            fromMe: !!m.key?.fromMe,
+            text: m.message?.conversation || m.message?.extendedTextMessage?.text || m.message?.imageMessage?.caption || "[Mídia]",
+            timestamp: m.messageTimestamp ? m.messageTimestamp * 1000 : Date.now(),
+            source: 'api'
+          };
+        } catch (e) { return null; }
+      }).filter(Boolean);
+
+      let rawLocal = Array.isArray(localMessages) ? localMessages : [];
+      const normalizedLocal = rawLocal.map((m: any) => ({
+        id: m.message_id || `local-${Math.random()}`,
+        fromMe: !!m.is_from_me,
+        text: m.message_body || "",
         timestamp: m.created_at ? new Date(m.created_at).getTime() : Date.now(),
         source: 'local'
       }));
 
       // Merge de arrays removendo duplicados por ID
       const allMessages = [...normalizedApi, ...normalizedLocal].reduce((acc: any[], curr: any) => {
-        if (curr.id && !acc.find(m => m.id === curr.id)) acc.push(curr);
+        if (curr && curr.id && !acc.find(m => m.id === curr.id)) {
+          acc.push(curr);
+        }
         return acc;
       }, []);
 
       setMessages(allMessages.sort((a,b) => a.timestamp - b.timestamp));
-    } catch (e) {
-      console.error("Erro ao carregar histórico:", e);
+    } catch (e: any) {
+      console.error("ERRO CRITICO HISTORICO:", e.message);
     } finally {
       setLoadingChat(false);
     }
