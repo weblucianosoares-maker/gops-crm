@@ -48,6 +48,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
 
   const loadMessages = async () => {
     if (!lead?.phone) return;
+    console.log("DEBUG - Buscando mensagens para:", lead.phone);
     setLoadingChat(true);
     try {
       // 1. Buscar do WhatsApp (Evolution API)
@@ -277,7 +278,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
                   <button onClick={loadMessages} className="p-2 bg-white rounded-lg border hover:text-blue-600"><Icons.History className={cn("w-5 h-5", loadingChat && "animate-spin")} /></button>
                </div>
 
-                <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 bg-[#efe7de] dark:bg-slate-900/50 space-y-3 min-h-[400px]">
+                <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 bg-[#efe7de] dark:bg-slate-900/50 space-y-3">
                   {(!messages || messages.length === 0) && !loadingChat && (
                     <div className="m-auto text-slate-400 text-xs font-black uppercase text-center">
                       <Icons.MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-20" />
