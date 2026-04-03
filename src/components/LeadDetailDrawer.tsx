@@ -1,5 +1,5 @@
 // Version: 2026-04-03-00-00 (Forcing Deployment Refresh)
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icons } from "./Icons";
 import { cn, formatCPF, formatPhone } from "../lib/utils";
@@ -30,12 +30,23 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
   const [loadingChat, setLoadingChat] = useState(false);
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
-  // Efeito para rolar o chat para o final quando mudar mensagens
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, activeTab]);
+  // Otimização: Memoizar a lista de mensagens para evitar re-render pesado ao digitar
+  const renderedMessages = useMemo(() => {
+    if (!messages || messages.length === 0) return null;
+    return messages.map((msg, idx) => {
+      try {
+        if (!msg) return null;
+        const isFromMe = msg.fromMe;
+        const text = msg.text;
+        return (
+          <div key={msg.id || `msg-${idx}`} className={cn("max-w-[85%] p-3 rounded-2xl text-sm shadow-sm relative", isFromMe ? "bg-[#dcf8c6] self-end rounded-tr-none" : "bg-white self-start rounded-tl-none")}>
+             <p className="whitespace-pre-wrap text-slate-800 font-medium">{text}</p>
+             <p className="text-[9px] text-slate-400 text-right mt-1 font-bold">{msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ""}</p>
+          </div>
+        );
+      } catch (e) { return null; }
+    });
+  }, [messages]);
 
   useEffect(() => {
     if (initialLead) {
@@ -313,19 +324,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
                       Nenhuma conversa encontrada
                     </div>
                   )}
-                    {messages.length > 0 ? messages.map((msg, idx) => {
-                      try {
-                        if (!msg) return null;
-                        const isFromMe = msg.fromMe;
-                        const text = msg.text;
-                        return (
-                          <div key={msg.id || `msg-${idx}`} className={cn("max-w-[85%] p-3 rounded-2xl text-sm shadow-sm relative", isFromMe ? "bg-[#dcf8c6] self-end rounded-tr-none" : "bg-white self-start rounded-tl-none")}>
-                             <p className="whitespace-pre-wrap text-slate-800 font-medium">{text}</p>
-                             <p className="text-[9px] text-slate-400 text-right mt-1 font-bold">{msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ""}</p>
-                          </div>
-                        );
-                      } catch (e) { return null; }
-                    }) : null}
+                     {renderedMessages}
                   {loadingChat && <div className="mx-auto bg-white/80 px-4 py-1 rounded-full text-[10px] font-black uppercase shadow-sm">Carregando mensagens...</div>}
                </div>
 
