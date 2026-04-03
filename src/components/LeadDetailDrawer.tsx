@@ -167,7 +167,21 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
     setMessages(prev => [...prev, tempMsg]);
 
     try {
-      await evolutionService.sendMessage(lead.phone, currentMsgText);
+      const response = await evolutionService.sendMessage(lead.phone, currentMsgText);
+      console.log("DEBUG - Resposta Evolution:", response);
+      
+      // Persistência Imediata no Supabase para evitar sumiço ao fechar/abrir
+      if (response && response.key?.id) {
+        await supabase.from('whatsapp_messages').upsert({
+          lead_id: lead.id,
+          message_id: response.key.id,
+          sender_number: lead.phone.replace(/\D/g, ''),
+          message_body: currentMsgText,
+          is_from_me: true,
+          created_at: new Date().toISOString()
+        }, { onConflict: 'message_id' });
+      }
+      
       // O Refresh real virá pelo Webhook/loadMessages, mas mantemos o otimista até lá
     } catch (e: any) {
       console.error("DEBUG - Erro detalhado:", e);
