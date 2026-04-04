@@ -10,6 +10,7 @@ import Settings from "./pages/Settings";
 
 import { LeadsProvider } from "./lib/leadsContext";
 import { BrokerProvider } from "./lib/brokerContext";
+import { DrawerProvider } from "./lib/drawerContext";
 
 function AppContent() {
   const location = useLocation();
@@ -51,9 +52,11 @@ export default function App() {
   return (
     <BrokerProvider>
       <LeadsProvider>
-        <Router>
-          <AppContent />
-        </Router>
+        <DrawerProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </DrawerProvider>
       </LeadsProvider>
     </BrokerProvider>
   );

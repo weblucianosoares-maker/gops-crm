@@ -43,7 +43,10 @@ import {
   Lock,
   Eye,
   EyeOff,
-  Image
+  Image,
+  Paperclip,
+  FileSearch,
+  Download
 } from "lucide-react";
 
 export const Icons = {
@@ -96,5 +99,8 @@ export const Icons = {
   Lock: Lock,
   Eye: Eye,
   EyeOff: EyeOff,
-  Image: Image
+  Image: Image,
+  Paperclip: Paperclip,
+  File: FileText,
+  Download: Download
 };

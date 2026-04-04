@@ -91,5 +91,52 @@ export const evolutionService = {
       console.error('Erro ao verificar status:', error);
       return { instance: { state: 'DISCONNECTED' } };
     }
+  },
+
+  // Enviar mídia (Imagem, PDF, etc)
+  async sendMedia(number: string, media: string, mediatype: string, mimetype: string, fileName?: string, caption?: string) {
+    try {
+      const cleanNumber = number.replace(/\D/g, '');
+      const formattedNumber = cleanNumber.startsWith('55') ? cleanNumber : `55${cleanNumber}`;
+      
+      const response = await fetch(`${BASE_URL}/message/sendMedia/${encodeURIComponent(INSTANCE)}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          number: formattedNumber,
+          mediatype: mediatype,
+          mimetype: mimetype,
+          media: media, // Deve vir com o prefixo data:[mimetype];base64,
+          fileName: fileName || 'arquivo',
+          caption: caption || ''
+        })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API: ${errorText || response.statusText}`);
+      }
+      return await response.json();
+    } catch (error: any) {
+      console.error('Erro ao enviar mídia:', error);
+      throw error;
+    }
+  },
+
+  // Buscar conteúdo Base64 de uma mensagem de mídia
+  async fetchMedia(messageId: string) {
+    try {
+      const response = await fetch(`${BASE_URL}/chat/getBase64FromMediaMessage/${encodeURIComponent(INSTANCE)}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ messageId })
+      });
+      
+      if (!response.ok) throw new Error('Erro ao buscar mídia');
+      return await response.json(); // Retorna { base64: "...", mimetype: "..." }
+    } catch (error) {
+      console.error('Erro ao buscar mídia:', error);
+      return null;
+    }
   }
 };

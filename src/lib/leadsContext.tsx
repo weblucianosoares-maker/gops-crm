@@ -13,6 +13,8 @@ interface LeadsContextType {
   filterCounts: Record<string, number>;
   loadingStages: boolean;
   loadingContactTypes: boolean;
+  unreadLeads: string[];
+  unreadCounts: Record<string, number>;
 }
 
 const LeadsContext = createContext<LeadsContextType | undefined>(undefined);
@@ -24,6 +26,8 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
   const [filter, setFilter] = useState("Todos");
   const [loadingStages, setLoadingStages] = useState(true);
   const [loadingContactTypes, setLoadingContactTypes] = useState(true);
+  const [unreadLeads, setUnreadLeads] = useState<string[]>([]);
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
 
   const fetchStages = async () => {
     setLoadingStages(true);
@@ -78,10 +82,36 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
     setLeads(allData);
   };
 
+  const fetchUnread = async () => {
+    const { data } = await supabase
+      .from('whatsapp_messages')
+      .select('lead_id')
+      .eq('is_read', false)
+      .eq('is_from_me', false);
+    
+    if (data) {
+      const counts: Record<string, number> = {};
+      data.forEach(m => { if(m.lead_id) counts[m.lead_id] = (counts[m.lead_id] || 0) + 1; });
+      setUnreadCounts(counts);
+      setUnreadLeads(Object.keys(counts));
+    }
+  };
+
   useEffect(() => {
     fetchLeads();
     fetchStages();
     fetchContactTypes();
+    fetchUnread();
+
+    const channel = supabase
+      .channel('unread-notifications')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'whatsapp_messages' }, (payload) => {
+        // Any change (INSERT, UPDATE) should trigger a re-fetch of unread counts
+        fetchUnread();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const filterCounts = useMemo(() => {
@@ -104,7 +134,9 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
       fetchContactTypes,
       filterCounts, 
       loadingStages,
-      loadingContactTypes
+      loadingContactTypes,
+      unreadLeads,
+      unreadCounts
     }}>
       {children}
     </LeadsContext.Provider>

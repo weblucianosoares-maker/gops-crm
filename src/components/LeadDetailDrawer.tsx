@@ -7,6 +7,81 @@ import { supabase } from "../lib/supabase";
 import { useLeads } from "../lib/leadsContext";
 import { evolutionService } from "../lib/evolution";
 
+// Componente para renderizar mensagens com mídia de forma inteligente
+const MediaMessage = ({ msg }: { msg: any }) => {
+  const [mediaData, setMediaData] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const isImage = msg.media_type === 'image';
+  const isDoc = msg.media_type === 'document';
+
+  useEffect(() => {
+    if ((isImage || isDoc) && msg.id && !msg.id.startsWith('temp-')) {
+      const loadMedia = async () => {
+        setLoading(true);
+        const res = await evolutionService.fetchMedia(msg.id);
+        if (res && res.base64) setMediaData(res.base64);
+        setLoading(false);
+      };
+      loadMedia();
+    }
+  }, [msg.id, msg.media_type]);
+
+  if (isImage) {
+    return (
+      <div className="space-y-2">
+        {loading ? (
+          <div className="w-48 h-32 bg-slate-100 animate-pulse rounded-lg flex items-center justify-center">
+            <Icons.Image className="w-6 h-6 text-slate-300" />
+          </div>
+        ) : mediaData ? (
+          <img 
+            src={`data:${msg.mimetype};base64,${mediaData}`} 
+            alt="WhatsApp Image" 
+            className="rounded-lg max-w-full cursor-pointer hover:opacity-90 transition-opacity"
+            onClick={() => window.open(`data:${msg.mimetype};base64,${mediaData}`, '_blank')}
+          />
+        ) : (
+          <div className="p-2 bg-slate-50 rounded border border-dashed text-[10px] text-slate-400">Imagem não disponível</div>
+        )}
+        {msg.text && <p className="whitespace-pre-wrap text-slate-800 font-medium">{msg.text}</p>}
+      </div>
+    );
+  }
+
+  if (isDoc) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-3 p-3 bg-slate-50/50 rounded-xl border border-slate-100">
+          <div className="p-2 bg-blue-100 rounded-lg">
+            <Icons.File className="w-5 h-5 text-blue-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-slate-700 truncate">{msg.file_name || "Documento"}</p>
+            <p className="text-[9px] text-slate-400 uppercase">{msg.mimetype?.split('/')[1] || "PDF"}</p>
+          </div>
+          {mediaData && (
+            <button 
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = `data:${msg.mimetype};base64,${mediaData}`;
+                link.download = msg.file_name || 'arquivo';
+                link.click();
+              }}
+              className="p-2 hover:bg-blue-50 text-blue-600 rounded-full transition-colors"
+            >
+              <Icons.Download className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+        {msg.text && <p className="whitespace-pre-wrap text-slate-800 font-medium">{msg.text}</p>}
+      </div>
+    );
+  }
+
+  return <p className="whitespace-pre-wrap text-slate-800 font-medium">{msg.text}</p>;
+};
+
 interface LeadDetailDrawerProps {
   lead: any;
   isOpen: boolean;
@@ -40,7 +115,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
         const text = msg.text;
         return (
           <div key={msg.id || `msg-${idx}`} className={cn("max-w-[85%] p-3 rounded-2xl text-sm shadow-sm relative", isFromMe ? "bg-[#dcf8c6] self-end rounded-tr-none" : "bg-white self-start rounded-tl-none")}>
-             <p className="whitespace-pre-wrap text-slate-800 font-medium">{text}</p>
+             <MediaMessage msg={msg} />
              <p className="text-[9px] text-slate-400 text-right mt-1 font-bold">{msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ""}</p>
           </div>
         );
@@ -98,7 +173,10 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
         fromMe: !!m.is_from_me,
         text: m.message_body || "",
         timestamp: m.created_at ? new Date(m.created_at).getTime() : Date.now(),
-        source: 'local'
+        source: 'local',
+        media_type: m.media_type,
+        mimetype: m.mimetype,
+        file_name: m.file_name
       }));
 
       // Merge de arrays removendo duplicados por ID
@@ -138,7 +216,10 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
               fromMe: newMsg.is_from_me,
               text: newMsg.message_body,
               timestamp: new Date(newMsg.created_at).getTime(),
-              source: 'realtime'
+              source: 'realtime',
+              media_type: newMsg.media_type,
+              mimetype: newMsg.mimetype,
+              file_name: newMsg.file_name
             }].sort((a,b) => a.timestamp - b.timestamp);
           });
         })
@@ -149,6 +230,60 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
       };
     }
   }, [activeTab, lead?.id]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, activeTab]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !lead?.phone) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64 = event.target?.result as string;
+      const mediatype = file.type.startsWith('image/') ? 'image' : 'document';
+      const tempId = `temp-${Date.now()}`;
+      
+      // Optimistic Update
+      setMessages(prev => [...prev, {
+        id: tempId,
+        fromMe: true,
+        text: file.name,
+        timestamp: Date.now(),
+        status: 'sending',
+        media_type: mediatype,
+        mimetype: file.type,
+        file_name: file.name
+      }]);
+
+      try {
+        const response = await evolutionService.sendMedia(lead.phone, base64, mediatype, file.type, file.name);
+        if (response && response.key?.id) {
+          await supabase.from('whatsapp_messages').upsert({
+            lead_id: lead.id,
+            message_id: response.key.id,
+            sender_number: lead.phone.replace(/\D/g, ''),
+            message_body: file.name,
+            is_from_me: true,
+            created_at: new Date().toISOString(),
+            media_type: mediatype,
+            mimetype: file.type,
+            file_name: file.name
+          }, { onConflict: 'message_id' });
+
+          setMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: response.key.id, status: 'sent' } : m));
+        }
+      } catch (err) {
+        setMessages(prev => prev.filter(m => m.id !== tempId));
+        alert("Erro ao enviar arquivo");
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !lead?.phone) return;
@@ -349,12 +484,14 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
                     <div>
                       <p className="text-sm font-black text-slate-700">{lead.name}</p>
                       <p className="text-[10px] text-green-600 font-bold uppercase tracking-tight flex items-center gap-1">
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                         Online via Evolution Hub
                       </p>
                     </div>
                   </div>
-                  <button onClick={loadMessages} className="p-2 bg-white rounded-lg border hover:text-blue-600"><Icons.History className={cn("w-5 h-5", loadingChat && "animate-spin")} /></button>
+                  <button onClick={loadMessages} className="p-2 bg-white rounded-lg border hover:text-blue-600">
+                    <Icons.History className={cn("w-5 h-5", loadingChat && "animate-spin")} />
+                  </button>
                </div>
 
                 <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 bg-[#efe7de] dark:bg-slate-900/50 space-y-3 flex flex-col">
@@ -364,14 +501,40 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
                       Nenhuma conversa encontrada
                     </div>
                   )}
-                     {renderedMessages}
+                  {renderedMessages}
                   {loadingChat && <div className="mx-auto bg-white/80 px-4 py-1 rounded-full text-[10px] font-black uppercase shadow-sm">Carregando mensagens...</div>}
                </div>
 
                <div className="bg-[#f0f0f0] p-4 flex items-center gap-3 border-t z-10">
-                  <textarea rows={1} value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }} className="flex-1 bg-white border-transparent rounded-2xl px-4 py-3 text-sm focus:ring-0 outline-none" placeholder="Digite sua mensagem..." />
-                  <button onClick={handleSendMessage} disabled={!newMessage.trim() || loadingChat} className="p-3.5 bg-[#00a884] text-white rounded-full shadow-md active:scale-95 disabled:opacity-50"><Icons.Check className="w-5 h-5" /></button>
-               </div>
+                  <textarea 
+                      rows={1}
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
+                      placeholder="Digite sua mensagem..."
+                      className="w-full bg-transparent border-none focus:ring-0 text-sm resize-none py-3 pr-12"
+                   />
+                   <div className="absolute right-2 bottom-2 flex items-center gap-1">
+                      <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        className="hidden" 
+                        onChange={handleFileSelect} 
+                      />
+                      <button 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-2 text-slate-400 hover:text-blue-600 transition-colors"
+                      >
+                        <Icons.Paperclip className="w-5 h-5" />
+                      </button>
+                      <button 
+                        onClick={handleSendMessage}
+                        className="p-2 text-blue-600 hover:scale-110 transition-transform"
+                      >
+                        <Icons.CheckCircle className="w-6 h-6" />
+                      </button>
+                   </div>
+                </div>
             </div>
           )}
         </div>
