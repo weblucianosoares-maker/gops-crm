@@ -15,6 +15,7 @@ import { Icons } from "../components/Icons";
 import { formatCurrency, cn } from "../lib/utils";
 import { supabase } from "../lib/supabase";
 import { useLeads } from "../lib/leadsContext";
+import { getTier, TIERS, calculateNetCommission } from "../lib/commissionRules";
 
 export default function Dashboard() {
   const { leads, stages, fetchLeads } = useLeads();
@@ -39,22 +40,57 @@ export default function Dashboard() {
     const contracts = contractsRes.data || [];
     const reminders = (remindersRes as any)?.data || [];
 
-    // Stats
-    const totalLeads = leads.length;
-    const vidasVendidas = beneficiaries.length;
+    // VGV Cálculo (Valor Global de Vendas)
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
     
-    // Filtra leads que estão em etapas de "risco" (ex: proposta, assinatura)
-    // Para simplificar, vamos considerar etapas que não são a primeira nem a última (Pago)
-    const riskStages = stages.slice(1, -1).map(s => s.name);
-    const receitaEmRisco = leads
-      .filter(l => riskStages.includes(l.status))
-      .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
+    // Mês Anterior para definir a Pedra
+    const lastMonthDate = new Date(currentYear, currentMonth - 1, 1);
+    const lastMonthM = lastMonthDate.getMonth();
+    const lastMonthY = lastMonthDate.getFullYear();
+
+    const lastMonthVgv = contracts
+      .filter(c => {
+        const d = new Date(c.start_date);
+        return d.getMonth() === lastMonthM && d.getFullYear() === lastMonthY;
+      })
+      .reduce((acc, c) => acc + (Number(c.monthly_fee) || 0), 0);
+
+    const currentMonthVgv = contracts
+      .filter(c => {
+        const d = new Date(c.start_date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      })
+      .reduce((acc, c) => acc + (Number(c.monthly_fee) || 0), 0);
+
+    const stoneStatus = getTier(lastMonthVgv);
+    const nextTier = TIERS[TIERS.indexOf(TIERS.find(t => t.name === stoneStatus.name)!) + 1] || null;
+    const progressToNext = nextTier ? Math.min((currentMonthVgv / nextTier.minVgv) * 100, 100) : 100;
+
+    // Cálculo de Comissões Líquidas (baseado na Pedra do mês passado)
+    const comissaoLiquidaTotal = contracts
+      .filter(c => {
+        const d = new Date(c.start_date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      })
+      .reduce((acc, c) => {
+        const calculation = calculateNetCommission(c.carrier || '', Number(c.monthly_fee) || 0, stoneStatus.name);
+        return acc + calculation.net;
+      }, 0);
     
-    const receitaStandby = leads
-      .filter(l => l.status === 'Parado')
-      .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
-    
-    setStats({ totalLeads, vidasVendidas, receitaEmRisco, receitaStandby });
+    setStats({ 
+      totalLeads, 
+      vidasVendidas, 
+      receitaEmRisco, 
+      receitaStandby, 
+      lastMonthVgv, 
+      currentMonthVgv, 
+      stoneStatus, 
+      nextTier, 
+      progressToNext,
+      comissaoLiquidaTotal 
+    });
 
     // Funnel Dinâmico
     const newFunnelData = stages.map(stage => ({
@@ -200,8 +236,8 @@ export default function Dashboard() {
           className="bg-blue-600 p-5 rounded-xl text-white relative overflow-hidden group shadow-lg shadow-blue-100"
         >
           <div className="relative z-10">
-            <p className="text-[0.6rem] uppercase tracking-widest text-blue-100 font-bold mb-1">Negociações</p>
-            <h3 className="text-lg font-black tracking-tight truncate">{formatCurrency(stats.receitaEmRisco)}</h3>
+            <p className="text-[0.6rem] uppercase tracking-widest text-blue-100 font-bold mb-1">Comissão Líquida (Prev.)</p>
+            <h3 className="text-lg font-black tracking-tight truncate">{formatCurrency(stats.comissaoLiquidaTotal)}</h3>
           </div>
         </motion.div>
 
@@ -209,12 +245,35 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="bg-amber-500 p-5 rounded-xl text-white relative overflow-hidden group shadow-lg shadow-amber-100"
+          className={cn(
+            "p-5 rounded-xl text-white relative overflow-hidden group shadow-lg",
+            stats.stoneStatus.color === 'amber' ? "bg-amber-500 shadow-amber-100" :
+            stats.stoneStatus.color === 'blue' ? "bg-blue-700 shadow-blue-100" :
+            stats.stoneStatus.color === 'emerald' ? "bg-emerald-600 shadow-emerald-100" :
+            stats.stoneStatus.color === 'cyan' ? "bg-cyan-600 shadow-cyan-100" :
+            stats.stoneStatus.color === 'sky' ? "bg-sky-500 shadow-sky-100" :
+            stats.stoneStatus.color === 'red' ? "bg-red-600 shadow-red-100" : "bg-slate-600 shadow-slate-100"
+          )}
         >
           <div className="relative z-10">
-            <p className="text-[0.6rem] uppercase tracking-widest text-amber-50 font-bold mb-1">Em Standby</p>
-            <h3 className="text-lg font-black tracking-tight truncate">{formatCurrency(stats.receitaStandby)}</h3>
+             <div className="flex items-center justify-between mb-1">
+               <p className="text-[0.6rem] uppercase tracking-widest opacity-80 font-bold">Status Invictos</p>
+               <Icons.Trophy className="w-3 h-3 opacity-50" />
+             </div>
+            <h3 className="text-lg font-black tracking-tight truncate uppercase italic">{stats.stoneStatus.label}</h3>
+            {stats.nextTier && (
+              <div className="mt-2">
+                <div className="flex justify-between text-[8px] font-bold mb-1 opacity-70 uppercase tracking-tighter">
+                  <span>Próxima: {stats.nextTier.name}</span>
+                  <span>{Math.round(stats.progressToNext)}%</span>
+                </div>
+                <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
+                  <div className="bg-white h-full transition-all duration-1000" style={{ width: `${stats.progressToNext}%` }} />
+                </div>
+              </div>
+            )}
           </div>
+          <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform" />
         </motion.div>
 
         {/* NEW: Birthday Month Card */}

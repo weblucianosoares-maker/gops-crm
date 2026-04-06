@@ -11,6 +11,7 @@ import Settings from "./pages/Settings";
 import { LeadsProvider } from "./lib/leadsContext";
 import { BrokerProvider } from "./lib/brokerContext";
 import { DrawerProvider } from "./lib/drawerContext";
+import { ToastProvider } from "./components/Toasts";
 
 function AppContent() {
   const location = useLocation();
@@ -50,14 +51,16 @@ function AppContent() {
 
 export default function App() {
   return (
-    <BrokerProvider>
-      <LeadsProvider>
-        <DrawerProvider>
-          <Router>
-            <AppContent />
-          </Router>
-        </DrawerProvider>
-      </LeadsProvider>
-    </BrokerProvider>
+    <ToastProvider>
+      <BrokerProvider>
+        <LeadsProvider>
+          <DrawerProvider>
+            <Router>
+              <AppContent />
+            </Router>
+          </DrawerProvider>
+        </LeadsProvider>
+      </BrokerProvider>
+    </ToastProvider>
   );
 }

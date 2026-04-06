@@ -5,6 +5,7 @@ import { cn, formatCPF, formatPhone } from "../lib/utils";
 import { supabase } from "../lib/supabase";
 import { useLeads } from "../lib/leadsContext";
 import { evolutionService } from "../lib/evolution";
+import { useToast } from "./Toasts";
 
 // Componente para renderizar mensagens com mídia (Imagem, PDF, etc)
 const MediaMessage = ({ msg }: { msg: any }) => {
@@ -90,23 +91,20 @@ interface LeadDetailDrawerProps {
   lead: any;
   isOpen: boolean;
   onClose: () => void;
-  onUpdate: () => void;
+  onUpdate: (updatedLead?: any) => void;
 }
 
 export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate }: LeadDetailDrawerProps) {
-  const { stages } = useLeads();
+  const { stages, jobTitles } = useLeads();
+  const { success, error: showError } = useToast();
   const [lead, setLead] = useState(initialLead);
   const [history, setHistory] = useState<any[]>([]);
   const [dependents, setDependents] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [newNote, setNewNote] = useState("");
   const [activeTab, setActiveTab] = useState<'details' | 'chat'>('details');
   const [loadingChat, setLoadingChat] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isAddingNote, setIsAddingNote] = useState(false);
-  const [isAddingDependent, setIsAddingDependent] = useState(false);
-  const [newDependent, setNewDependent] = useState({ name: '', type: 'Dependente', birth_date: '' });
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -114,19 +112,14 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
   useEffect(() => {
     if (initialLead) {
       setLead(initialLead);
-      if (initialLead.id) {
-        fetchHistory(initialLead.id);
-        fetchDependents(initialLead.id);
-      } else {
-        setHistory([]);
-        setDependents([]);
-      }
+      fetchHistory(initialLead.id);
+      fetchDependents(initialLead.id);
       setActiveTab('details');
     }
   }, [initialLead]);
 
   const loadMessages = async () => {
-    if (!lead?.phone || !lead?.id) return;
+    if (!lead?.phone) return;
     setLoadingChat(true);
     try {
       const apiRes = await evolutionService.getMessages(lead.phone);
@@ -222,7 +215,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !lead?.phone || !lead?.id) return;
+    if (!newMessage.trim() || !lead?.phone) return;
     const txt = newMessage;
     setNewMessage("");
     const tempId = `temp-${Date.now()}`;
@@ -251,7 +244,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !lead?.phone || !lead?.id) return;
+    if (!file || !lead?.phone) return;
 
     const reader = new FileReader();
     reader.onload = async (ev) => {
@@ -300,95 +293,50 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
   };
 
   const handleSave = async () => {
-    if (!lead?.name) return alert("O nome do lead é obrigatório");
     setIsSaving(true);
-    
-    const leadData = {
+    const { error: err } = await supabase.from('leads').update({ 
       name: lead.name, 
-      email: lead.email || '', 
-      phone: lead.phone || '', 
-      status: lead.status || 'Novo',
-      source: lead.source || 'Manual',
-      deal_value: Number(lead.deal_value || 0),
-      carrier: lead.carrier || 'Operadora não definida'
-    };
-
-    let result;
-    try {
-      if (lead?.id) {
-        result = await supabase.from('leads').update(leadData).eq('id', lead.id);
-      } else {
-        result = await supabase.from('leads').insert([leadData]).select();
-      }
-      
-      if (!result.error) {
-        if (!lead?.id && result.data && result.data[0]) {
-          setLead(result.data[0]);
-        }
-        onUpdate();
-        onClose();
-      } else {
-        alert("Erro ao salvar: " + result.error.message);
-      }
-    } catch (e: any) {
-      alert("Erro sistêmico ao salvar: " + e.message);
-    } finally {
-      setIsSaving(false);
+      email: lead.email, 
+      phone: lead.phone, 
+      status: lead.status,
+      nickname: lead.nickname,
+      lead_type: lead.lead_type,
+      company_name: lead.company_name,
+      contact_person: lead.contact_person,
+      job_title: lead.job_title,
+      birth_date: lead.birth_date || null,
+      marriage_date: lead.marriage_date || null,
+      rg: lead.rg,
+      cnpj: lead.cnpj,
+      address_zip: lead.address_zip,
+      address_street: lead.address_street,
+      address_neighborhood: lead.address_neighborhood,
+      address_city: lead.address_city,
+      address_state: lead.address_state,
+      address_number: lead.address_number,
+      address_complement: lead.address_complement,
+      current_carrier: lead.current_carrier,
+      current_product: lead.current_product,
+      current_lives: lead.current_lives,
+      current_value: lead.current_value,
+      docs_link: lead.docs_link
+    }).eq('id', lead.id);
+    
+    setIsSaving(false);
+    if (!err) {
+      success("Lead atualizado!");
+      onUpdate(); onClose();
+    } else {
+      showError("Erro ao salvar: " + err.message);
     }
   };
 
   const handleDelete = async () => {
-    if (!lead?.id) return onClose();
     if (window.confirm(`Excluir permanentemente o lead "${lead.name}"?`)) {
       await supabase.from('leads').delete().eq('id', lead.id);
       onUpdate(); onClose();
     }
   };
-
-  const handleAddNote = async () => {
-    if (!newNote.trim()) return;
-    if (!lead?.id) return alert("Salve o lead antes de adicionar uma nota.");
-    
-    setIsAddingNote(true);
-    const { error } = await supabase.from('lead_history').insert([{ lead_id: lead.id, content: newNote }]);
-    setIsAddingNote(false);
-    if (!error) { 
-      setNewNote(""); 
-      fetchHistory(lead.id); 
-    }
-  };
-
-  const handleAddDependent = async () => {
-    if (!newDependent.name.trim() || !lead?.id) return;
-    const { error } = await supabase.from('beneficiaries').insert([{ lead_id: lead.id, name: newDependent.name, type: newDependent.type }]);
-    if (!error) { 
-      setNewDependent({ name: '', type: 'Dependente', birth_date: '' }); 
-      setIsAddingDependent(false); 
-      fetchDependents(lead.id); 
-    }
-  };
-
-  const handleRemoveDependent = async (id: string) => {
-    await supabase.from('beneficiaries').delete().eq('id', id);
-    fetchDependents(lead.id);
-  };
-
-  const renderedMessages = useMemo(() => {
-    return messages.map((msg, idx) => (
-      <div key={msg.id || idx} className={cn(
-        "max-w-[85%] p-3 rounded-2xl text-sm shadow-sm relative animate-in fade-in slide-in-from-bottom-2 duration-300",
-        msg.fromMe ? "bg-[#dcf8c6] self-end rounded-tr-none" : "bg-white self-start rounded-tl-none border border-black/5"
-      )}>
-         {!msg.fromMe && !msg.is_read && (
-           <div className="absolute -left-2 top-0 w-2.5 h-2.5 rounded-full bg-green-500 shadow-sm ring-2 ring-white animate-pulse" />
-         )}
-         <MediaMessage msg={msg} />
-         <p className="text-[9px] text-slate-400 text-right mt-1 font-bold opacity-70">
-           {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ""}
-         </p>
-      </div>
-    ));
-  }, [messages]);
 
   if (!isOpen) return null;
 
@@ -409,7 +357,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {lead.id && <button onClick={handleDelete} className="p-2.5 text-red-500 hover:bg-red-50 rounded-xl transition-all"><Icons.Trash className="w-5 h-5"/></button>}
+            <button onClick={handleDelete} title="Excluir Lead" className="p-2.5 text-red-500 hover:bg-red-50 rounded-xl transition-all"><Icons.Trash className="w-5 h-5"/></button>
             <button onClick={handleSave} disabled={isSaving} className="bg-blue-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md active:scale-95 disabled:opacity-50 transition-all">
                {isSaving ? "Salvando..." : "Salvar"}
             </button>
@@ -418,7 +366,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex px-8 border-b border-slate-100 bg-white">
+        <div className="flex px-8 border-b border-slate-100 bg-white shadow-sm z-10">
           <button onClick={() => setActiveTab('details')} className={cn("px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2", activeTab === 'details' ? "border-blue-600 text-blue-600" : "border-transparent text-slate-400")}>Ficha do Lead</button>
           <button onClick={() => setActiveTab('chat')} className={cn("px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2", activeTab === 'chat' ? "border-green-500 text-green-600" : "border-transparent text-slate-400")}>WhatsApp Chat</button>
         </div>
@@ -426,80 +374,130 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden relative bg-slate-50">
           {activeTab === 'details' ? (
-            <div className="absolute inset-0 overflow-y-auto p-8 space-y-8 custom-scrollbar">
-               <section className="space-y-4">
-                  <div className="flex items-center gap-2 border-b border-black/5 pb-2 text-slate-400 font-black uppercase text-[10px] tracking-widest"><Icons.Users className="w-3.5 h-3.5"/> Dados Basicos</div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1"><label className="text-[9px] uppercase font-black text-slate-400 ml-1">Nome</label><input className="w-full bg-white border border-slate-200 p-3 rounded-xl text-sm outline-none focus:ring-2 ring-blue-100 transition-all font-medium" value={lead.name || ""} onChange={e => setLead({...lead, name: e.target.value})} /></div>
-                    <div className="space-y-1"><label className="text-[9px] uppercase font-black text-slate-400 ml-1">Telefone</label><input className="w-full bg-white border border-slate-200 p-3 rounded-xl text-sm outline-none focus:ring-2 ring-blue-100 transition-all font-medium" value={lead.phone || ""} onChange={e => setLead({...lead, phone: e.target.value})} /></div>
-                    <div className="space-y-1"><label className="text-[9px] uppercase font-black text-slate-400 ml-1">Email</label><input className="w-full bg-white border border-slate-200 p-3 rounded-xl text-sm outline-none focus:ring-2 ring-blue-100 transition-all font-medium" value={lead.email || ""} onChange={e => setLead({...lead, email: e.target.value})} /></div>
-                    <div className="space-y-1"><label className="text-[9px] uppercase font-black text-slate-400 ml-1">Status</label>
-                      <select className="w-full bg-white border border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 ring-blue-100 transition-all" value={String(lead.status || "")} onChange={e => setLead({...lead, status: e.target.value})}>
-                        {(stages || []).map(s => <option key={s.id} value={s.name}>{s.label}</option>)}
-                      </select>
+            <div className="absolute inset-0 overflow-y-auto p-8 space-y-8 custom-scrollbar bg-white">
+               {/* Tipo de Lead e Identificação */}
+               <section className="space-y-6">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <div className="flex items-center gap-2 text-slate-400 font-black uppercase text-[10px] tracking-widest">
+                       {lead.lead_type === 'PJ' ? <Icons.Building2 className="w-4 h-4 text-blue-600"/> : <Icons.Users className="w-4 h-4 text-blue-600"/>}
+                       Identificação ({lead.lead_type || 'PF'})
                     </div>
-                    <div className="space-y-1"><label className="text-[9px] uppercase font-black text-slate-400 ml-1">Valor do Negócio</label><input type="number" className="w-full bg-white border border-slate-200 p-3 rounded-xl text-sm outline-none focus:ring-2 ring-blue-100 transition-all font-medium" value={lead.deal_value || 0} onChange={e => setLead({...lead, deal_value: e.target.value})} /></div>
-                    <div className="space-y-1"><label className="text-[9px] uppercase font-black text-slate-400 ml-1">Operadora Sugerida</label><input className="w-full bg-white border border-slate-200 p-3 rounded-xl text-sm outline-none focus:ring-2 ring-blue-100 transition-all font-medium" value={lead.carrier || ""} onChange={e => setLead({...lead, carrier: e.target.value})} /></div>
+                    <div className="flex bg-slate-100 p-1 rounded-lg">
+                      <button 
+                        onClick={() => setLead({...lead, lead_type: 'PF'})}
+                        className={cn("px-3 py-1 text-[9px] font-black uppercase rounded-md transition-all", lead.lead_type === 'PF' || !lead.lead_type ? "bg-white text-blue-600 shadow-sm" : "text-slate-400")}
+                      >PF</button>
+                      <button 
+                        onClick={() => setLead({...lead, lead_type: 'PJ'})}
+                        className={cn("px-3 py-1 text-[9px] font-black uppercase rounded-md transition-all", lead.lead_type === 'PJ' ? "bg-white text-blue-600 shadow-sm" : "text-slate-400")}
+                      >PJ</button>
+                    </div>
                   </div>
-               </section>
 
-               <section className="space-y-4">
-                  <div className="flex items-center justify-between border-b border-black/5 pb-2 text-slate-400 font-black uppercase text-[10px] tracking-widest">
-                    <div className="flex items-center gap-2"><Icons.Users className="w-3.5 h-3.5"/> Dependentes</div>
-                    <button onClick={() => setIsAddingDependent(!isAddingDependent)} className="text-[9px] text-blue-600 hover:underline">+ Adicionar</button>
-                  </div>
-                  
-                  {isAddingDependent && (
-                    <div className="bg-white p-4 rounded-2xl border border-blue-100 space-y-3 shadow-sm animate-in fade-in zoom-in-95">
-                      <input className="w-full border border-slate-200 p-2.5 rounded-xl text-xs" placeholder="Nome do dependente" value={newDependent.name} onChange={e => setNewDependent({...newDependent, name: e.target.value})} />
-                      <div className="flex gap-2">
-                        <button onClick={handleAddDependent} className="flex-1 bg-blue-600 text-white p-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest">Salvar</button>
-                        <button onClick={() => setIsAddingDependent(false)} className="px-4 bg-slate-100 text-slate-400 p-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest">Cancelar</button>
+                  {lead.lead_type === 'PJ' ? (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="col-span-2 space-y-1">
+                        <label className="text-[9px] uppercase font-black text-slate-400 ml-1">Razão Social</label>
+                        <input className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none focus:bg-white focus:border-blue-500 transition-all" value={lead.company_name || ""} onChange={e => setLead({...lead, company_name: e.target.value, name: e.target.value})} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase font-black text-slate-400 ml-1">CNPJ</label>
+                        <input className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none" value={lead.cnpj || ""} onChange={e => setLead({...lead, cnpj: e.target.value})} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase font-black text-slate-400 ml-1">Nome Fantasia / Apelido</label>
+                        <input className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none" value={lead.nickname || ""} onChange={e => setLead({...lead, nickname: e.target.value})} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase font-black text-slate-400 ml-1">Responsável</label>
+                        <input className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none" value={lead.contact_person || ""} onChange={e => setLead({...lead, contact_person: e.target.value})} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase font-black text-slate-400 ml-1">Cargo</label>
+                        <select 
+                          className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-700 outline-none" 
+                          value={lead.job_title || ""} 
+                          onChange={e => setLead({...lead, job_title: e.target.value})}
+                        >
+                          <option value="">Selecione...</option>
+                          {jobTitles.map((jt:any) => <option key={jt.id} value={jt.name}>{jt.name}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="col-span-2 space-y-1">
+                        <label className="text-[9px] uppercase font-black text-slate-400 ml-1">Nome Completo</label>
+                        <input className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none" value={lead.name || ""} onChange={e => setLead({...lead, name: e.target.value})} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase font-black text-slate-400 ml-1">RG</label>
+                        <input className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none" value={lead.rg || ""} onChange={e => setLead({...lead, rg: e.target.value})} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase font-black text-slate-400 ml-1">Status</label>
+                        <select className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-700 outline-none capitalize" value={lead.status || ""} onChange={e => setLead({...lead, status: e.target.value})}>
+                          {stages.map(s => <option key={s.id} value={s.name}>{s.label}</option>)}
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase font-black text-slate-400 ml-1">Data Nascimento</label>
+                        <input type="date" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none" value={lead.birth_date || ""} onChange={e => setLead({...lead, birth_date: e.target.value})} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase font-black text-slate-400 ml-1">Data Casamento</label>
+                        <input type="date" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none" value={lead.marriage_date || ""} onChange={e => setLead({...lead, marriage_date: e.target.value})} />
                       </div>
                     </div>
                   )}
+               </section>
 
-                  <div className="grid gap-2">
-                    {dependents.map(dep => (
-                      <div key={dep.id} className="flex items-center justify-between p-3 bg-white rounded-xl border border-black/5">
-                        <span className="text-xs font-bold text-slate-600">{dep.name}</span>
-                        <button onClick={() => handleRemoveDependent(dep.id)} className="text-slate-300 hover:text-red-500"><Icons.Trash className="w-3.5 h-3.5"/></button>
-                      </div>
-                    ))}
+               {/* Contato Principal */}
+               <section className="space-y-4">
+                  <div className="flex items-center gap-2 border-b border-black/5 pb-2 text-slate-400 font-black uppercase text-[10px] tracking-widest"><Icons.Phone className="w-3.5 h-3.5"/> Contato</div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1"><label className="text-[9px] uppercase font-black text-slate-400 ml-1">WhatsApp / Telefone</label><input className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none" value={lead.phone || ""} onChange={e => setLead({...lead, phone: e.target.value})} /></div>
+                    <div className="space-y-1"><label className="text-[9px] uppercase font-black text-slate-400 ml-1">E-mail</label><input className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none" value={lead.email || ""} onChange={e => setLead({...lead, email: e.target.value})} /></div>
                   </div>
                </section>
 
+               {/* Localização */}
                <section className="space-y-4">
-                  <div className="flex items-center gap-2 border-b border-black/5 pb-2 text-slate-400 font-black uppercase text-[10px] tracking-widest"><Icons.History className="w-3.5 h-3.5"/> Historico / Notas</div>
-                  
-                  <div className="space-y-4">
-                    <div className="relative">
-                      <textarea 
-                        value={newNote} 
-                        onChange={e => setNewNote(e.target.value)} 
-                        className="w-full bg-white border border-slate-200 p-4 rounded-2xl text-sm outline-none focus:ring-2 ring-blue-100 transition-all font-medium min-h-[100px] resize-none" 
-                        placeholder="Adicionar nova nota ao histórico..." 
-                      />
-                      <button 
-                        onClick={handleAddNote} 
-                        disabled={isAddingNote || !newNote.trim()} 
-                        className="absolute bottom-3 right-3 bg-blue-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 disabled:opacity-30 transition-all"
-                      >
-                        {isAddingNote ? "Enviando..." : "Registrar"}
-                      </button>
-                    </div>
+                  <div className="flex items-center gap-2 border-b border-black/5 pb-2 text-slate-400 font-black uppercase text-[10px] tracking-widest"><Icons.MapPin className="w-3.5 h-3.5"/> Endereço</div>
+                  <div className="grid grid-cols-6 gap-4">
+                    <div className="col-span-2 space-y-1"><label className="text-[9px] uppercase font-black text-slate-400 ml-1">CEP</label><input className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none" value={lead.address_zip || ""} onChange={e => setLead({...lead, address_zip: e.target.value})} /></div>
+                    <div className="col-span-4 space-y-1"><label className="text-[9px] uppercase font-black text-slate-400 ml-1">Logradouro</label><input className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none" value={lead.address_street || ""} onChange={e => setLead({...lead, address_street: e.target.value})} /></div>
+                    <div className="col-span-2 space-y-1"><label className="text-[9px] uppercase font-black text-slate-400 ml-1">Número</label><input className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none" value={lead.address_number || ""} onChange={e => setLead({...lead, address_number: e.target.value})} /></div>
+                    <div className="col-span-4 space-y-1"><label className="text-[9px] uppercase font-black text-slate-400 ml-1">Complemento</label><input className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none" value={lead.address_complement || ""} onChange={e => setLead({...lead, address_complement: e.target.value})} /></div>
+                    <div className="col-span-3 space-y-1"><label className="text-[9px] uppercase font-black text-slate-400 ml-1">Bairro</label><input className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none" value={lead.address_neighborhood || ""} onChange={e => setLead({...lead, address_neighborhood: e.target.value})} /></div>
+                    <div className="col-span-2 space-y-1"><label className="text-[9px] uppercase font-black text-slate-400 ml-1">Cidade</label><input className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none" value={lead.address_city || ""} onChange={e => setLead({...lead, address_city: e.target.value})} /></div>
+                    <div className="col-span-1 space-y-1"><label className="text-[9px] uppercase font-black text-slate-400 ml-1">UF</label><input className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none text-center" value={lead.address_state || ""} onChange={e => setLead({...lead, address_state: e.target.value})} /></div>
+                  </div>
+               </section>
 
-                    <div className="space-y-3 pb-20">
-                      {history.map(h => (
-                        <div key={h.id} className="p-5 bg-white rounded-2xl border border-black/5 shadow-sm hover:shadow-md transition-shadow">
-                          <div className="flex justify-between items-start mb-2">
-                            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none">{new Date(h.created_at).toLocaleString('pt-BR')}</p>
-                          </div>
-                          <p className="text-sm text-slate-600 font-medium whitespace-pre-wrap">{h.content}</p>
-                        </div>
-                      ))}
-                      {history.length === 0 && <p className="text-center py-10 text-[10px] font-black text-slate-300 uppercase tracking-widest">Nenhuma nota registrada</p>}
-                    </div>
+               {/* Plano Atual */}
+               <section className="space-y-4">
+                  <div className="flex items-center gap-2 border-b border-black/5 pb-2 text-slate-400 font-black uppercase text-[10px] tracking-widest"><Icons.Target className="w-3.5 h-3.5"/> Plano Atual</div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1"><label className="text-[9px] uppercase font-black text-slate-400 ml-1">Operadora Atual</label><input className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none" value={lead.current_carrier || ""} onChange={e => setLead({...lead, current_carrier: e.target.value})} /></div>
+                    <div className="space-y-1"><label className="text-[9px] uppercase font-black text-slate-400 ml-1">Vidas Atuais</label><input type="number" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none" value={lead.current_lives || 0} onChange={e => setLead({...lead, current_lives: Number(e.target.value)})} /></div>
+                    <div className="space-y-1"><label className="text-[9px] uppercase font-black text-slate-400 ml-1">Valor Atual</label><input type="number" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none" value={lead.current_value || 0} onChange={e => setLead({...lead, current_value: Number(e.target.value)})} /></div>
+                    <div className="space-y-1"><label className="text-[9px] uppercase font-black text-slate-400 ml-1">Docs Link</label><input className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none text-blue-600 underline" placeholder="https://..." value={lead.docs_link || ""} onChange={e => setLead({...lead, docs_link: e.target.value})} /></div>
+                  </div>
+               </section>
+
+               {/* Histórico */}
+               <section className="space-y-4 pb-12">
+                  <div className="flex items-center gap-2 border-b border-black/5 pb-2 text-slate-400 font-black uppercase text-[10px] tracking-widest"><Icons.History className="w-3.5 h-3.5"/> Histórico</div>
+                  <div className="space-y-3">
+                    {history.length > 0 ? history.map(h => (
+                      <div key={h.id} className="p-4 bg-slate-50 rounded-2xl border border-black/5">
+                        <p className="text-[10px] font-black text-slate-300 uppercase leading-none mb-1">{new Date(h.created_at).toLocaleString('pt-BR')}</p>
+                        <p className="text-sm text-slate-600 font-medium">{h.content}</p>
+                      </div>
+                    )) : (
+                      <p className="text-center py-4 text-xs text-slate-400 font-bold uppercase italic">Nenhum histórico registrado</p>
+                    )}
                   </div>
                </section>
             </div>
@@ -507,7 +505,20 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
             <div className="absolute inset-0 flex flex-col bg-[#efe7de]">
                {/* Messages Container */}
                <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 flex flex-col custom-scrollbar scroll-smooth">
-                  {renderedMessages}
+                  {messages.map((msg, idx) => (
+                    <div key={msg.id || idx} className={cn(
+                      "max-w-[85%] p-3 rounded-2xl text-sm shadow-sm relative animate-in fade-in slide-in-from-bottom-2 duration-300",
+                      msg.fromMe ? "bg-[#dcf8c6] self-end rounded-tr-none" : "bg-white self-start rounded-tl-none border border-black/5"
+                    )}>
+                       {!msg.fromMe && !msg.is_read && (
+                         <div className="absolute -left-2 top-0 w-2.5 h-2.5 rounded-full bg-green-500 shadow-sm ring-2 ring-white animate-pulse" />
+                       )}
+                       <MediaMessage msg={msg} />
+                       <p className="text-[9px] text-slate-400 text-right mt-1 font-bold opacity-70">
+                         {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ""}
+                       </p>
+                    </div>
+                  ))}
                   {loadingChat && <div className="mx-auto bg-white/90 px-4 py-1.5 rounded-full text-[10px] font-black text-slate-400 uppercase shadow-sm">Buscando mensagens...</div>}
                </div>
 

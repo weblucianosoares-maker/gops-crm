@@ -7,9 +7,11 @@ import Papa from "papaparse";
 import { supabase } from "../lib/supabase";
 import { useLeads } from "../lib/leadsContext";
 import { LeadDetailDrawer } from "../components/LeadDetailDrawer";
+import { useToast } from "../components/Toasts";
 
 export default function Leads() {
-  const { leads, filter, fetchLeads, stages, contactTypes } = useLeads();
+  const { leads, filter, fetchLeads, stages, contactTypes, jobTitles } = useLeads();
+  const { success, error, toast: showToast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
   const [ufFilter, setUfFilter] = useState("Todos");
   const [statusFilter, setStatusFilter] = useState("Todos");
@@ -29,7 +31,13 @@ export default function Leads() {
     current_carrier: '', current_product: '', current_value: 0,
     rg: '', address_zip: '', address_street: '', address_neighborhood: '',
     address_city: '', address_state: '', address_number: '', address_complement: '',
-    docs_link: '', product: '', carrier: '', nickname: '', has_cnpj: false, is_mei: false, cnpj: ''
+    docs_link: '', product: '', carrier: '', nickname: '', has_cnpj: false, is_mei: false, cnpj: '',
+    lead_type: 'PF' as 'PF' | 'PJ',
+    company_name: '',
+    contact_person: '',
+    job_title: '',
+    birth_date: '',
+    marriage_date: ''
   });
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -134,7 +142,7 @@ export default function Leads() {
             });
 
           if (parsedData.length === 0) {
-            alert('Nenhum dado válido encontrado para importar.');
+            showToast('Nenhum dado válido encontrado para importar.', 'warning');
             setIsUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
             return;
@@ -152,9 +160,9 @@ export default function Leads() {
           
           await fetchLeads();
           setImportResult({ imported: parsedData.length, duplicated: duplicateCount });
-        } catch (error: any) {
-          console.error("Erro ao importar CSV:", error);
-          alert(`Erro ao importar CSV: ${error?.message || JSON.stringify(error)}`);
+        } catch (err: any) {
+          console.error("Erro ao importar CSV:", err);
+          error(`Erro ao importar CSV: ${err?.message || 'Erro desconhecido'}`);
         } finally {
           setIsUploading(false);
           if (fileInputRef.current) fileInputRef.current.value = '';
@@ -198,8 +206,9 @@ export default function Leads() {
         if (response.ok && !data.error) {
           setNewLead(prev => ({
             ...prev,
-            name: prev.name || data.razao_social,
-            nickname: prev.nickname || data.nome_fantasia,
+            company_name: data.razao_social,
+            name: data.razao_social,
+            nickname: data.nome_fantasia || prev.nickname,
             cnpj: cnpj
           }));
         }
@@ -217,7 +226,7 @@ export default function Leads() {
     if (normalizedPhone) {
       const isDuplicate = leads.some((l: any) => l.phone && l.phone.replace(/\D/g, '') === normalizedPhone);
       if (isDuplicate) {
-        alert("Já existe um lead cadastrado com este telefone!");
+        showToast("Já existe um lead cadastrado com este telefone!", "warning");
         setIsSaving(false);
         return;
       }
@@ -231,7 +240,7 @@ export default function Leads() {
       initials = newLead.name.substring(0, 2).toUpperCase();
     }
 
-    const { error } = await supabase.from('leads').insert([{
+    const { error: supabaseError } = await supabase.from('leads').insert([{
       name: newLead.name,
       email: newLead.email,
       phone: normalizedPhone,
@@ -259,14 +268,21 @@ export default function Leads() {
       has_cnpj: newLead.has_cnpj,
       is_mei: newLead.is_mei,
       cnpj: newLead.cnpj,
-      contact_type: newLead.contact_type
+      contact_type: newLead.contact_type,
+      lead_type: newLead.lead_type,
+      company_name: newLead.company_name,
+      contact_person: newLead.contact_person,
+      job_title: newLead.job_title,
+      birth_date: newLead.birth_date || null,
+      marriage_date: newLead.marriage_date || null
     }]);
 
     setIsSaving(false);
     
-    if (error) {
-      alert("Erro ao salvar lead: " + error.message);
+    if (supabaseError) {
+      error("Erro ao salvar lead: " + supabaseError.message);
     } else {
+      success("Lead cadastrado com sucesso!");
       setIsModalOpen(false);
       setNewLead({ 
         name: '', email: '', phone: '', source: 'Manual', status: stages[0]?.name || 'Novo', contact_type: '',
@@ -274,7 +290,8 @@ export default function Leads() {
         current_carrier: '', current_product: '', current_value: 0,
         rg: '', address_zip: '', address_street: '', address_neighborhood: '',
         address_city: '', address_state: '', address_number: '', address_complement: '',
-        docs_link: '', product: '', carrier: '', nickname: '', has_cnpj: false, is_mei: false, cnpj: ''
+        docs_link: '', product: '', carrier: '', nickname: '', has_cnpj: false, is_mei: false, cnpj: '',
+        lead_type: 'PF', company_name: '', contact_person: '', job_title: '', birth_date: '', marriage_date: ''
       });
       fetchLeads();
     }
@@ -284,15 +301,16 @@ export default function Leads() {
     if (!leadToDelete) return;
     setIsDeleting(true);
     
-    const { error } = await supabase
+    const { error: supabaseError } = await supabase
       .from('leads')
       .delete()
       .eq('id', leadToDelete.id);
       
     setIsDeleting(false);
-    if (error) {
-      alert("Erro ao excluir lead: " + error.message);
+    if (supabaseError) {
+      error("Erro ao excluir lead: " + supabaseError.message);
     } else {
+      success("Lead removido permanentemente.");
       setLeadToDelete(null);
       fetchLeads();
     }
@@ -760,32 +778,168 @@ export default function Leads() {
             </div>
             
             <form onSubmit={handleCreateLead} className="p-6 space-y-6 overflow-y-auto max-h-[85vh] custom-scrollbar">
-              {/* Seção: Dados Pessoais */}
+              {/* Seletor de Tipo de Lead */}
+              <div className="flex p-1 bg-slate-100 rounded-xl relative">
+                <button 
+                  type="button"
+                  onClick={() => setNewLead({ ...newLead, lead_type: 'PF', has_cnpj: false })}
+                  className={cn(
+                    "flex-1 relative z-10 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all duration-300",
+                    newLead.lead_type === 'PF' ? "text-blue-600" : "text-slate-400 hover:text-slate-600"
+                  )}
+                >
+                  Pessoa Física
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setNewLead({ ...newLead, lead_type: 'PJ', has_cnpj: true })}
+                  className={cn(
+                    "flex-1 relative z-10 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all duration-300",
+                    newLead.lead_type === 'PJ' ? "text-blue-600" : "text-slate-400 hover:text-slate-600"
+                  )}
+                >
+                  Corporativo (PJ)
+                </button>
+                <motion.div 
+                  layoutId="lead-type-active"
+                  className="absolute inset-y-1 bg-white rounded-lg shadow-sm border border-black/5"
+                  style={{ 
+                    width: 'calc(50% - 4px)',
+                    left: newLead.lead_type === 'PF' ? '4px' : 'calc(50%)'
+                  }}
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              </div>
+
+              {/* Seção: Dados de Identificação */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-                  <Icons.Leads className="w-4 h-4 text-blue-600" />
-                  <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400">Dados Pessoais</h4>
+                  {newLead.lead_type === 'PJ' ? <Icons.Building2 className="w-4 h-4 text-blue-600" /> : <Icons.Leads className="w-4 h-4 text-blue-600" />}
+                  <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+                    {newLead.lead_type === 'PJ' ? "Dados da Empresa" : "Dados Pessoais"}
+                  </h4>
                 </div>
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Nome Completo</label>
-                  <input 
-                    required
-                    type="text" 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                    placeholder="Ex: João da Silva"
-                    value={newLead.name}
-                    onChange={e => setNewLead({...newLead, name: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Apelido</label>
-                  <input 
-                    type="text" 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                    placeholder="Como prefere ser chamado"
-                    value={newLead.nickname}
-                    onChange={e => setNewLead({...newLead, nickname: e.target.value})}
-                  />
+
+                {newLead.lead_type === 'PJ' ? (
+                  <>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Razão Social / Nome da Empresa</label>
+                      <input 
+                        required
+                        type="text" 
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
+                        placeholder="Ex: Efraim Consultoria LTDA"
+                        value={newLead.company_name}
+                        onChange={e => setNewLead({...newLead, company_name: e.target.value, name: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">CNPJ</label>
+                      <input 
+                        required
+                        type="text" 
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
+                        placeholder="00.000.000/0000-00"
+                        value={newLead.cnpj}
+                        onChange={e => handleCNPJChange(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Nome do Responsável</label>
+                        <input 
+                          required
+                          type="text" 
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
+                          placeholder="Ex: Maria Souza"
+                          value={newLead.contact_person}
+                          onChange={e => setNewLead({...newLead, contact_person: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Cargo</label>
+                         <select 
+                           required
+                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
+                           value={newLead.job_title}
+                           onChange={e => setNewLead({...newLead, job_title: e.target.value})}
+                         >
+                           <option value="">Selecione o cargo</option>
+                           {jobTitles.map(jt => (
+                             <option key={jt.id} value={jt.name}>{jt.name}</option>
+                           ))}
+                           <option value="Outro">Outro...</option>
+                         </select>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Nome Completo</label>
+                      <input 
+                        required
+                        type="text" 
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
+                        placeholder="Ex: João da Silva"
+                        value={newLead.name}
+                        onChange={e => setNewLead({...newLead, name: e.target.value})}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Data Nascimento</label>
+                        <input 
+                          type="date" 
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
+                          value={newLead.birth_date}
+                          onChange={e => setNewLead({...newLead, birth_date: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Data Casamento</label>
+                         <input 
+                           type="date" 
+                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
+                           value={newLead.marriage_date}
+                           onChange={e => setNewLead({...newLead, marriage_date: e.target.value})}
+                         />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {newLead.lead_type === 'PF' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">RG</label>
+                      <input 
+                        type="text" 
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
+                        placeholder="00.000.000-0"
+                        value={newLead.rg}
+                        onChange={e => setNewLead({...newLead, rg: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Informações Adic.</label>
+                      <input 
+                        type="text" 
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
+                        placeholder="Ex: Apelido"
+                        value={newLead.nickname}
+                        onChange={e => setNewLead({...newLead, nickname: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Seção: Contato */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+                  <Icons.Phone className="w-4 h-4 text-blue-600" />
+                  <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400">Contato</h4>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -810,55 +964,6 @@ export default function Leads() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">RG</label>
-                    <input 
-                      type="text" 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                      placeholder="00.000.000-0"
-                      value={newLead.rg}
-                      onChange={e => setNewLead({...newLead, rg: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Possui CNPJ?</label>
-                    <select 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                      value={newLead.has_cnpj ? "Sim" : "Não"}
-                      onChange={e => setNewLead({...newLead, has_cnpj: e.target.value === "Sim"})}
-                    >
-                      <option value="Não">Não</option>
-                      <option value="Sim">Sim</option>
-                    </select>
-                  </div>
-                </div>
-
-                {newLead.has_cnpj && (
-                  <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-xl border border-blue-100 animate-in fade-in slide-in-from-top-2">
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Para MEI?</label>
-                      <select 
-                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                        value={newLead.is_mei ? "Sim" : "Não"}
-                        onChange={e => setNewLead({...newLead, is_mei: e.target.value === "Sim"})}
-                      >
-                        <option value="Não">Não</option>
-                        <option value="Sim">Sim</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">CNPJ</label>
-                      <input 
-                        type="text" 
-                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                        placeholder="00.000.000/0000-00"
-                        value={newLead.cnpj}
-                        onChange={e => handleCNPJChange(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Seção: Endereço */}

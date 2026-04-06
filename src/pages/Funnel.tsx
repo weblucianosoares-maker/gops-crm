@@ -7,9 +7,11 @@ import { useLeads } from "../lib/leadsContext";
 import { LeadDetailDrawer } from "../components/LeadDetailDrawer";
 import { supabase } from "../lib/supabase";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { useToast } from "../components/Toasts";
 
 export default function Funnel() {
   const { leads, fetchLeads, stages, loadingStages } = useLeads();
+  const { success, error, toast: showToast } = useToast();
   const [selectedLead, setSelectedLead] = useState<any>(null);
   const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
@@ -54,14 +56,16 @@ export default function Funnel() {
     if (destination.droppableId === source.droppableId && destination.index === source.index) return;
 
     // Atualização Otimista no Supabase
-    const { error } = await supabase
+    const { error: supabaseError } = await supabase
       .from('leads')
       .update({ status: destination.droppableId })
       .eq('id', draggableId);
 
-    if (error) {
-      console.error("Erro ao mover lead:", error);
-      // Aqui poderíamos adicionar um toast de erro
+    if (supabaseError) {
+      console.error("Erro ao mover lead:", supabaseError);
+      error("Erro ao mover lead: " + supabaseError.message);
+    } else {
+      success("Lead movido!");
     }
     
     // Atualiza o estado global
@@ -73,12 +77,13 @@ export default function Funnel() {
     const confirmed = window.confirm(`Tem certeza que deseja apagar a oportunidade de "${leadName || "Sem Nome"}"? Esta ação não pode ser desfeita.`);
     if (!confirmed) return;
 
-    const { error } = await supabase.from('leads').delete().eq('id', leadId);
-    if (!error) {
+    const { error: supabaseError } = await supabase.from('leads').delete().eq('id', leadId);
+    if (!supabaseError) {
+      success("Oportunidade removida.");
       await fetchLeads();
     } else {
-      console.error("Erro ao apagar lead:", error);
-      alert("Erro ao apagar oportunidade: " + error.message);
+      console.error("Erro ao apagar lead:", supabaseError);
+      error("Erro ao apagar oportunidade: " + supabaseError.message);
     }
   };
 
@@ -343,10 +348,8 @@ export default function Funnel() {
             lead={selectedLead}
             isOpen={!!selectedLead}
             onClose={() => setSelectedLead(null)}
-            onUpdate={() => {
+            onUpdate={(updatedLead) => {
               fetchLeads();
-              // Se o lead atual mudou, vamos atualizar nosso objeto selecionado também
-              const updatedLead = leads.find(l => l.id === selectedLead.id);
               if (updatedLead) setSelectedLead(updatedLead);
             }}
           />

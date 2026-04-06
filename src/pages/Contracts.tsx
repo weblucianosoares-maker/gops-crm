@@ -1,18 +1,58 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Icons } from "../components/Icons";
 import { formatCurrency, cn } from "../lib/utils";
 import { supabase } from "../lib/supabase";
 import { useAlerts } from "../hooks/useAlerts";
+import { getTier, calculateNetCommission } from "../lib/commissionRules";
 
 export default function Contracts() {
   const [contracts, setContracts] = useState<any[]>([]);
   const [beneficiaries, setBeneficiaries] = useState<any[]>([]);
   const [financials, setFinancials] = useState<any[]>([]);
+  const [selectedContract, setSelectedContract] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { alerts } = useAlerts();
-
+ 
   const contractAlerts = alerts.filter(a => a.type === 'contract');
+
+  // Gamificação: Calcular a Pedra (Gema) baseada no mês passado
+  const stoneData = useMemo(() => {
+    const now = new Date();
+    const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthM = lastMonthDate.getMonth();
+    const lastMonthY = lastMonthDate.getFullYear();
+
+    const vgv = contracts
+      .filter(c => {
+        const d = new Date(c.start_date);
+        return d.getMonth() === lastMonthM && d.getFullYear() === lastMonthY;
+      })
+      .reduce((acc, c) => acc + (Number(c.monthly_fee) || 0), 0);
+    
+    return getTier(vgv);
+  }, [contracts]);
+ 
+  const totalCommissions = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    return contracts
+      .filter(c => {
+        const d = new Date(c.start_date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      })
+      .reduce((acc, c) => {
+        const calculation = calculateNetCommission(c.carrier || '', Number(c.monthly_fee) || 0, stoneData.name);
+        return acc + calculation.net;
+      }, 0);
+  }, [contracts, stoneData]);
+
+  const activeBeneficiaries = useMemo(() => {
+    if (!selectedContract) return beneficiaries;
+    return beneficiaries;
+  }, [beneficiaries, selectedContract]);
 
   useEffect(() => {
     fetchContractsData();
@@ -28,6 +68,7 @@ export default function Contracts() {
     setContracts(cRes.data || []);
     setBeneficiaries(bRes.data || []);
     setFinancials(fRes.data || []);
+    if (cRes.data && cRes.data.length > 0) setSelectedContract(cRes.data[0]);
     setLoading(false);
   };
 
@@ -68,19 +109,22 @@ export default function Contracts() {
           </div>
         </div>
 
-        {/* Commission Summary */}
+        {/* Commission Summary (Real Data) */}
         <div className="lg:col-span-4 bg-blue-700 text-white p-6 rounded-xl flex flex-col justify-between overflow-hidden relative shadow-xl shadow-blue-200">
           <div className="relative z-10">
             <p className="text-[0.6875rem] uppercase tracking-widest text-blue-200 mb-2">Comissões Acumuladas</p>
-            <h3 className="text-4xl font-extrabold tracking-tight">R$ 14.280,<span className="text-xl">50</span></h3>
+            <h3 className="text-4xl font-extrabold tracking-tight">{formatCurrency(totalCommissions)}</h3>
           </div>
           <div className="mt-8 relative z-10">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-xs">Meta Mensal</span>
-              <span className="text-xs font-bold">85%</span>
+              <span className="text-xs">Meta Mensal (R$ 20k)</span>
+              <span className="text-xs font-bold">{Math.round((totalCommissions / 20000) * 100)}%</span>
             </div>
             <div className="w-full h-1.5 bg-blue-800 rounded-full overflow-hidden">
-              <div className="bg-green-400 h-full w-[85%]"></div>
+              <div 
+                className="bg-green-400 h-full transition-all duration-1000" 
+                style={{ width: `${Math.min((totalCommissions / 20000) * 100, 100)}%` }} 
+              />
             </div>
           </div>
           <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-blue-600 rounded-full blur-3xl opacity-50"></div>
@@ -110,15 +154,22 @@ export default function Contracts() {
               <tr>
                 <th className="px-6 py-4 text-[0.6875rem] uppercase tracking-widest font-bold text-slate-400">Cliente</th>
                 <th className="px-6 py-4 text-[0.6875rem] uppercase tracking-widest font-bold text-slate-400">Operadora</th>
-                <th className="px-6 py-4 text-[0.6875rem] uppercase tracking-widest font-bold text-slate-400 text-center">Vidas</th>
-                <th className="px-6 py-4 text-[0.6875rem] uppercase tracking-widest font-bold text-slate-400">Vigência</th>
-                <th className="px-6 py-4 text-[0.6875rem] uppercase tracking-widest font-bold text-slate-400">Status</th>
+                <th className="px-6 py-3 text-left text-[0.6875rem] font-bold text-slate-500 uppercase tracking-widest">Início</th>
+                <th className="px-6 py-3 text-left text-[0.6875rem] font-bold text-slate-500 uppercase tracking-widest">Comissão (Líq.)</th>
+                <th className="px-6 py-3 text-left text-[0.6875rem] font-bold text-slate-500 uppercase tracking-widest">Status</th>
                 <th className="px-6 py-4"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {contracts.map(contract => (
-                <tr key={contract.id} className="bg-blue-50/30 hover:bg-slate-50 transition-colors">
+                <tr 
+                  key={contract.id} 
+                  onClick={() => setSelectedContract(contract)}
+                  className={cn(
+                    "cursor-pointer transition-colors",
+                    selectedContract?.id === contract.id ? "bg-blue-50/50" : "hover:bg-slate-50"
+                  )}
+                >
                   <td className="px-6 py-4">
                     <p className="text-sm font-bold text-slate-900">{contract.client_name}</p>
                     <p className="text-xs text-slate-400">CNPJ: {contract.cnpj || 'Não cadastrado'}</p>
@@ -131,15 +182,28 @@ export default function Contracts() {
                       <span className="text-sm text-slate-700">{contract.carrier}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-center font-bold text-slate-700">{contract.lives}</td>
                   <td className="px-6 py-4">
-                    <p className="text-sm text-slate-700">{new Date(contract.start_date).toLocaleDateString('pt-BR') || contract.start_date}</p>
+                    <p className="text-sm text-slate-700">{new Date(contract.start_date).toLocaleDateString('pt-BR')}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    {(() => {
+                       const calc = calculateNetCommission(contract.carrier || '', Number(contract.monthly_fee) || 0, stoneData.name);
+                       return (
+                         <div>
+                           <p className="text-sm font-bold text-blue-900">{formatCurrency(calc.net)}</p>
+                           <p className="text-[10px] text-slate-400">Total: {calc.percentage}%</p>
+                         </div>
+                       );
+                    })()}
                   </td>
                   <td className="px-6 py-4">
                     <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold uppercase">{contract.status}</span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button className="text-blue-600 hover:bg-blue-100 p-2 rounded-full transition-colors">
+                    <button className={cn(
+                      "p-2 rounded-full transition-colors",
+                      selectedContract?.id === contract.id ? "text-blue-600 bg-blue-100" : "text-slate-300 hover:text-blue-600 hover:bg-blue-50"
+                    )}>
                       <Icons.Info className="w-5 h-5" />
                     </button>
                   </td>
@@ -190,12 +254,12 @@ export default function Contracts() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-md font-bold text-blue-900">Beneficiários (Vidas)</h3>
-              <p className="text-xs text-slate-400">Contrato: Indústria Alvorada S.A.</p>
+              <p className="text-xs text-slate-400">Contrato: {selectedContract?.client_name || 'Selecione um contrato'}</p>
             </div>
-            <span className="text-[0.6875rem] font-bold px-2 py-1 bg-slate-100 text-slate-600 rounded">142 Total</span>
+            <span className="text-[0.6875rem] font-bold px-2 py-1 bg-slate-100 text-slate-600 rounded">{activeBeneficiaries.length} Total</span>
           </div>
-          <div className="space-y-4 overflow-y-auto max-h-[300px] pr-2">
-            {beneficiaries.map((beneficiary) => (
+          <div className="space-y-4 overflow-y-auto max-h-[300px] pr-2 custom-scrollbar">
+            {activeBeneficiaries.map((beneficiary) => (
               <div key={beneficiary.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition-colors group">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">{beneficiary.initials}</div>

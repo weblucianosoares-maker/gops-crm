@@ -13,6 +13,9 @@ interface LeadsContextType {
   filterCounts: Record<string, number>;
   loadingStages: boolean;
   loadingContactTypes: boolean;
+  jobTitles: any[];
+  loadingJobTitles: boolean;
+  fetchJobTitles: () => Promise<void>;
   unreadLeads: string[];
   unreadCounts: Record<string, number>;
 }
@@ -26,6 +29,8 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
   const [filter, setFilter] = useState("Todos");
   const [loadingStages, setLoadingStages] = useState(true);
   const [loadingContactTypes, setLoadingContactTypes] = useState(true);
+  const [jobTitles, setJobTitles] = useState<any[]>([]);
+  const [loadingJobTitles, setLoadingJobTitles] = useState(true);
   const [unreadLeads, setUnreadLeads] = useState<string[]>([]);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
 
@@ -54,44 +59,49 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
     }
     setLoadingContactTypes(false);
   };
+  
+  const fetchJobTitles = async () => {
+    setLoadingJobTitles(true);
+    const { data, error } = await supabase
+      .from('job_titles')
+      .select('*')
+      .order('name', { ascending: true });
+    
+    if (!error && data) {
+      setJobTitles(data);
+    }
+    setLoadingJobTitles(false);
+  };
 
   const fetchLeads = async () => {
-    let allData: any[] = [];
-    let hasMore = true;
-    let start = 0;
-    const step = 1000;
-    
-    while (hasMore) {
-      const { data, error } = await supabase
-        .from('leads')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .range(start, start + step - 1);
-        
-      if (error || !data) {
-        hasMore = false;
-        break;
-      }
-      allData = [...allData, ...data];
-      if (data.length < step) {
-        hasMore = false;
-      } else {
-        start += step;
-      }
+    // Busca os 2000 leads mais recentes em uma única chamada. 
+    // Para bases maiores, o ideal seria implementar paginação sob demanda na UI.
+    const { data, error } = await supabase
+      .from('leads')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(2000);
+      
+    if (!error && data) {
+      setLeads(data);
+    } else if (error) {
+      console.error("Erro ao buscar leads:", error);
     }
-    setLeads(allData);
   };
 
   const fetchUnread = async () => {
-    const { data } = await supabase
+    // Busca apenas o contagem e agrupamento de mensagens não lidas
+    const { data, error } = await supabase
       .from('whatsapp_messages')
       .select('lead_id')
       .eq('is_read', false)
       .eq('is_from_me', false);
     
-    if (data) {
+    if (!error && data) {
       const counts: Record<string, number> = {};
-      data.forEach(m => { if(m.lead_id) counts[m.lead_id] = (counts[m.lead_id] || 0) + 1; });
+      data.forEach(m => { 
+        if(m.lead_id) counts[m.lead_id] = (counts[m.lead_id] || 0) + 1; 
+      });
       setUnreadCounts(counts);
       setUnreadLeads(Object.keys(counts));
     }
@@ -101,6 +111,7 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
     fetchLeads();
     fetchStages();
     fetchContactTypes();
+    fetchJobTitles();
     fetchUnread();
 
     const channel = supabase
@@ -135,6 +146,9 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
       filterCounts, 
       loadingStages,
       loadingContactTypes,
+      jobTitles,
+      loadingJobTitles,
+      fetchJobTitles,
       unreadLeads,
       unreadCounts
     }}>

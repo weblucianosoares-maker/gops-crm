@@ -4,6 +4,7 @@ import { Icons } from "../components/Icons";
 import { useLeads } from "../lib/leadsContext";
 import { supabase } from "../lib/supabase";
 import { cn } from "../lib/utils";
+import { useToast } from "../components/Toasts";
 
 const COLOR_OPTIONS = [
   "bg-blue-600", "bg-blue-400", "bg-indigo-600", "bg-purple-600",
@@ -13,6 +14,7 @@ const COLOR_OPTIONS = [
 
 // ─── Brokers Section ────────────────────────────────
 function BrokersSection({ isOpen, onToggle }: { isOpen: boolean, onToggle: () => void }) {
+  const { success, error, toast: showToast } = useToast();
   const [brokers, setBrokers] = useState<any[]>([]);
   const [carriers, setCarriers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +46,7 @@ function BrokersSection({ isOpen, onToggle }: { isOpen: boolean, onToggle: () =>
       }
     } catch (err: any) {
       console.error('Erro ao enviar foto:', err);
-      alert('Erro ao enviar foto: ' + (err?.message || 'Erro desconhecido'));
+      error('Erro ao enviar foto: ' + (err?.message || 'Erro desconhecido'));
     } finally {
       setUploadingPhoto(null);
     }
@@ -75,31 +77,32 @@ function BrokersSection({ isOpen, onToggle }: { isOpen: boolean, onToggle: () =>
   };
 
   const handleSave = async (id: string) => {
-    if (!editForm.name.trim()) { alert("Nome do corretor é obrigatório."); return; }
-    const { error } = await supabase
+    if (!editForm.name.trim()) { showToast("Nome do corretor é obrigatório.", "warning"); return; }
+    const { error: supabaseError } = await supabase
       .from('brokers')
       .update({ name: editForm.name, phone: editForm.phone, email: editForm.email, password: editForm.password, avatar_url: editForm.avatar_url || null, carrier_codes: editForm.carrier_codes })
       .eq('id', id);
-    if (!error) { setEditingId(null); fetchData(); }
-    else alert("Erro ao salvar corretor.");
+    if (!supabaseError) { success("Corretor atualizado!"); setEditingId(null); fetchData(); }
+    else error("Erro ao salvar corretor.");
   };
 
   const handleAdd = async () => {
-    if (!newForm.name.trim()) { alert("Nome do corretor é obrigatório."); return; }
-    const { error } = await supabase
+    if (!newForm.name.trim()) { showToast("Nome do corretor é obrigatório.", "warning"); return; }
+    const { error: supabaseError } = await supabase
       .from('brokers')
       .insert([{ name: newForm.name, phone: newForm.phone, email: newForm.email, password: newForm.password, avatar_url: newForm.avatar_url || null, carrier_codes: newForm.carrier_codes }]);
     if (!error) {
       setIsAdding(false);
       setNewForm({ name: "", phone: "", email: "", password: "", avatar_url: "", carrier_codes: [] });
+      success("Corretor cadastrado!");
       fetchData();
-    } else alert("Erro ao adicionar corretor.");
+    } else error("Erro ao adicionar corretor.");
   };
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Tem certeza que deseja apagar este corretor?")) return;
-    const { error } = await supabase.from('brokers').delete().eq('id', id);
-    if (!error) fetchData();
+    const { error: supabaseError } = await supabase.from('brokers').delete().eq('id', id);
+    if (!supabaseError) { success("Corretor removido."); fetchData(); }
   };
 
   const updateCarrierCode = (codes: any[], index: number, field: string, value: string) => {
@@ -501,6 +504,7 @@ function BrokersSection({ isOpen, onToggle }: { isOpen: boolean, onToggle: () =>
 
 // ─── Carriers Settings Section ─────────────────────
 function CarriersSettingsSection({ isOpen, onToggle }: { isOpen: boolean, onToggle: () => void }) {
+  const { success, error, toast: showToast } = useToast();
   const [carriers, setCarriers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -522,34 +526,35 @@ function CarriersSettingsSection({ isOpen, onToggle }: { isOpen: boolean, onTogg
   };
 
   const handleSave = async (id: string) => {
-    if (!editForm.name.trim()) { alert("Nome da operadora é obrigatório."); return; }
-    const { error } = await supabase
+    if (!editForm.name.trim()) { showToast("Nome da operadora é obrigatório.", "warning"); return; }
+    const { error: supabaseError } = await supabase
       .from('carriers')
       .update({ name: editForm.name, active: editForm.active })
       .eq('id', id);
-    if (!error) { setEditingId(null); fetchCarriers(); }
-    else alert("Erro ao salvar operadora.");
+    if (!supabaseError) { success("Operadora atualizada!"); setEditingId(null); fetchCarriers(); }
+    else error("Erro ao salvar operadora.");
   };
 
   const handleAdd = async () => {
-    if (!newForm.name.trim()) { alert("Nome da operadora é obrigatório."); return; }
+    if (!newForm.name.trim()) { showToast("Nome da operadora é obrigatório.", "warning"); return; }
     const isDuplicate = carriers.some(c => c.name.toLowerCase() === newForm.name.trim().toLowerCase());
-    if (isDuplicate) { alert("Já existe uma operadora com este nome."); return; }
-    const { error } = await supabase
+    if (isDuplicate) { showToast("Já existe uma operadora com este nome.", "warning"); return; }
+    const { error: supabaseError } = await supabase
       .from('carriers')
       .insert([{ name: newForm.name.trim(), active: newForm.active }]);
     if (!error) {
       setIsAdding(false);
       setNewForm({ name: "", active: true });
+      success("Operadora cadastrada!");
       fetchCarriers();
-    } else alert("Erro ao adicionar operadora.");
+    } else error("Erro ao adicionar operadora.");
   };
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Tem certeza que deseja apagar esta operadora? Produtos vinculados podem ser afetados.")) return;
-    const { error } = await supabase.from('carriers').delete().eq('id', id);
-    if (!error) fetchCarriers();
-    else alert("Erro ao apagar. Verifique se há produtos vinculados.");
+    const { error: supabaseError } = await supabase.from('carriers').delete().eq('id', id);
+    if (!supabaseError) { success("Operadora removida."); fetchCarriers(); }
+    else error("Erro ao apagar. Verifique se há produtos vinculados.");
   };
 
   const toggleActive = async (id: string, currentActive: boolean) => {
@@ -769,6 +774,7 @@ function CarriersSettingsSection({ isOpen, onToggle }: { isOpen: boolean, onTogg
 // ─── Contact Types Settings Section ─────────────────────
 function ContactTypesSettingsSection({ isOpen, onToggle }: { isOpen: boolean, onToggle: () => void }) {
   const { contactTypes, fetchContactTypes, loadingContactTypes } = useLeads();
+  const { success, error, toast: showToast } = useToast();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ name: "", active: true });
   const [isAdding, setIsAdding] = useState(false);
@@ -780,20 +786,20 @@ function ContactTypesSettingsSection({ isOpen, onToggle }: { isOpen: boolean, on
   };
 
   const handleSave = async (id: string) => {
-    if (!editForm.name.trim()) { alert("Nome do tipo é obrigatório."); return; }
-    const { error } = await supabase
+    if (!editForm.name.trim()) { showToast("Nome do tipo é obrigatório.", "warning"); return; }
+    const { error: supabaseError } = await supabase
       .from('contact_types')
       .update({ name: editForm.name, active: editForm.active })
       .eq('id', id);
-    if (!error) { setEditingId(null); fetchContactTypes(); }
-    else alert("Erro ao salvar tipo.");
+    if (!supabaseError) { success("Tipo de contato salvo!"); setEditingId(null); fetchContactTypes(); }
+    else error("Erro ao salvar tipo.");
   };
 
   const handleAdd = async () => {
-    if (!newForm.name.trim()) { alert("Nome do tipo é obrigatório."); return; }
+    if (!newForm.name.trim()) { showToast("Nome do tipo é obrigatório.", "warning"); return; }
     const isDuplicate = contactTypes.some((c: any) => c.name.toLowerCase() === newForm.name.trim().toLowerCase());
-    if (isDuplicate) { alert("Já existe um tipo com este nome."); return; }
-    const { error } = await supabase
+    if (isDuplicate) { showToast("Já existe um tipo com este nome.", "warning"); return; }
+    const { error: supabaseError } = await supabase
       .from('contact_types')
       .insert([{ name: newForm.name.trim(), active: newForm.active }]);
     
@@ -1025,9 +1031,164 @@ function ContactTypesSettingsSection({ isOpen, onToggle }: { isOpen: boolean, on
 );
 }
 
+// ─── Job Titles Section ─────────────────────────────
+function JobTitlesSettingsSection({ isOpen, onToggle }: { isOpen: boolean, onToggle: () => void }) {
+  const { jobTitles, fetchJobTitles, loadingJobTitles } = useLeads();
+  const { success, error, toast: showToast } = useToast();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ name: "" });
+  const [isAdding, setIsAdding] = useState(false);
+  const [newForm, setNewForm] = useState({ name: "" });
+
+  const handleEdit = (title: any) => {
+    setEditingId(title.id);
+    setEditForm({ name: title.name });
+  };
+
+  const handleSave = async (id: string) => {
+    if (!editForm.name.trim()) return;
+    const { error: err } = await supabase
+      .from('job_titles')
+      .update({ name: editForm.name })
+      .eq('id', id);
+
+    if (!err) {
+      success("Cargo atualizado!");
+      setEditingId(null);
+      fetchJobTitles();
+    } else error("Erro ao salvar cargo.");
+  };
+
+  const handleAdd = async () => {
+    if (!newForm.name.trim()) return;
+    const { error: err } = await supabase
+      .from('job_titles')
+      .insert([{ name: newForm.name }]);
+
+    if (!err) {
+      success("Cargo adicionado!");
+      setIsAdding(false);
+      setNewForm({ name: "" });
+      fetchJobTitles();
+    } else error("Erro ao adicionar cargo.");
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Excluir este cargo?")) return;
+    const { error: err } = await supabase
+      .from('job_titles')
+      .delete()
+      .eq('id', id);
+
+    if (!err) {
+      success("Cargo removido.");
+      fetchJobTitles();
+    } else error("Erro ao remover cargo.");
+  };
+
+  return (
+    <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <button 
+        onClick={onToggle}
+        className="w-full text-left p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50 hover:bg-slate-100/50 transition-colors group"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+            <Icons.Briefcase className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="font-bold text-slate-900">Cargos Corporativos</h2>
+            <p className="text-xs text-slate-500">Gerencie os cargos para Leads de Empresas</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isOpen) onToggle();
+              setIsAdding(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-xs font-black uppercase tracking-wider rounded-lg hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100"
+          >
+            <Icons.Plus className="w-3.5 h-3.5" /> Novo Cargo
+          </button>
+          <Icons.ChevronDown className={cn(
+            "w-5 h-5 text-slate-400 transition-transform duration-300",
+            isOpen ? "rotate-180" : ""
+          )} />
+        </div>
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="p-6"
+          >
+            {loadingJobTitles ? (
+              <div className="py-12 flex justify-center">
+                <div className="w-8 h-8 border-4 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin"></div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {jobTitles.map((title: any) => (
+                  <div key={title.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 group">
+                    {editingId === title.id ? (
+                      <input 
+                        className="flex-1 bg-white border border-indigo-200 rounded-lg px-3 py-1.5 text-sm font-bold outline-none"
+                        value={editForm.name}
+                        onChange={e => setEditForm({ name: e.target.value })}
+                        autoFocus
+                      />
+                    ) : (
+                      <span className="text-sm font-bold text-slate-700 px-2">{title.name}</span>
+                    )}
+
+                    <div className="flex items-center gap-1 ml-2">
+                       {editingId === title.id ? (
+                         <>
+                           <button onClick={() => handleSave(title.id)} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg"><Icons.Check className="w-4 h-4" /></button>
+                           <button onClick={() => setEditingId(null)} className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg"><Icons.X className="w-4 h-4" /></button>
+                         </>
+                       ) : (
+                         <>
+                           <button onClick={() => handleEdit(title)} className="p-1.5 text-slate-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-all"><Icons.Edit className="w-4 h-4" /></button>
+                           <button onClick={() => handleDelete(title.id)} className="p-1.5 text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all"><Icons.Trash className="w-4 h-4" /></button>
+                         </>
+                       )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {isAdding && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 p-4 bg-indigo-50/50 rounded-xl border border-indigo-100">
+                <input 
+                  placeholder="Nome do cargo (ex: Gerente Financeiro)"
+                  className="w-full bg-white border border-indigo-200 rounded-xl px-4 py-2 text-sm font-bold outline-none"
+                  value={newForm.name}
+                  onChange={e => setNewForm({ name: e.target.value })}
+                />
+                <div className="flex justify-end gap-2 mt-3">
+                  <button onClick={() => setIsAdding(false)} className="px-4 py-2 text-slate-500 text-[10px] font-black uppercase">Cancelar</button>
+                  <button onClick={handleAdd} className="px-4 py-2 bg-indigo-600 text-white text-[10px] font-black uppercase rounded-lg shadow-md shadow-indigo-100">Adicionar</button>
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
+  );
+}
+
 // ─── Main Settings Page ─────────────────────────────
 export default function Settings() {
   const { stages, fetchStages, loadingStages } = useLeads();
+  const { success, error, toast: showToast } = useToast();
   const [activeSection, setActiveSection] = useState<string | null>("funnel");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ label: "", name: "", color: "" });
@@ -1046,32 +1207,33 @@ export default function Settings() {
   const handleSave = async (id: string) => {
     const isDuplicate = stages.some((s: any) => s.name === editForm.name && s.id !== id);
     if (isDuplicate) {
-      alert("Erro: Já existe uma etapa com este Nome Interno. Cada etapa deve ter um nome interno único.");
+      showToast("Erro: Já existe uma etapa com este Nome Interno.", "error");
       return;
     }
 
-    const { error } = await supabase
+    const { error: supabaseError } = await supabase
       .from('pipeline_stages')
       .update({ label: editForm.label, name: editForm.name, color: editForm.color })
       .eq('id', id);
 
-    if (!error) {
+    if (!supabaseError) {
+      success("Etapa atualizada!");
       setEditingId(null);
       await fetchStages();
     } else {
-      alert("Erro ao salvar etapa. Verifique se o nome interno não é duplicado.");
+      error("Erro ao salvar etapa. Verifique se o nome interno é único.");
     }
   };
 
   const handleAdd = async () => {
     const isDuplicate = stages.some((s: any) => s.name === newForm.name);
     if (isDuplicate) {
-      alert("Erro: Já existe uma etapa com este Nome Interno. Cada etapa deve ter um nome interno único.");
+      showToast("Erro: Já existe uma etapa com este Nome Interno.", "error");
       return;
     }
 
     const nextOrder = stages.length > 0 ? Math.max(...stages.map((s: any) => s.order_index)) + 1 : 0;
-    const { error } = await supabase
+    const { error: supabaseError } = await supabase
       .from('pipeline_stages')
       .insert([{
         name: newForm.name,
@@ -1080,12 +1242,13 @@ export default function Settings() {
         order_index: nextOrder
       }]);
 
-    if (!error) {
+    if (!supabaseError) {
+      success("Etapa criada com sucesso!");
       setIsAdding(false);
       setNewForm({ name: "", label: "", color: COLOR_OPTIONS[0] });
       await fetchStages();
     } else {
-      alert("Erro ao adicionar etapa. Verifique se o nome interno não é duplicado.");
+      error("Erro ao adicionar etapa. Nome interno deve ser único.");
     }
   };
 
@@ -1375,6 +1538,12 @@ export default function Settings() {
       <ContactTypesSettingsSection 
         isOpen={activeSection === "contact_types"} 
         onToggle={() => toggleSection("contact_types")} 
+      />
+
+      {/* ── Section 5: Cargos Corporativos ── */}
+      <JobTitlesSettingsSection 
+        isOpen={activeSection === "job_titles"} 
+        onToggle={() => toggleSection("job_titles")} 
       />
     </div>
   );

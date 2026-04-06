@@ -46,7 +46,9 @@ import {
   Image,
   Paperclip,
   FileSearch,
-  Download
+  Download,
+  Trophy,
+  Gem
 } from "lucide-react";
 
 export const Icons = {
@@ -102,5 +104,7 @@ export const Icons = {
   Image: Image,
   Paperclip: Paperclip,
   File: FileText,
-  Download: Download
+  Download: Download,
+  Trophy: Trophy,
+  Gem: Gem
 };
