@@ -74,19 +74,36 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
   };
 
   const fetchLeads = async () => {
-    // Busca os 2000 leads mais recentes em uma única chamada. 
-    // Para bases maiores, o ideal seria implementar paginação sob demanda na UI.
-    const { data, error } = await supabase
-      .from('leads')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(2000);
-      
-    if (!error && data) {
-      setLeads(data);
-    } else if (error) {
-      console.error("Erro ao buscar leads:", error);
+    let allLeads: any[] = [];
+    let from = 0;
+    let to = 999;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('leads')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .range(from, to);
+        
+      if (error) {
+        console.error("Erro ao buscar leads:", error);
+        break;
+      }
+
+      if (data && data.length > 0) {
+        allLeads = [...allLeads, ...data];
+        if (data.length < 1000) {
+          hasMore = false;
+        } else {
+          from += 1000;
+          to += 1000;
+        }
+      } else {
+        hasMore = false;
+      }
     }
+    setLeads(allLeads);
   };
 
   const fetchUnread = async () => {

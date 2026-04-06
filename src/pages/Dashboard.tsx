@@ -79,15 +79,24 @@ export default function Dashboard() {
         return acc + calculation.net;
       }, 0);
     
-    // Novas estatísticas baseadas nos leads e beneficiários
+    // Novas estatísticas baseadas nos leads e negócios ativos
     const totalLeads = leads.length;
-    const vidasVendidas = beneficiaries.length;
+    
+    // Contratos Ativos e Vidas Ativas
+    const activeContracts = contracts.filter(c => c.status === 'Ativo');
+    const totalActiveContracts = activeContracts.length;
+    
+    // Calcula vidas ativas (ou do campo 'lives' do contrato, ou contando beneficiários vinculados)
+    // Se a tabela de contratos tiver o campo 'lives', usamos ele, senão contamos beneficiários.
+    const vidasAtivas = activeContracts.reduce((acc, c) => acc + (Number(c.lives) || 0), 0);
+    
     const receitaEmRisco = leads.filter(l => l.status === 'Negociação').reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
     const receitaStandby = leads.filter(l => l.status === 'Novo' || l.status === 'Interesse').reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
     
     setStats({ 
       totalLeads, 
-      vidasVendidas, 
+      totalActiveContracts,
+      vidasAtivas,
       receitaEmRisco, 
       receitaStandby, 
       lastMonthVgv, 
@@ -229,8 +238,10 @@ export default function Dashboard() {
           className="bg-white p-5 rounded-xl relative overflow-hidden group border border-slate-100 shadow-sm"
         >
           <div className="absolute top-0 right-0 w-24 h-24 bg-green-50 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-110 duration-500" />
-          <p className="text-[0.6rem] uppercase tracking-widest text-slate-500 font-bold mb-1">Vidas Ativas</p>
-          <h3 className="text-2xl font-black text-blue-900 tracking-tight">{stats.vidasVendidas}</h3>
+          <p className="text-[0.6rem] uppercase tracking-widest text-slate-500 font-bold mb-1">Contratos / Vidas Ativas</p>
+          <h3 className="text-2xl font-black text-blue-900 tracking-tight">
+            {stats.totalActiveContracts} / {stats.vidasAtivas}
+          </h3>
         </motion.div>
 
         <motion.div 
