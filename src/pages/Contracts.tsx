@@ -136,6 +136,27 @@ export default function Contracts() {
         <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h3 className="text-lg font-bold text-blue-900">Contratos Ativos</h3>
           <div className="flex items-center gap-3">
+            {/* Botão Temporário para Resetar Dados Fictícios */}
+            <button 
+              onClick={async () => {
+                if (window.confirm("⚠️ ATENÇÃO: Isso apagará TODOS os contratos, beneficiários e histórico financeiro atuais. Deseja continuar?")) {
+                  try {
+                    await supabase.from('beneficiaries').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                    await supabase.from('financial_history').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                    await supabase.from('contracts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                    alert("Dados fictícios removidos com sucesso! Atualizando...");
+                    fetchContractsData();
+                  } catch (err) {
+                    console.error("Erro no reset:", err);
+                    alert("Falha ao limpar dados. Verifique o console.");
+                  }
+                }
+              }}
+              className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm font-bold border border-red-100 hover:bg-red-100 transition-colors"
+            >
+              ⚠️ Limpar Dados Fictícios
+            </button>
+            
             <div className="relative">
               <Icons.Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
               <input 
