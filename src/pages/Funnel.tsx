@@ -165,8 +165,9 @@ export default function Funnel() {
                       <div className="flex flex-col gap-4 pb-10 flex-1">
                         {leads
                           .filter(l => l.status === col.name)
-                          .map((lead, index) => (
-                            <Draggable key={String(lead.id)} draggableId={String(lead.id)} index={index}>
+                          .map((lead: any, index: number) => (
+                            // @ts-ignore
+                            <Draggable key={lead.id} draggableId={String(lead.id)} index={index}>
                               {(draggableProvided, draggableSnapshot) => (
                                 <div
                                   ref={draggableProvided.innerRef}

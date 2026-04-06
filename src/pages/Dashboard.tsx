@@ -79,6 +79,12 @@ export default function Dashboard() {
         return acc + calculation.net;
       }, 0);
     
+    // Novas estatísticas baseadas nos leads e beneficiários
+    const totalLeads = leads.length;
+    const vidasVendidas = beneficiaries.length;
+    const receitaEmRisco = leads.filter(l => l.status === 'Negociação').reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
+    const receitaStandby = leads.filter(l => l.status === 'Novo' || l.status === 'Interesse').reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
+    
     setStats({ 
       totalLeads, 
       vidasVendidas, 
@@ -128,10 +134,8 @@ export default function Dashboard() {
       status: l.status === stages[stages.length - 1]?.name ? 'Pago' : 'Em Análise'
     })));
 
-    // Events & Birthdays Logic
-    const now = new Date();
-    now.setHours(0,0,0,0);
-    const currentMonth = now.getMonth();
+    // Events & Birthdays Logic (Usa a constante 'now' definida no início da função)
+    const currentMonthForEvents = now.getMonth();
     let monthCount = 0;
     let dayCount = 0;
     const upcoming: any[] = [];
@@ -144,7 +148,7 @@ export default function Dashboard() {
       if (d.getDate() === now.getDate() && d.getMonth() === now.getMonth()) dayCount++;
       
       // Contar aniversariantes do mês (ignorar ano)
-      if (d.getMonth() === currentMonth) monthCount++;
+      if (d.getMonth() === currentMonthForEvents) monthCount++;
 
       // Próximos 7 dias (ignorar ano)
       const eventThisYear = new Date(now.getFullYear(), d.getMonth(), d.getDate());
