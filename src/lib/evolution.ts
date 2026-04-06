@@ -106,7 +106,7 @@ export const evolutionService = {
           number: formattedNumber,
           mediatype: mediatype,
           mimetype: mimetype,
-          media: media, // Deve vir com o prefixo data:[mimetype];base64,
+          media: media.includes('base64,') ? media.split('base64,')[1] : media,
           fileName: fileName || 'arquivo',
           caption: caption || ''
         })

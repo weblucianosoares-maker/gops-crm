@@ -32,8 +32,11 @@ const MediaMessage = ({ msg }: { msg: any }) => {
         }
       };
       loadMedia();
+    } else if (msg.media_preview) {
+      // Usar preview local caso exista (ex: durante o envio)
+      setMediaData(msg.media_preview.includes('base64,') ? msg.media_preview.split('base64,')[1] : msg.media_preview);
     }
-  }, [msg.id, msg.media_type]);
+  }, [msg.id, msg.media_type, msg.media_preview]);
 
   if (loading) {
     return (
@@ -327,7 +330,8 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
 
       setMessages(prev => [...prev, { 
         id: tempId, fromMe: true, text: file.name, timestamp: Date.now(), 
-        media_type: type, mimetype: file.type, file_name: file.name, status: 'sending' 
+        media_type: type, mimetype: file.type, file_name: file.name, status: 'sending',
+        media_preview: b64
       }]);
 
       try {
@@ -347,9 +351,10 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
           }, { onConflict: 'message_id' });
           setMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: res.key.id, status: 'sent' } : m));
         }
-      } catch (e) {
+      } catch (e: any) {
         setMessages(prev => prev.filter(m => m.id !== tempId));
-        alert("Erro ao anexar arquivo.");
+        console.error("Erro ao enviar mídia:", e);
+        alert(`Erro ao anexar arquivo: ${e.message || 'Erro desconhecido'}`);
       }
     };
     reader.readAsDataURL(file);
