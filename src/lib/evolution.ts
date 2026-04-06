@@ -53,7 +53,7 @@ export const evolutionService = {
           headers,
           body: JSON.stringify({
             where: { remoteJid },
-            count: 50
+            count: 100
           })
         });
         if (!response.ok) return [];

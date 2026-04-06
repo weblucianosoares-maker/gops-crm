@@ -48,7 +48,11 @@ import {
   FileSearch,
   Download,
   Trophy,
-  Gem
+  Gem,
+  Loader2,
+  Mic,
+  Play,
+  File
 } from "lucide-react";
 
 export const Icons = {
@@ -103,8 +107,12 @@ export const Icons = {
   EyeOff: EyeOff,
   Image: Image,
   Paperclip: Paperclip,
-  File: FileText,
+  FileSearch: FileSearch,
   Download: Download,
   Trophy: Trophy,
-  Gem: Gem
+  Gem: Gem,
+  Loader2: Loader2,
+  Mic: Mic,
+  Play: Play,
+  File: File
 };

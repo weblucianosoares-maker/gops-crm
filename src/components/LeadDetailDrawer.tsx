@@ -7,16 +7,19 @@ import { useLeads } from "../lib/leadsContext";
 import { evolutionService } from "../lib/evolution";
 import { useToast } from "./Toasts";
 
-// Componente para renderizar mensagens com mídia (Imagem, PDF, etc)
+// Componente para renderizar mensagens com mídia (Imagem, PDF, Áudio, etc)
 const MediaMessage = ({ msg }: { msg: any }) => {
   const [mediaData, setMediaData] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const isImage = msg.media_type === 'image';
+  const isImage = msg.media_type === 'image' || msg.media_type === 'sticker';
   const isDoc = msg.media_type === 'document';
+  const isAudio = msg.media_type === 'audio';
+  const isVideo = msg.media_type === 'video';
 
   useEffect(() => {
-    if ((isImage || isDoc) && msg.id && !msg.id.startsWith('temp-')) {
+    const hasMedia = isImage || isDoc || isAudio || isVideo;
+    if (hasMedia && msg.id && !msg.id.startsWith('temp-')) {
       const loadMedia = async () => {
         setLoading(true);
         try {
@@ -32,22 +35,60 @@ const MediaMessage = ({ msg }: { msg: any }) => {
     }
   }, [msg.id, msg.media_type]);
 
+  if (loading) {
+    return (
+      <div className="w-48 h-20 bg-slate-100/50 animate-pulse rounded-lg flex items-center justify-center gap-2">
+        <Icons.Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
+        <span className="text-[9px] font-black uppercase text-slate-300">Carregando mídias...</span>
+      </div>
+    );
+  }
+
   if (isImage) {
     return (
       <div className="space-y-2">
-        {loading ? (
-          <div className="w-48 h-32 bg-slate-100 animate-pulse rounded-lg flex items-center justify-center">
-            <Icons.Image className="w-6 h-6 text-slate-300" />
-          </div>
-        ) : mediaData ? (
+        {mediaData ? (
           <img 
-            src={`data:${msg.mimetype};base64,${mediaData}`} 
+            src={`data:${msg.mimetype || 'image/png'};base64,${mediaData}`} 
             alt="Anexo" 
             className="rounded-lg max-w-full cursor-pointer hover:brightness-95 transition-all shadow-sm"
-            onClick={() => window.open(`data:${msg.mimetype};base64,${mediaData}`, '_blank')}
+            onClick={() => window.open(`data:${msg.mimetype || 'image/png'};base64,${mediaData}`, '_blank')}
           />
         ) : (
-          <div className="p-3 bg-slate-50 rounded-lg border border-dashed text-[10px] text-slate-400 text-center font-bold uppercase tracking-tighter">Mídia não disponível</div>
+          <div className="p-3 bg-slate-50 rounded-lg border border-dashed text-[10px] text-slate-400 text-center font-bold uppercase tracking-tighter">Imagem não disponível</div>
+        )}
+        {msg.text && <p className="whitespace-pre-wrap text-slate-800 font-medium ">{msg.text}</p>}
+      </div>
+    );
+  }
+
+  if (isAudio) {
+    return (
+      <div className="space-y-2 py-1 min-w-[200px]">
+        {mediaData ? (
+          <audio controls className="h-8 w-full">
+            <source src={`data:${msg.mimetype || 'audio/ogg'};base64,${mediaData}`} type={msg.mimetype || 'audio/ogg'} />
+            Seu navegador não suporta áudio.
+          </audio>
+        ) : (
+          <div className="flex items-center gap-2 text-slate-400">
+            <Icons.Mic className="w-4 h-4" />
+            <span className="text-[10px] font-bold uppercase">Áudio indisponível</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (isVideo) {
+    return (
+      <div className="space-y-2">
+        {mediaData ? (
+          <video controls className="rounded-lg max-w-full shadow-sm max-h-[300px]">
+            <source src={`data:${msg.mimetype || 'video/mp4'};base64,${mediaData}`} type={msg.mimetype || 'video/mp4'} />
+          </video>
+        ) : (
+          <div className="p-3 bg-slate-50 rounded-lg border border-dashed text-[10px] text-slate-400 text-center font-bold uppercase">Vídeo não disponível</div>
         )}
         {msg.text && <p className="whitespace-pre-wrap text-slate-800 font-medium ">{msg.text}</p>}
       </div>
@@ -84,7 +125,7 @@ const MediaMessage = ({ msg }: { msg: any }) => {
     );
   }
 
-  return <p className="whitespace-pre-wrap text-slate-800 font-medium">{msg.text}</p>;
+  return <p className="whitespace-pre-wrap text-slate-800 font-medium">{msg.text || "[Mídia/Outro]"}</p>;
 };
 
 interface LeadDetailDrawerProps {
@@ -130,13 +171,45 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
         .order('created_at', { ascending: true });
 
       let rawApi = Array.isArray(apiRes) ? apiRes : (apiRes as any)?.messages || [];
-      const normalizedApi = rawApi.map((m: any) => ({
-        id: m.key?.id || `api-${Math.random()}`,
-        fromMe: !!m.key?.fromMe,
-        text: m.message?.conversation || m.message?.extendedTextMessage?.text || "",
-        timestamp: m.messageTimestamp ? m.messageTimestamp * 1000 : Date.now(),
-        source: 'api'
-      }));
+      const normalizedApi = rawApi.map((m: any) => {
+        const msg = m.message || {};
+        let text = msg.conversation || msg.extendedTextMessage?.text || "";
+        let mediaType = undefined;
+        let mimetype = undefined;
+        let fileName = undefined;
+
+        if (msg.imageMessage) {
+          mediaType = 'image';
+          mimetype = msg.imageMessage.mimetype;
+          text = msg.imageMessage.caption || "";
+        } else if (msg.audioMessage) {
+          mediaType = 'audio';
+          mimetype = msg.audioMessage.mimetype;
+        } else if (msg.videoMessage) {
+          mediaType = 'video';
+          mimetype = msg.videoMessage.mimetype;
+          text = msg.videoMessage.caption || "";
+        } else if (msg.documentMessage) {
+          mediaType = 'document';
+          mimetype = msg.documentMessage.mimetype;
+          fileName = msg.documentMessage.fileName || msg.documentMessage.title;
+          text = msg.documentMessage.caption || "";
+        } else if (msg.stickerMessage) {
+          mediaType = 'sticker';
+          mimetype = msg.stickerMessage.mimetype;
+        }
+
+        return {
+          id: m.key?.id || `api-${Math.random()}`,
+          fromMe: !!m.key?.fromMe,
+          text,
+          timestamp: m.messageTimestamp ? m.messageTimestamp * 1000 : Date.now(),
+          media_type: mediaType,
+          mimetype,
+          file_name: fileName,
+          source: 'api'
+        };
+      });
 
       const normalizedLocal = (localData || []).map((m: any) => ({
         id: m.message_id,
