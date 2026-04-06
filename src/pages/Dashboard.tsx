@@ -83,11 +83,24 @@ export default function Dashboard() {
     const totalLeads = leads.length;
     
     // Contratos Ativos e Vidas Ativas
-    const activeContracts = contracts.filter(c => c.status === 'Ativo');
+    const activeContracts = contracts.filter(c => 
+      c.status && 
+      c.status.toLowerCase().trim() === 'ativo' && 
+      c.client_name // Garante que não é um registro vazio ou de teste sem nome
+    );
+
+    // DEBUG: Imprime no console para que o usuário veja o que está sendo contado
+    if (activeContracts.length > 0) {
+      console.log("--- DEBUG: CONTRATOS ATIVOS ENCONTRADOS ---");
+      activeContracts.forEach(c => {
+        console.log(`ID: ${c.id} | Cliente: ${c.client_name} | Vidas: ${c.lives} | Data: ${c.start_date}`);
+      });
+      console.log("-------------------------------------------");
+    }
+
     const totalActiveContracts = activeContracts.length;
     
-    // Calcula vidas ativas (ou do campo 'lives' do contrato, ou contando beneficiários vinculados)
-    // Se a tabela de contratos tiver o campo 'lives', usamos ele, senão contamos beneficiários.
+    // Calcula vidas ativas estritamente dos contratos que passaram no filtro acima
     const vidasAtivas = activeContracts.reduce((acc, c) => acc + (Number(c.lives) || 0), 0);
     
     const receitaEmRisco = leads.filter(l => l.status === 'Negociação').reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
