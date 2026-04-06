@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icons } from "./Icons";
-import { cn } from "../lib/utils";
+import { cn, formatCPF, formatPhone, formatCNPJ, formatCEP } from "../lib/utils";
 import { supabase } from "../lib/supabase";
 import { useLeads } from "../lib/leadsContext";
 import { useToast } from "./Toasts";
@@ -18,10 +18,11 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
   const [isSaving, setIsSaving] = useState(false);
   
   const [newLead, setNewLead] = useState({ 
-    name: '', email: '', phone: '', source: 'Manual', status: stages[0]?.name || 'Novo', contact_type: '',
+    name: '', email: '', phone: '', secondary_phone: '', source: 'Manual', status: stages[0]?.name || 'Novo', contact_type: '',
     has_current_plan: false, interested_lives: 1, current_lives: 0,
     current_carrier: '', current_product: '', current_value: 0,
-    rg: '', address_zip: '', address_street: '', address_neighborhood: '',
+    rg: '', cpf: '', marital_status: '',
+    address_zip: '', address_street: '', address_neighborhood: '',
     address_city: '', address_state: '', address_number: '', address_complement: '',
     docs_link: '', product: '', carrier: '', nickname: '', has_cnpj: false, is_mei: false, cnpj: '',
     lead_type: 'PF' as 'PF' | 'PJ',
@@ -29,7 +30,16 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
     contact_person: '',
     job_title: '',
     birth_date: '',
-    marriage_date: ''
+    marriage_date: '',
+    deal_value: 0,
+    // Responsável Empresa
+    resp_emp_name: '', resp_emp_job: '', resp_emp_birth_date: '', resp_emp_marital_status: '', 
+    resp_emp_marriage_date: '', resp_emp_cpf: '', resp_emp_rg: '', resp_emp_whatsapp: '', 
+    resp_emp_phone: '', resp_emp_email: '',
+    // Responsável Contrato
+    resp_con_name: '', resp_con_job: '', resp_con_birth_date: '', resp_con_marital_status: '', 
+    resp_con_marriage_date: '', resp_con_cpf: '', resp_con_rg: '', resp_con_whatsapp: '', 
+    resp_con_phone: '', resp_con_email: ''
   });
 
   const handleCEPChange = async (cep: string) => {
@@ -46,7 +56,8 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
             address_street: data.logradouro,
             address_neighborhood: data.bairro,
             address_city: data.localidade,
-            address_state: data.uf
+            address_state: data.uf,
+            address_zip: formatCEP(cleanCEP)
           }));
         }
       } catch (e) {
@@ -56,8 +67,9 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
   };
 
   const handleCNPJChange = async (cnpj: string) => {
-    const cleanCNPJ = cnpj.replace(/\D/g, "");
-    setNewLead(prev => ({ ...prev, cnpj: cnpj }));
+    const formatted = formatCNPJ(cnpj);
+    const cleanCNPJ = formatted.replace(/\D/g, "");
+    setNewLead(prev => ({ ...prev, cnpj: formatted }));
     
     if (cleanCNPJ.length === 14) {
       try {
@@ -69,6 +81,12 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
             company_name: data.razao_social,
             name: data.razao_social,
             nickname: data.nome_fantasia || prev.nickname,
+            address_zip: data.cep || prev.address_zip,
+            address_street: data.logradouro || prev.address_street,
+            address_neighborhood: data.bairro || prev.address_neighborhood,
+            address_city: data.municipio || prev.address_city,
+            address_state: data.uf || prev.address_state,
+            address_number: data.numero || prev.address_number,
           }));
         }
       } catch (e) {
@@ -94,14 +112,18 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
       name: newLead.name,
       email: newLead.email,
       phone: normalizedPhone,
+      secondary_phone: newLead.secondary_phone.replace(/\D/g, ''),
       source: newLead.source,
       status: newLead.status,
       initials: initials,
       current_lives: newLead.current_lives,
+      interested_lives: newLead.interested_lives,
       current_carrier: newLead.current_carrier,
       current_product: newLead.current_product,
       current_value: newLead.current_value,
       rg: newLead.rg,
+      cpf: newLead.cpf.replace(/\D/g, ''),
+      marital_status: newLead.marital_status,
       address_zip: newLead.address_zip,
       address_street: newLead.address_street,
       address_neighborhood: newLead.address_neighborhood,
@@ -115,14 +137,37 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
       nickname: newLead.nickname,
       has_cnpj: newLead.has_cnpj,
       is_mei: newLead.is_mei,
-      cnpj: newLead.cnpj,
+      cnpj: newLead.cnpj.replace(/\D/g, ''),
       contact_type: newLead.contact_type,
       lead_type: newLead.lead_type,
       company_name: newLead.company_name,
       contact_person: newLead.contact_person,
       job_title: newLead.job_title,
       birth_date: newLead.birth_date || null,
-      marriage_date: newLead.marriage_date || null
+      marriage_date: newLead.marriage_date || null,
+      deal_value: newLead.deal_value,
+      has_current_plan: newLead.has_current_plan,
+      // PME Data
+      resp_emp_name: newLead.resp_emp_name,
+      resp_emp_job: newLead.resp_emp_job,
+      resp_emp_birth_date: newLead.resp_emp_birth_date || null,
+      resp_emp_marital_status: newLead.resp_emp_marital_status,
+      resp_emp_marriage_date: newLead.resp_emp_marriage_date || null,
+      resp_emp_cpf: newLead.resp_emp_cpf.replace(/\D/g, ''),
+      resp_emp_rg: newLead.resp_emp_rg,
+      resp_emp_whatsapp: newLead.resp_emp_whatsapp.replace(/\D/g, ''),
+      resp_emp_phone: newLead.resp_emp_phone.replace(/\D/g, ''),
+      resp_emp_email: newLead.resp_emp_email,
+      resp_con_name: newLead.resp_con_name,
+      resp_con_job: newLead.resp_con_job,
+      resp_con_birth_date: newLead.resp_con_birth_date || null,
+      resp_con_marital_status: newLead.resp_con_marital_status,
+      resp_con_marriage_date: newLead.resp_con_marriage_date || null,
+      resp_con_cpf: newLead.resp_con_cpf.replace(/\D/g, ''),
+      resp_con_rg: newLead.resp_con_rg,
+      resp_con_whatsapp: newLead.resp_con_whatsapp.replace(/\D/g, ''),
+      resp_con_phone: newLead.resp_con_phone.replace(/\D/g, ''),
+      resp_con_email: newLead.resp_con_email
     }]);
 
     setIsSaving(false);
@@ -134,6 +179,29 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
       onClose();
     }
   };
+
+  const SectionHeader = ({ icon: Icon, title, colorClass }: { icon: any, title: string, colorClass: string }) => (
+    <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
+      <div className={cn("p-2 rounded-lg", colorClass)}>
+        <Icon className="w-5 h-5" />
+      </div>
+      <h4 className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-400">{title}</h4>
+    </div>
+  );
+
+  const InputField = ({ label, value, onChange, placeholder, type = "text", required = false, mask }: any) => (
+    <div>
+      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">{label}</label>
+      <input 
+        type={type}
+        required={required}
+        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
+        placeholder={placeholder}
+        value={mask ? mask(value) : value}
+        onChange={e => onChange(e.target.value)}
+      />
+    </div>
+  );
 
   if (!isOpen) return null;
 
@@ -202,328 +270,211 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Coluna Principal (Identificação e Perfil) */}
-            <div className="lg:col-span-3 space-y-8">
-              
-              {/* Seção: Dados de Identificação */}
-              <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-8">
-                <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-                  <div className="p-2 bg-blue-50 rounded-lg">
-                    {newLead.lead_type === 'PF' ? <Icons.Users className="w-5 h-5 text-blue-600" /> : <Icons.Building2 className="w-5 h-5 text-blue-600" />}
-                  </div>
-                  <h4 className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-400">
-                    {newLead.lead_type === 'PF' ? "Dados Pessoais" : "Dados da Empresa"}
-                  </h4>
-                </div>
-
+          {newLead.lead_type === 'PF' ? (
+            /* ================= PF FORM FLOW ================= */
+            <div className="space-y-8">
+              {/* DADOS PESSOAIS */}
+              <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                <SectionHeader icon={Icons.Users} title="Dados Pessoais" colorClass="bg-blue-50 text-blue-600" />
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div className="lg:col-span-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Nome Completo / Razão Social</label>
-                    <input 
-                      required
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                      placeholder="Ex: João da Silva / Efraim Saúde LTDA"
-                      value={newLead.name}
-                      onChange={e => setNewLead({...newLead, name: e.target.value, company_name: e.target.value})}
-                    />
+                    <InputField label="Nome Completo" value={newLead.name} onChange={(v:any) => setNewLead({...newLead, name: v})} placeholder="Ex: João da Silva" required />
                   </div>
-
-                  {newLead.lead_type === 'PF' ? (
-                    <>
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Data Nascimento</label>
-                        <div className="relative">
-                          <input 
-                            type="date" 
-                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                            value={newLead.birth_date}
-                            onChange={e => setNewLead({...newLead, birth_date: e.target.value})}
-                          />
-                          <Icons.Calendar className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 pointer-events-none" />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Data Casamento</label>
-                        <div className="relative">
-                          <input 
-                            type="date" 
-                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                            value={newLead.marriage_date}
-                            onChange={e => setNewLead({...newLead, marriage_date: e.target.value})}
-                          />
-                          <Icons.Calendar className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 pointer-events-none" />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">RG</label>
-                        <input 
-                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                          placeholder="00.000.000-0"
-                          value={newLead.rg}
-                          onChange={e => setNewLead({...newLead, rg: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Informações Adic. (Apelido)</label>
-                        <input 
-                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                          placeholder="Ex: Juca"
-                          value={newLead.nickname}
-                          onChange={e => setNewLead({...newLead, nickname: e.target.value})}
-                        />
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">CNPJ</label>
-                        <input 
-                          required
-                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                          placeholder="00.000.000/0000-00"
-                          value={newLead.cnpj}
-                          onChange={e => handleCNPJChange(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Nome Fantasia</label>
-                        <input 
-                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                          placeholder="Ex: Efraim Consultoria"
-                          value={newLead.nickname}
-                          onChange={e => setNewLead({...newLead, nickname: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Responsável</label>
-                        <input 
-                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                          placeholder="Ex: Maria Souza"
-                          value={newLead.contact_person}
-                          onChange={e => setNewLead({...newLead, contact_person: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Cargo</label>
-                        <select 
-                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-700"
-                          value={newLead.job_title}
-                          onChange={e => setNewLead({...newLead, job_title: e.target.value})}
-                        >
-                          <option value="">Selecione...</option>
-                          {jobTitles.map(jt => <option key={jt.id} value={jt.name}>{jt.name}</option>)}
-                        </select>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Seção: Endereço (Expandida) */}
-              <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-8">
-                <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-                  <div className="p-2 bg-orange-50 rounded-lg">
-                    <Icons.MapPin className="w-5 h-5 text-orange-600" />
-                  </div>
-                  <h4 className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-400">Localização</h4>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                  <InputField label="Data Nascimento" type="date" value={newLead.birth_date} onChange={(v:any) => setNewLead({...newLead, birth_date: v})} />
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">CEP</label>
-                    <input 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                      placeholder="00000-000"
-                      value={newLead.address_zip}
-                      onChange={e => handleCEPChange(e.target.value)}
-                    />
-                  </div>
-                  <div className="lg:col-span-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Logradouro / Rua</label>
-                    <input 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                      value={newLead.address_street}
-                      onChange={e => setNewLead({...newLead, address_street: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Número</label>
-                    <input 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                      value={newLead.address_number}
-                      onChange={e => setNewLead({...newLead, address_number: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">UF / Estado</label>
-                    <input 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                      value={newLead.address_state}
-                      onChange={e => setNewLead({...newLead, address_state: e.target.value})}
-                    />
-                  </div>
-                  <div className="lg:col-span-3">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Complemento / Apto / Bloco</label>
-                    <input 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                      placeholder="Ex: Apto 123, Bloco B"
-                      value={newLead.address_complement}
-                      onChange={e => setNewLead({...newLead, address_complement: e.target.value})}
-                    />
-                  </div>
-                  <div className="lg:col-span-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Cidade / Bairro</label>
-                    <div className="flex gap-2">
-                       <input 
-                        className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                        placeholder="Cidade"
-                        value={newLead.address_city}
-                        onChange={e => setNewLead({...newLead, address_city: e.target.value})}
-                      />
-                      <input 
-                        className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                        placeholder="Bairro"
-                        value={newLead.address_neighborhood}
-                        onChange={e => setNewLead({...newLead, address_neighborhood: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Coluna Lateral (Contato e Perfil Rápido) */}
-            <div className="lg:col-span-1 space-y-8">
-              
-              {/* Seção: Contato */}
-              <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
-                <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-                  <div className="p-2 bg-green-50 rounded-lg">
-                    <Icons.Phone className="w-5 h-5 text-green-600" />
-                  </div>
-                  <h4 className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-400">Contato</h4>
-                </div>
-
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">WhatsApp</label>
-                    <div className="relative">
-                      <input 
-                        required
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                        placeholder="(00) 00000-0000"
-                        value={newLead.phone}
-                        onChange={e => setNewLead({...newLead, phone: e.target.value})}
-                      />
-                      <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 bg-green-100 rounded-lg">
-                        <Icons.Phone className="w-4 h-4 text-green-600" />
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">E-mail</label>
-                    <input 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                      placeholder="exemplo@email.com"
-                      value={newLead.email}
-                      onChange={e => setNewLead({...newLead, email: e.target.value})}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Seção: Perfil Operacional */}
-              <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
-                <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-                  <div className="p-2 bg-purple-50 rounded-lg">
-                    <Icons.Target className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <h4 className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-400">Operacional</h4>
-                </div>
-
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Status Inicial</label>
-                    <select 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-700"
-                      value={newLead.status}
-                      onChange={e => setNewLead({...newLead, status: e.target.value})}
-                    >
-                      {stages.map(s => <option key={s.id} value={s.name}>{s.label}</option>)}
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Estado Civil</label>
+                    <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" value={newLead.marital_status} onChange={e => setNewLead({...newLead, marital_status: e.target.value})}>
+                      <option value="">Selecione...</option>
+                      <option value="Solteiro(a)">Solteiro(a)</option>
+                      <option value="Casado(a)">Casado(a)</option>
+                      <option value="Divorciado(a)">Divorciado(a)</option>
+                      <option value="Viúvo(a)">Viúvo(a)</option>
+                      <option value="União Estável">União Estável</option>
                     </select>
                   </div>
+                  <InputField label="Data Casamento" type="date" value={newLead.marriage_date} onChange={(v:any) => setNewLead({...newLead, marriage_date: v})} />
+                  <InputField label="CPF" value={newLead.cpf} mask={formatCPF} onChange={(v:any) => setNewLead({...newLead, cpf: v})} placeholder="000.000.000-00" />
+                  <InputField label="RG" value={newLead.rg} onChange={(v:any) => setNewLead({...newLead, rg: v})} placeholder="00.000.000-0" />
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Tipo de Contato</label>
-                    <select 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-700"
-                      value={newLead.contact_type}
-                      onChange={e => setNewLead({...newLead, contact_type: e.target.value})}
-                    >
+                    <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" value={newLead.contact_type} onChange={e => setNewLead({...newLead, contact_type: e.target.value})}>
                       <option value="">Selecione...</option>
                       {contactTypes.filter(t => t.active).map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Origem do Lead</label>
-                    <input 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                      value={newLead.source}
-                      onChange={e => setNewLead({...newLead, source: e.target.value})}
-                    />
-                  </div>
+                  <InputField label="Origem Lead" value={newLead.source} onChange={(v:any) => setNewLead({...newLead, source: v})} />
                 </div>
               </div>
 
+              {/* CONTATO */}
+              <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                <SectionHeader icon={Icons.Phone} title="Contato" colorClass="bg-green-50 text-green-600" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <InputField label="WhatsApp" value={newLead.phone} mask={formatPhone} onChange={(v:any) => setNewLead({...newLead, phone: v})} placeholder="(00) 00000-0000" required />
+                  <InputField label="Telefone Contato (Opcional)" value={newLead.secondary_phone} mask={formatPhone} onChange={(v:any) => setNewLead({...newLead, secondary_phone: v})} placeholder="(00) 0000-0000" />
+                  <InputField label="E-mail" type="email" value={newLead.email} onChange={(v:any) => setNewLead({...newLead, email: v})} placeholder="exemplo@email.com" />
+                </div>
+              </div>
+
+              {/* ENDEREÇO */}
+              <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                <SectionHeader icon={Icons.MapPin} title="Endereço" colorClass="bg-orange-50 text-orange-600" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                  <InputField label="CEP" value={newLead.address_zip} mask={formatCEP} onChange={(v:any) => handleCEPChange(v)} placeholder="00000-000" />
+                  <div className="lg:col-span-2">
+                    <InputField label="Logradouro / Rua" value={newLead.address_street} onChange={(v:any) => setNewLead({...newLead, address_street: v})} />
+                  </div>
+                  <InputField label="Número" value={newLead.address_number} onChange={(v:any) => setNewLead({...newLead, address_number: v})} />
+                  <InputField label="UF / Estado" value={newLead.address_state} onChange={(v:any) => setNewLead({...newLead, address_state: v})} />
+                  <div className="lg:col-span-2">
+                    <InputField label="Complemento / Apto / Bloco" value={newLead.address_complement} onChange={(v:any) => setNewLead({...newLead, address_complement: v})} />
+                  </div>
+                  <InputField label="Cidade" value={newLead.address_city} onChange={(v:any) => setNewLead({...newLead, address_city: v})} />
+                  <InputField label="Bairro" value={newLead.address_neighborhood} onChange={(v:any) => setNewLead({...newLead, address_neighborhood: v})} />
+                  <InputField label="Link Documentos" value={newLead.docs_link} onChange={(v:any) => setNewLead({...newLead, docs_link: v})} placeholder="G-Drive / Dropbox..." />
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* ================= PME FORM FLOW ================= */
+            <div className="space-y-8">
+              {/* DADOS DA EMPRESA */}
+              <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                <SectionHeader icon={Icons.Building2} title="Dados da Empresa" colorClass="bg-blue-50 text-blue-600" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <InputField label="CNPJ" value={newLead.cnpj} mask={formatCNPJ} onChange={(v:any) => handleCNPJChange(v)} placeholder="00.000.000/0000-00" required />
+                  <div className="md:col-span-2">
+                    <InputField label="Razão Social" value={newLead.company_name} onChange={(v:any) => setNewLead({...newLead, company_name: v, name: v})} required />
+                  </div>
+                  <InputField label="Nome Fantasia" value={newLead.nickname} onChange={(v:any) => setNewLead({...newLead, nickname: v})} />
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Tipo de Contato</label>
+                    <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" value={newLead.contact_type} onChange={e => setNewLead({...newLead, contact_type: e.target.value})}>
+                      <option value="">Selecione...</option>
+                      {contactTypes.filter(t => t.active).map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
+                    </select>
+                  </div>
+                  <InputField label="Origem Lead" value={newLead.source} onChange={(v:any) => setNewLead({...newLead, source: v})} />
+                </div>
+              </div>
+
+              {/* DADOS DO RESPONSÁVEL PELA EMPRESA */}
+              <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                <SectionHeader icon={Icons.Users} title="Responsável pela Empresa" colorClass="bg-indigo-50 text-indigo-600" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="lg:col-span-2">
+                    <InputField label="Nome Completo" value={newLead.resp_emp_name} onChange={(v:any) => setNewLead({...newLead, resp_emp_name: v, contact_person: v})} />
+                  </div>
+                  <InputField label="Cargo" value={newLead.resp_emp_job} onChange={(v:any) => setNewLead({...newLead, resp_emp_job: v, job_title: v})} />
+                  <InputField label="Data Nascimento" type="date" value={newLead.resp_emp_birth_date} onChange={(v:any) => setNewLead({...newLead, resp_emp_birth_date: v})} />
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Estado Civil</label>
+                    <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" value={newLead.resp_emp_marital_status} onChange={e => setNewLead({...newLead, resp_emp_marital_status: e.target.value})}>
+                      <option value="">Selecione...</option>
+                      <option value="Solteiro(a)">Solteiro(a)</option>
+                      <option value="Casado(a)">Casado(a)</option>
+                      <option value="Divorciado(a)">Divorciado(a)</option>
+                      <option value="Viúvo(a)">Viúvo(a)</option>
+                      <option value="União Estável">União Estável</option>
+                    </select>
+                  </div>
+                  <InputField label="Data Casamento" type="date" value={newLead.resp_emp_marriage_date} onChange={(v:any) => setNewLead({...newLead, resp_emp_marriage_date: v})} />
+                  <InputField label="CPF" value={newLead.resp_emp_cpf} mask={formatCPF} onChange={(v:any) => setNewLead({...newLead, resp_emp_cpf: v})} placeholder="000.000.000-00" />
+                  <InputField label="RG" value={newLead.resp_emp_rg} onChange={(v:any) => setNewLead({...newLead, resp_emp_rg: v})} />
+                  <InputField label="WhatsApp" value={newLead.resp_emp_whatsapp} mask={formatPhone} onChange={(v:any) => setNewLead({...newLead, resp_emp_whatsapp: v})} placeholder="(00) 00000-0000" />
+                  <InputField label="Telefone" value={newLead.resp_emp_phone} mask={formatPhone} onChange={(v:any) => setNewLead({...newLead, resp_emp_phone: v})} placeholder="(00) 0000-0000" />
+                  <InputField label="E-mail" type="email" value={newLead.resp_emp_email} onChange={(v:any) => setNewLead({...newLead, resp_emp_email: v})} placeholder="contato@empresa.com" />
+                </div>
+              </div>
+
+              {/* DADOS DO RESPONSÁVEL PELO CONTRATO */}
+              <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                <SectionHeader icon={Icons.FileText} title="Responsável pelo Contrato" colorClass="bg-emerald-50 text-emerald-600" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="lg:col-span-2">
+                    <InputField label="Nome Completo" value={newLead.resp_con_name} onChange={(v:any) => setNewLead({...newLead, resp_con_name: v})} />
+                  </div>
+                  <InputField label="Cargo" value={newLead.resp_con_job} onChange={(v:any) => setNewLead({...newLead, resp_con_job: v})} />
+                  <InputField label="Data Nascimento" type="date" value={newLead.resp_con_birth_date} onChange={(v:any) => setNewLead({...newLead, resp_con_birth_date: v})} />
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Estado Civil</label>
+                    <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" value={newLead.resp_con_marital_status} onChange={e => setNewLead({...newLead, resp_con_marital_status: e.target.value})}>
+                      <option value="">Selecione...</option>
+                      <option value="Solteiro(a)">Solteiro(a)</option>
+                      <option value="Casado(a)">Casado(a)</option>
+                      <option value="Divorciado(a)">Divorciado(a)</option>
+                      <option value="Viúvo(a)">Viúvo(a)</option>
+                      <option value="União Estável">União Estável</option>
+                    </select>
+                  </div>
+                  <InputField label="Data Casamento" type="date" value={newLead.resp_con_marriage_date} onChange={(v:any) => setNewLead({...newLead, resp_con_marriage_date: v})} />
+                  <InputField label="CPF" value={newLead.resp_con_cpf} mask={formatCPF} onChange={(v:any) => setNewLead({...newLead, resp_con_cpf: v})} placeholder="000.000.000-00" />
+                  <InputField label="RG" value={newLead.resp_con_rg} onChange={(v:any) => setNewLead({...newLead, resp_con_rg: v})} />
+                  <InputField label="WhatsApp" value={newLead.resp_con_whatsapp} mask={formatPhone} onChange={(v:any) => setNewLead({...newLead, resp_con_whatsapp: v})} placeholder="(00) 00000-0000" />
+                  <InputField label="Telefone" value={newLead.resp_con_phone} mask={formatPhone} onChange={(v:any) => setNewLead({...newLead, resp_con_phone: v})} placeholder="(00) 0000-0000" />
+                  <InputField label="E-mail" type="email" value={newLead.resp_con_email} onChange={(v:any) => setNewLead({...newLead, resp_con_email: v})} placeholder="contato@empresa.com" />
+                </div>
+              </div>
+
+              {/* ENDEREÇO DA EMPRESA */}
+              <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                <SectionHeader icon={Icons.MapPin} title="Endereço da Empresa" colorClass="bg-orange-50 text-orange-600" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                  <InputField label="CEP" value={newLead.address_zip} mask={formatCEP} onChange={(v:any) => handleCEPChange(v)} placeholder="00000-000" />
+                  <div className="lg:col-span-2">
+                    <InputField label="Logradouro / Rua" value={newLead.address_street} onChange={(v:any) => setNewLead({...newLead, address_street: v})} />
+                  </div>
+                  <InputField label="Número" value={newLead.address_number} onChange={(v:any) => setNewLead({...newLead, address_number: v})} />
+                  <InputField label="UF / Estado" value={newLead.address_state} onChange={(v:any) => setNewLead({...newLead, address_state: v})} />
+                  <div className="lg:col-span-2">
+                    <InputField label="Complemento / Apto / Bloco" value={newLead.address_complement} onChange={(v:any) => setNewLead({...newLead, address_complement: v})} />
+                  </div>
+                  <InputField label="Cidade" value={newLead.address_city} onChange={(v:any) => setNewLead({...newLead, address_city: v})} />
+                  <InputField label="Bairro" value={newLead.address_neighborhood} onChange={(v:any) => setNewLead({...newLead, address_neighborhood: v})} />
+                  <InputField label="Link Documentos" value={newLead.docs_link} onChange={(v:any) => setNewLead({...newLead, docs_link: v})} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ================= COMMON SECTIONS (Plano Atual & Proposta) ================= */}
+          <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+            <SectionHeader icon={Icons.Target} title="Plano Atual" colorClass="bg-amber-50 text-amber-600" />
+            <div className="space-y-6">
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-3 ml-1">Tem plano atualmente?</label>
+                <div className="flex gap-4">
+                  <button type="button" onClick={() => setNewLead({...newLead, has_current_plan: true})} className={cn("flex-1 py-4 rounded-2xl font-bold transition-all border-2", newLead.has_current_plan ? "bg-amber-50 border-amber-500 text-amber-600 shadow-lg shadow-amber-100" : "bg-slate-50 border-transparent text-slate-400")}>Sim, possui</button>
+                  <button type="button" onClick={() => setNewLead({...newLead, has_current_plan: false})} className={cn("flex-1 py-4 rounded-2xl font-bold transition-all border-2", !newLead.has_current_plan ? "bg-slate-900 border-slate-900 text-white" : "bg-slate-50 border-transparent text-slate-400")}>Não possui</button>
+                </div>
+              </div>
+
+              <AnimatePresence>
+                {newLead.has_current_plan && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-4 border-t border-slate-100">
+                    <InputField label="Operadora Atual" value={newLead.current_carrier} onChange={(v:any) => setNewLead({...newLead, current_carrier: v})} />
+                    <InputField label="Produto Atual" value={newLead.current_product} onChange={(v:any) => setNewLead({...newLead, current_product: v})} />
+                    <InputField label="Qtde Vidas" type="number" value={newLead.current_lives} onChange={(v:any) => setNewLead({...newLead, current_lives: v})} />
+                    <InputField label="Valor Pago Atual" type="number" value={newLead.current_value} onChange={(v:any) => setNewLead({...newLead, current_value: v})} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
-          {/* Seção Perfil e Produto (Full Width na parte inferior) */}
           <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-             <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-8">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <Icons.FileText className="w-5 h-5 text-blue-600" />
-              </div>
-              <h4 className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-400">Produto e Plano de Interesse</h4>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <SectionHeader icon={Icons.FileText} title="Proposta Novo Plano" colorClass="bg-blue-50 text-blue-600" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Operadora / Carrier</label>
-                <input 
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                  placeholder="Ex: SulAmérica"
-                  value={newLead.carrier}
-                  onChange={e => setNewLead({...newLead, carrier: e.target.value})}
-                />
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Status no Funil</label>
+                <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" value={newLead.status} onChange={e => setNewLead({...newLead, status: e.target.value})}>
+                  {stages.map(s => <option key={s.id} value={s.name}>{s.label}</option>)}
+                </select>
               </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Produto específico</label>
-                <input 
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                  placeholder="Ex: Top Nacional Plus"
-                  value={newLead.product}
-                  onChange={e => setNewLead({...newLead, product: e.target.value})}
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Vidas Estimadas</label>
-                <input 
-                  type="number"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-                  value={newLead.current_lives}
-                  onChange={e => setNewLead({...newLead, current_lives: Number(e.target.value)})}
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Link de Documentos</label>
-                <input 
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 transition-all text-sm font-bold text-blue-600"
-                  placeholder="https://drive.google.com/..."
-                  value={newLead.docs_link}
-                  onChange={e => setNewLead({...newLead, docs_link: e.target.value})}
-                />
-              </div>
+              <InputField label="Operadora Proposta" value={newLead.carrier} onChange={(v:any) => setNewLead({...newLead, carrier: v})} />
+              <InputField label="Produto Proposta" value={newLead.product} onChange={(v:any) => setNewLead({...newLead, product: v})} />
+              <InputField label="Qtde Vidas" type="number" value={newLead.interested_lives} onChange={(v:any) => setNewLead({...newLead, interested_lives: v})} />
+              <InputField label="Valor Proposta" type="number" value={newLead.deal_value} onChange={(v:any) => setNewLead({...newLead, deal_value: v})} />
             </div>
           </div>
 
