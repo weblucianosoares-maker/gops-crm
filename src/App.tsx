@@ -34,7 +34,7 @@ function AppContent() {
       <Sidebar isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} />
       <div className="flex-1 md:ml-64 flex flex-col min-w-0 w-full">
         <TopBar title={getTitle(location.pathname)} onMenuClick={() => setIsMobileMenuOpen(true)} />
-        <main className="flex-1">
+        <main className="flex-1 overflow-y-auto custom-scrollbar">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/leads" element={<Leads />} />

@@ -445,9 +445,9 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-hidden relative bg-slate-50">
+        <div className="flex-1 overflow-y-auto relative bg-slate-50 custom-scrollbar">
           {activeTab === 'details' ? (
-            <div className="absolute inset-0 overflow-y-auto p-8 space-y-8 custom-scrollbar bg-white">
+            <div className="p-8 space-y-8 bg-white">
                {/* Tipo de Lead e Identificação */}
                <section className="space-y-6">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -575,7 +575,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
                </section>
             </div>
           ) : (
-            <div className="absolute inset-0 flex flex-col bg-[#efe7de]">
+            <div className="h-full flex flex-col bg-[#efe7de]">
                {/* Messages Container */}
                <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 flex flex-col custom-scrollbar scroll-smooth">
                   {messages.map((msg, idx) => (
