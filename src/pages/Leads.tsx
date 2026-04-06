@@ -7,6 +7,7 @@ import Papa from "papaparse";
 import { supabase } from "../lib/supabase";
 import { useLeads } from "../lib/leadsContext";
 import { LeadDetailDrawer } from "../components/LeadDetailDrawer";
+import { LeadCreateScreen } from "../components/LeadCreateScreen";
 import { useToast } from "../components/Toasts";
 
 export default function Leads() {
@@ -20,25 +21,10 @@ export default function Leads() {
   const [perPage, setPerPage] = useState(10);
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [selectedLead, setSelectedLead] = useState<any>(null);
   const [leadToDelete, setLeadToDelete] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [newLead, setNewLead] = useState({ 
-    name: '', email: '', phone: '', source: 'Manual', status: stages[0]?.name || 'Novo', contact_type: '',
-    has_current_plan: false, interested_lives: 1, current_lives: 0,
-    current_carrier: '', current_product: '', current_value: 0,
-    rg: '', address_zip: '', address_street: '', address_neighborhood: '',
-    address_city: '', address_state: '', address_number: '', address_complement: '',
-    docs_link: '', product: '', carrier: '', nickname: '', has_cnpj: false, is_mei: false, cnpj: '',
-    lead_type: 'PF' as 'PF' | 'PJ',
-    company_name: '',
-    contact_person: '',
-    job_title: '',
-    birth_date: '',
-    marriage_date: ''
-  });
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -171,131 +157,6 @@ export default function Leads() {
     });
   };
 
-  const handleCEPChange = async (cep: string) => {
-    const cleanCEP = cep.replace(/\D/g, "");
-    setNewLead(prev => ({ ...prev, address_zip: cep }));
-    
-    if (cleanCEP.length === 8) {
-      try {
-        const response = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`);
-        const data = await response.json();
-        if (!data.erro) {
-          setNewLead(prev => ({
-            ...prev,
-            address_street: data.logradouro,
-            address_neighborhood: data.bairro,
-            address_city: data.localidade,
-            address_state: data.uf,
-            address_zip: cep
-          }));
-        }
-      } catch (e) {
-        console.error("Erro ao buscar CEP:", e);
-      }
-    }
-  };
-
-  const handleCNPJChange = async (cnpj: string) => {
-    const cleanCNPJ = cnpj.replace(/\D/g, "");
-    setNewLead(prev => ({ ...prev, cnpj: cnpj }));
-    
-    if (cleanCNPJ.length === 14) {
-      try {
-        const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCNPJ}`);
-        const data = await response.json();
-        if (response.ok && !data.error) {
-          setNewLead(prev => ({
-            ...prev,
-            company_name: data.razao_social,
-            name: data.razao_social,
-            nickname: data.nome_fantasia || prev.nickname,
-            cnpj: cnpj
-          }));
-        }
-      } catch (e) {
-        console.error("Erro ao buscar CNPJ:", e);
-      }
-    }
-  };
-
-  const handleCreateLead = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-    
-    const normalizedPhone = newLead.phone.replace(/\D/g, '');
-    if (normalizedPhone) {
-      const isDuplicate = leads.some((l: any) => l.phone && l.phone.replace(/\D/g, '') === normalizedPhone);
-      if (isDuplicate) {
-        showToast("Já existe um lead cadastrado com este telefone!", "warning");
-        setIsSaving(false);
-        return;
-      }
-    }
-    
-    const parts = newLead.name.split(' ').filter(Boolean);
-    let initials = 'SN';
-    if (parts.length > 1) {
-      initials = (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    } else if (newLead.name) {
-      initials = newLead.name.substring(0, 2).toUpperCase();
-    }
-
-    const { error: supabaseError } = await supabase.from('leads').insert([{
-      name: newLead.name,
-      email: newLead.email,
-      phone: normalizedPhone,
-      source: newLead.source,
-      status: newLead.status,
-      initials: initials,
-      lastcontact: null,
-      birthday: false,
-      current_lives: newLead.current_lives,
-      current_carrier: newLead.current_carrier,
-      current_product: newLead.current_product,
-      current_value: newLead.current_value,
-      rg: newLead.rg,
-      address_zip: newLead.address_zip,
-      address_street: newLead.address_street,
-      address_neighborhood: newLead.address_neighborhood,
-      address_city: newLead.address_city,
-      address_state: newLead.address_state,
-      address_number: newLead.address_number,
-      address_complement: newLead.address_complement,
-      docs_link: newLead.docs_link,
-      product: newLead.product,
-      carrier: newLead.carrier,
-      nickname: newLead.nickname,
-      has_cnpj: newLead.has_cnpj,
-      is_mei: newLead.is_mei,
-      cnpj: newLead.cnpj,
-      contact_type: newLead.contact_type,
-      lead_type: newLead.lead_type,
-      company_name: newLead.company_name,
-      contact_person: newLead.contact_person,
-      job_title: newLead.job_title,
-      birth_date: newLead.birth_date || null,
-      marriage_date: newLead.marriage_date || null
-    }]);
-
-    setIsSaving(false);
-    
-    if (supabaseError) {
-      error("Erro ao salvar lead: " + supabaseError.message);
-    } else {
-      success("Lead cadastrado com sucesso!");
-      setIsModalOpen(false);
-      setNewLead({ 
-        name: '', email: '', phone: '', source: 'Manual', status: stages[0]?.name || 'Novo', contact_type: '',
-        has_current_plan: false, interested_lives: 1, current_lives: 0,
-        current_carrier: '', current_product: '', current_value: 0,
-        rg: '', address_zip: '', address_street: '', address_neighborhood: '',
-        address_city: '', address_state: '', address_number: '', address_complement: '',
-        docs_link: '', product: '', carrier: '', nickname: '', has_cnpj: false, is_mei: false, cnpj: '',
-        lead_type: 'PF', company_name: '', contact_person: '', job_title: '', birth_date: '', marriage_date: ''
-      });
-      fetchLeads();
-    }
-  };
 
   const handleDeleteLead = async () => {
     if (!leadToDelete) return;
@@ -399,7 +260,7 @@ export default function Leads() {
   return (
     <div className="px-8 pb-8 pt-2 space-y-8">
       {/* Popup de Resultado da Importação */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {importResult && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
             <motion.div 
@@ -443,7 +304,7 @@ export default function Leads() {
       </AnimatePresence>
 
       {/* Modal de Confirmação de Exclusão */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {leadToDelete && (
           <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
             <motion.div 
@@ -469,7 +330,7 @@ export default function Leads() {
                     disabled={isDeleting}
                     className="w-full py-4 bg-red-600 text-white font-black uppercase text-xs tracking-widest rounded-xl hover:bg-red-700 transition-all shadow-lg shadow-red-200 disabled:opacity-50 flex items-center justify-center gap-2"
                   >
-                    {isDeleting ? <Icons.Upload className="w-4 h-4 animate-spin" /> : "Sim, Excluir Lead"}
+                    {isDeleting ? <Icons.Loader2 className="w-4 h-4 animate-spin" /> : "Sim, Excluir Lead"}
                   </button>
                   <button 
                     onClick={() => setLeadToDelete(null)}
@@ -529,6 +390,7 @@ export default function Leads() {
           </div>
         </div>
       </div>
+
       {/* Filters & Search Section */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-1.5 hover:border-blue-300 transition-colors">
@@ -762,465 +624,16 @@ export default function Leads() {
         )}
       </AnimatePresence>
 
-      {/* Modal Novo Lead */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col"
-          >
-            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <h3 className="text-lg font-bold text-slate-800">Cadastrar Novo Lead</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
-                <Icons.X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <form onSubmit={handleCreateLead} className="p-6 space-y-6 overflow-y-auto max-h-[85vh] custom-scrollbar">
-              {/* Seletor de Tipo de Lead */}
-              <div className="flex p-1 bg-slate-100 rounded-xl relative">
-                <button 
-                  type="button"
-                  onClick={() => setNewLead({ ...newLead, lead_type: 'PF', has_cnpj: false })}
-                  className={cn(
-                    "flex-1 relative z-10 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all duration-300",
-                    newLead.lead_type === 'PF' ? "text-blue-600" : "text-slate-400 hover:text-slate-600"
-                  )}
-                >
-                  Pessoa Física
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setNewLead({ ...newLead, lead_type: 'PJ', has_cnpj: true })}
-                  className={cn(
-                    "flex-1 relative z-10 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all duration-300",
-                    newLead.lead_type === 'PJ' ? "text-blue-600" : "text-slate-400 hover:text-slate-600"
-                  )}
-                >
-                  Corporativo (PJ)
-                </button>
-                <motion.div 
-                  layoutId="lead-type-active"
-                  className="absolute inset-y-1 bg-white rounded-lg shadow-sm border border-black/5"
-                  style={{ 
-                    width: 'calc(50% - 4px)',
-                    left: newLead.lead_type === 'PF' ? '4px' : 'calc(50%)'
-                  }}
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                />
-              </div>
-
-              {/* Seção: Dados de Identificação */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-                  {newLead.lead_type === 'PJ' ? <Icons.Building2 className="w-4 h-4 text-blue-600" /> : <Icons.Leads className="w-4 h-4 text-blue-600" />}
-                  <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400">
-                    {newLead.lead_type === 'PJ' ? "Dados da Empresa" : "Dados Pessoais"}
-                  </h4>
-                </div>
-
-                {newLead.lead_type === 'PJ' ? (
-                  <>
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Razão Social / Nome da Empresa</label>
-                      <input 
-                        required
-                        type="text" 
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                        placeholder="Ex: Efraim Consultoria LTDA"
-                        value={newLead.company_name}
-                        onChange={e => setNewLead({...newLead, company_name: e.target.value, name: e.target.value})}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">CNPJ</label>
-                      <input 
-                        required
-                        type="text" 
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                        placeholder="00.000.000/0000-00"
-                        value={newLead.cnpj}
-                        onChange={e => handleCNPJChange(e.target.value)}
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Nome do Responsável</label>
-                        <input 
-                          required
-                          type="text" 
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                          placeholder="Ex: Maria Souza"
-                          value={newLead.contact_person}
-                          onChange={e => setNewLead({...newLead, contact_person: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Cargo</label>
-                         <select 
-                           required
-                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                           value={newLead.job_title}
-                           onChange={e => setNewLead({...newLead, job_title: e.target.value})}
-                         >
-                           <option value="">Selecione o cargo</option>
-                           {jobTitles.map(jt => (
-                             <option key={jt.id} value={jt.name}>{jt.name}</option>
-                           ))}
-                           <option value="Outro">Outro...</option>
-                         </select>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Nome Completo</label>
-                      <input 
-                        required
-                        type="text" 
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                        placeholder="Ex: João da Silva"
-                        value={newLead.name}
-                        onChange={e => setNewLead({...newLead, name: e.target.value})}
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Data Nascimento</label>
-                        <input 
-                          type="date" 
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                          value={newLead.birth_date}
-                          onChange={e => setNewLead({...newLead, birth_date: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Data Casamento</label>
-                         <input 
-                           type="date" 
-                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                           value={newLead.marriage_date}
-                           onChange={e => setNewLead({...newLead, marriage_date: e.target.value})}
-                         />
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {newLead.lead_type === 'PF' && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">RG</label>
-                      <input 
-                        type="text" 
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                        placeholder="00.000.000-0"
-                        value={newLead.rg}
-                        onChange={e => setNewLead({...newLead, rg: e.target.value})}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Informações Adic.</label>
-                      <input 
-                        type="text" 
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                        placeholder="Ex: Apelido"
-                        value={newLead.nickname}
-                        onChange={e => setNewLead({...newLead, nickname: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Seção: Contato */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-                  <Icons.Phone className="w-4 h-4 text-blue-600" />
-                  <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400">Contato</h4>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Telefone</label>
-                    <input 
-                      required
-                      type="text" 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                      placeholder="(00) 00000-0000"
-                      value={newLead.phone}
-                      onChange={e => setNewLead({...newLead, phone: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">E-mail</label>
-                    <input 
-                      type="email" 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                      placeholder="joao@email.com"
-                      value={newLead.email}
-                      onChange={e => setNewLead({...newLead, email: e.target.value})}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Seção: Endereço */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-                  <Icons.MapPin className="w-4 h-4 text-blue-600" />
-                  <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400">Endereço</h4>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="col-span-1">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">CEP</label>
-                    <input 
-                      type="text" 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                      placeholder="00000-000"
-                      value={newLead.address_zip}
-                      onChange={e => handleCEPChange(e.target.value)}
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Rua / Logradouro</label>
-                    <input 
-                      type="text" 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                      value={newLead.address_street}
-                      onChange={e => setNewLead({...newLead, address_street: e.target.value})}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Número</label>
-                    <input 
-                      type="text" 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                      placeholder="123"
-                      value={newLead.address_number}
-                      onChange={e => setNewLead({...newLead, address_number: e.target.value})}
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Complemento</label>
-                    <input 
-                      type="text" 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                      placeholder="Apto, Bloco, etc."
-                      value={newLead.address_complement}
-                      onChange={e => setNewLead({...newLead, address_complement: e.target.value})}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Bairro</label>
-                    <input 
-                      type="text" 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                      value={newLead.address_neighborhood}
-                      onChange={e => setNewLead({...newLead, address_neighborhood: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Cidade / UF</label>
-                    <div className="flex gap-2">
-                       <input 
-                        type="text" 
-                        className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                        value={newLead.address_city}
-                        onChange={e => setNewLead({...newLead, address_city: e.target.value})}
-                      />
-                      <input 
-                        type="text" 
-                        maxLength={2}
-                        className="w-12 bg-slate-50 border border-slate-200 rounded-xl px-2 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900 text-center uppercase"
-                        value={newLead.address_state}
-                        onChange={e => setNewLead({...newLead, address_state: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Seção: Perfil do Plano */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-                  <Icons.Target className="w-4 h-4 text-blue-600" />
-                  <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400">Perfil do Plano</h4>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Operadora</label>
-                    <input 
-                      type="text" 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                      placeholder="Ex: Unimed"
-                      value={newLead.carrier}
-                      onChange={e => setNewLead({...newLead, carrier: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Produto</label>
-                    <input 
-                      type="text" 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                      placeholder="Ex: Regional"
-                      value={newLead.product}
-                      onChange={e => setNewLead({...newLead, product: e.target.value})}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Tipo de Contato</label>
-                    <select 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-700"
-                      value={newLead.contact_type || ""}
-                      onChange={e => setNewLead({...newLead, contact_type: e.target.value})}
-                    >
-                      <option value="">Não definido</option>
-                      {contactTypes?.filter(t => t.active).map(t => (
-                        <option key={t.id} value={t.name}>{t.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Origem</label>
-                    <input 
-                      type="text" 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                      value={newLead.source}
-                      onChange={e => setNewLead({...newLead, source: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Status</label>
-                    <select 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                      value={newLead.status}
-                      onChange={e => setNewLead({...newLead, status: e.target.value})}
-                    >
-                      {stages.map(s => (
-                        <option key={s.id} value={s.name}>{s.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Link Docs (Drive)</label>
-                  <input 
-                    type="text" 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-blue-600"
-                    placeholder="https://drive.google.com/..."
-                    value={newLead.docs_link}
-                    onChange={e => setNewLead({...newLead, docs_link: e.target.value})}
-                  />
-                </div>
-              </div>
-
-              {/* Seção Situação Atual */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-                  <Icons.Info className="w-4 h-4 text-blue-600" />
-                  <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400">Situação Atual</h4>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Possui Plano?</label>
-                    <select 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                      value={newLead.has_current_plan ? "Sim" : "Não"}
-                      onChange={e => setNewLead({...newLead, has_current_plan: e.target.value === "Sim"})}
-                    >
-                      <option value="Não">Não</option>
-                      <option value="Sim">Sim</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Vidas Int.</label>
-                    <input 
-                      type="number" 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-900"
-                      value={newLead.interested_lives}
-                      min={1}
-                      onChange={e => setNewLead({...newLead, interested_lives: parseInt(e.target.value) || 1})}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {newLead.has_current_plan && (
-                <div className="pt-4 mt-2 border-t border-slate-100 space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Operadora Atual</label>
-                      <input 
-                        type="text" 
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-medium"
-                        placeholder="Ex: SulAmérica"
-                        value={newLead.current_carrier}
-                        onChange={e => setNewLead({...newLead, current_carrier: e.target.value})}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Produto Atual</label>
-                      <input 
-                        type="text" 
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-medium"
-                        placeholder="Ex: Top Nacional"
-                        value={newLead.current_product}
-                        onChange={e => setNewLead({...newLead, current_product: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Vidas Atuais</label>
-                      <input 
-                        type="number" 
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-medium"
-                        value={newLead.current_lives}
-                        onChange={e => setNewLead({...newLead, current_lives: parseInt(e.target.value) || 0})}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Valor Pago R$</label>
-                      <input 
-                        type="number" 
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-medium"
-                        placeholder="0.00"
-                        value={newLead.current_value || ""}
-                        onChange={e => setNewLead({...newLead, current_value: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="pt-4 mt-2 border-t border-slate-100 flex justify-end gap-3">
-                <button 
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-2.5 text-sm font-bold text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button 
-                  type="submit"
-                  disabled={isSaving}
-                  className="px-5 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center min-w-[120px] shadow-sm"
-                >
-                  {isSaving ? <Icons.Upload className="w-4 h-4 animate-spin" /> : "Salvar Lead"}
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
+      {/* Tela Novo Lead (Full Screen) */}
+      <AnimatePresence mode="wait">
+        {isModalOpen && (
+          <LeadCreateScreen 
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onSuccess={fetchLeads}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
