@@ -23,6 +23,7 @@ interface LeadCreateScreenProps {
      plan_type: 'Saúde' as 'Saúde' | 'Odonto' | 'Saúde + Odonto',
      has_current_plan: false, interested_lives: 1, current_lives: 0,
      current_carrier: '', current_product: '', current_value: 0,
+     contract_expiry_date: '', has_broker: false,
      rg: '', cpf: '', marital_status: '',
      address_zip: '', address_street: '', address_neighborhood: '',
      address_city: '', address_state: '', address_number: '', address_complement: '',
@@ -135,6 +136,8 @@ interface LeadCreateScreenProps {
       current_carrier: newLead.current_carrier,
       current_product: newLead.current_product,
       current_value: newLead.current_value,
+      contract_expiry_date: newLead.contract_expiry_date || null,
+      has_broker: !!newLead.has_broker,
       rg: newLead.rg,
       cpf: newLead.cpf.replace(/\D/g, ''),
       marital_status: newLead.marital_status,
@@ -487,11 +490,23 @@ interface LeadCreateScreenProps {
 
                      <AnimatePresence>
                        {newLead.has_current_plan && (
-                         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-4 border-t border-slate-100">
-                           <InputField label="Operadora Atual" value={newLead.current_carrier} onChange={(v:any) => setNewLead({...newLead, current_carrier: v})} />
-                           <InputField label="Produto Atual" value={newLead.current_product} onChange={(v:any) => setNewLead({...newLead, current_product: v})} />
-                           <InputField label="Qtde Vidas" type="number" value={newLead.current_lives} onChange={(v:any) => setNewLead({...newLead, current_lives: v})} />
-                           <InputField label="Valor Pago Atual" type="number" value={newLead.current_value} onChange={(v:any) => setNewLead({...newLead, current_value: v})} />
+                         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="pt-4 border-t border-slate-100 grid gap-6">
+                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                              <InputField label="Operadora Atual" value={newLead.current_carrier} onChange={(v:any) => setNewLead({...newLead, current_carrier: v})} />
+                              <InputField label="Produto Atual" value={newLead.current_product} onChange={(v:any) => setNewLead({...newLead, current_product: v})} />
+                              <InputField label="Qtde Vidas" type="number" value={newLead.current_lives} onChange={(v:any) => setNewLead({...newLead, current_lives: Number(v)})} />
+                              <InputField label="Valor Pago Atual" type="number" value={newLead.current_value} onChange={(v:any) => setNewLead({...newLead, current_value: Number(v)})} />
+                           </div>
+                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                              <InputField label="Vencimento Contrato" type="date" value={newLead.contract_expiry_date} onChange={(v:any) => setNewLead({...newLead, contract_expiry_date: v})} />
+                              <div className="space-y-4">
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Tem Corretor?</label>
+                                <div className="flex gap-3">
+                                  <button type="button" onClick={() => setNewLead({...newLead, has_broker: true})} className={cn("flex-1 py-3.5 rounded-xl font-bold text-xs transition-all border-2", newLead.has_broker ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-100" : "bg-slate-50 border-transparent text-slate-400")}>Sim, possui</button>
+                                  <button type="button" onClick={() => setNewLead({...newLead, has_broker: false})} className={cn("flex-1 py-3.5 rounded-xl font-bold text-xs transition-all border-2", !newLead.has_broker ? "bg-slate-700 border-slate-700 text-white" : "bg-white border-slate-200 text-slate-400")}>Não possui</button>
+                                </div>
+                              </div>
+                           </div>
                          </motion.div>
                        )}
                      </AnimatePresence>
@@ -558,8 +573,8 @@ interface LeadCreateScreenProps {
                           </select>
                         </div>
 
-                        <InputField label="Qtde Vidas" type="number" value={newLead.interested_lives} onChange={(v:any) => setNewLead({...newLead, interested_lives: v})} />
-                        <InputField label="Valor Proposta" type="number" value={newLead.deal_value} onChange={(v:any) => setNewLead({...newLead, deal_value: v})} />
+                        <InputField label="Qtde Vidas" type="number" value={newLead.interested_lives} onChange={(v:any) => setNewLead({...newLead, interested_lives: Number(v)})} />
+                        <InputField label="Valor Proposta" type="number" value={newLead.deal_value} onChange={(v:any) => setNewLead({...newLead, deal_value: Number(v)})} />
                       </div>
                     </div>
                   </div>

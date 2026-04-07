@@ -122,7 +122,7 @@ const MediaMessage = ({ msg }: { msg: any }) => {
              </button>
           )}
         </div>
-        {msg.text && <p className="whitespace-pre-wrap text-slate-800 font-medium">{msg.text}</p>}
+        {msg.text && <p className="whitespace-pre-wrap text-slate-800 font-medium">{msg.text || ""}</p>}
       </div>
     );
   }
@@ -149,7 +149,7 @@ const DetailField = ({ label, value, onChange, placeholder, type = "text", mask,
         onChange={e => onChange(e.target.value)}
       >
         <option value="">Selecione...</option>
-        {selectOptions.map((opt:any) => <option key={opt.id || opt} value={opt.value || opt.name || opt}>{opt.label || opt.name || opt}</option>)}
+        {selectOptions.map((opt:any) => <option key={opt.id || opt} value={opt.value !== undefined ? opt.value : (opt.name || opt)}>{opt.label || opt.name || opt}</option>)}
       </select>
     ) : (
       <input 
@@ -325,6 +325,10 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
       current_lives: lead.current_lives, current_value: lead.current_value, docs_link: lead.docs_link,
       plan_type: lead.plan_type, carrier: lead.carrier, product: lead.product,
       interested_lives: lead.interested_lives, deal_value: lead.deal_value,
+      has_current_plan: lead.has_current_plan,
+      contract_expiry_date: lead.contract_expiry_date || null,
+      has_broker: !!lead.has_broker,
+      // PME Data
       resp_emp_name: lead.resp_emp_name, resp_emp_job: lead.resp_emp_job, resp_emp_birth_date: lead.resp_emp_birth_date || null,
       resp_emp_marital_status: lead.resp_emp_marital_status, resp_emp_marriage_date: lead.resp_emp_marriage_date || null,
       resp_emp_cpf: lead.resp_emp_cpf?.replace(/\D/g, ''), resp_emp_rg: lead.resp_emp_rg,
@@ -359,7 +363,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
             <div>
               <h2 className="text-xl font-black text-slate-900 leading-tight">{lead.name || "Sem Nome"}</h2>
               <div className="flex items-center gap-2 mt-1">
-                 <span className="px-2 py-0.5 bg-slate-200 rounded text-[9px] font-black uppercase text-slate-500 tracking-tighter">{lead.lead_type || 'PF'}</span>
+                 <span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded text-[9px] font-black uppercase tracking-tighter">{lead.lead_type || 'PF'}</span>
                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{stages.find(s => s.name === lead.status)?.label || lead.status}</span>
               </div>
             </div>
@@ -389,13 +393,21 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
                <section>
                   <SectionHeader icon={Icons.Users} title="Identificação do Lead" colorClass="bg-blue-50 text-blue-600" />
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <div>
+                      <DetailField 
+                        label="Categoria / Perfil" 
+                        value={lead.lead_type || 'PF'} 
+                        selectOptions={[{ value: 'PF', label: 'Pessoa Física (PF)' }, { value: 'PJ', label: 'Corporativo (PME)' }]} 
+                        onChange={(v:any) => setLead({...lead, lead_type: v})} 
+                      />
+                    </div>
                     <div className="md:col-span-2">
                        <DetailField label={lead.lead_type === 'PJ' ? "Razão Social" : "Nome Completo"} value={lead.name} onChange={(v:any) => setLead({...lead, name: v, company_name: lead.lead_type === 'PJ' ? v : lead.company_name})} />
                     </div>
                     <DetailField label="Apelido / Fantasia" value={lead.nickname} onChange={(v:any) => setLead({...lead, nickname: v})} />
                     <DetailField label={lead.lead_type === 'PJ' ? "CNPJ" : "CPF"} value={lead.lead_type === 'PJ' ? lead.cnpj : lead.cpf} mask={lead.lead_type === 'PJ' ? formatCNPJ : formatCPF} onChange={(v:any) => setLead({...lead, [lead.lead_type === 'PJ' ? 'cnpj' : 'cpf']: v})} />
                     <DetailField label="RG" value={lead.rg} onChange={(v:any) => setLead({...lead, rg: v})} />
-                    <DetailField label="Status Atual" value={lead.status} selectOptions={stages.map(s => ({ value: s.name, label: s.label }))} onChange={(v:any) => setLead({...lead, status: v})} />
+                    <DetailField label="Status Fluxo" value={lead.status} selectOptions={stages.map(s => ({ value: s.name, label: s.label }))} onChange={(v:any) => setLead({...lead, status: v})} />
                     <DetailField label="Data Nascimento" type="date" value={lead.birth_date} onChange={(v:any) => setLead({...lead, birth_date: v})} />
                     <DetailField label="Estado Civil" value={lead.marital_status} selectOptions={['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União Estável']} onChange={(v:any) => setLead({...lead, marital_status: v})} />
                     <DetailField label="Data Casamento" type="date" value={lead.marriage_date} onChange={(v:any) => setLead({...lead, marriage_date: v})} />
@@ -454,18 +466,40 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
                {/* Plano Atual & Proposta */}
                <section className="space-y-10">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                    <div className="space-y-6">
-                       <SectionHeader icon={Icons.Target} title="Plano Atual" colorClass="bg-amber-50 text-amber-600" />
-                       <div className="space-y-5">
-                          <DetailField label="Operadora Atual" value={lead.current_carrier} onChange={(v:any) => setLead({...lead, current_carrier: v})} />
-                          <DetailField label="Produto Atual" value={lead.current_product} onChange={(v:any) => setLead({...lead, current_product: v})} />
-                          <div className="grid grid-cols-2 gap-4">
-                             <DetailField label="Vidas" type="number" value={lead.current_lives} onChange={(v:any) => setLead({...lead, current_lives: Number(v)})} />
-                             <DetailField label="Valor Atual" type="number" value={lead.current_value} onChange={(v:any) => setLead({...lead, current_value: Number(v)})} />
+                    <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100">
+                       <SectionHeader icon={Icons.Target} title="Plano Atual" colorClass="bg-amber-100 text-amber-700" />
+                       <div className="space-y-6">
+                          <div className="space-y-2">
+                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">Possui plano atualmente?</label>
+                            <div className="flex gap-2">
+                               <button onClick={() => setLead({...lead, has_current_plan: true})} className={cn("flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border-2 transition-all", lead.has_current_plan ? "bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-100" : "bg-white border-slate-200 text-slate-400")}>Sim</button>
+                               <button onClick={() => setLead({...lead, has_current_plan: false})} className={cn("flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border-2 transition-all", !lead.has_current_plan ? "bg-slate-800 border-slate-800 text-white" : "bg-white border-slate-200 text-slate-400")}>Não</button>
+                            </div>
                           </div>
+                          
+                          {lead.has_current_plan && (
+                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5 pt-4 border-t border-slate-200">
+                               <DetailField label="Operadora Atual" value={lead.current_carrier} onChange={(v:any) => setLead({...lead, current_carrier: v})} />
+                               <DetailField label="Produto Atual" value={lead.current_product} onChange={(v:any) => setLead({...lead, current_product: v})} />
+                               <div className="grid grid-cols-2 gap-4">
+                                  <DetailField label="Vidas" type="number" value={lead.current_lives} onChange={(v:any) => setLead({...lead, current_lives: Number(v)})} />
+                                  <DetailField label="Valor Atual" type="number" value={lead.current_value} onChange={(v:any) => setLead({...lead, current_value: Number(v)})} />
+                               </div>
+                               <div className="grid grid-cols-2 gap-4">
+                                  <DetailField label="Vencimento Contrato" type="date" value={lead.contract_expiry_date} onChange={(v:any) => setLead({...lead, contract_expiry_date: v})} />
+                                  <div className="space-y-2">
+                                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">Tem Corretor?</label>
+                                     <div className="flex gap-2">
+                                        <button onClick={() => setLead({...lead, has_broker: true})} className={cn("flex-1 py-2 rounded-xl text-[9px] font-black uppercase border-2 transition-all", lead.has_broker ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-100" : "bg-white border-slate-200 text-slate-400 text-[8px]")}>Sim</button>
+                                        <button onClick={() => setLead({...lead, has_broker: false})} className={cn("flex-1 py-2 rounded-xl text-[9px] font-black uppercase border-2 transition-all", lead.has_broker === false ? "bg-slate-700 border-slate-700 text-white" : "bg-white border-slate-200 text-slate-400 text-[8px]")}>Não</button>
+                                     </div>
+                                  </div>
+                               </div>
+                            </motion.div>
+                          )}
                        </div>
                     </div>
-                    <div className="space-y-6">
+                    <div className="p-8 bg-white rounded-[2rem] border border-slate-100 shadow-sm">
                        <SectionHeader icon={Icons.FileText} title="Proposta Solicitada" colorClass="bg-blue-50 text-blue-600" />
                        <div className="space-y-5">
                           <div className="space-y-2">
