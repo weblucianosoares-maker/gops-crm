@@ -13,13 +13,14 @@ interface LeadCreateScreenProps {
 }
 
  export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScreenProps) {
-   const { stages, jobTitles, contactTypes } = useLeads();
+   const { stages, jobTitles, contactTypes, carriers, products } = useLeads();
    const { success, error, toast: showToast } = useToast();
    const [isSaving, setIsSaving] = useState(false);
    const [showSelection, setShowSelection] = useState(true);
    
    const [newLead, setNewLead] = useState({ 
      name: '', email: '', phone: '', secondary_phone: '', source: 'Manual', status: stages[0]?.name || 'Novo', contact_type: '',
+     plan_type: 'Saúde' as 'Saúde' | 'Odonto' | 'Saúde + Odonto',
      has_current_plan: false, interested_lives: 1, current_lives: 0,
      current_carrier: '', current_product: '', current_value: 0,
      rg: '', cpf: '', marital_status: '',
@@ -160,6 +161,7 @@ interface LeadCreateScreenProps {
       marriage_date: newLead.marriage_date || null,
       deal_value: newLead.deal_value,
       has_current_plan: newLead.has_current_plan,
+      plan_type: newLead.plan_type,
       // PME Data
       resp_emp_name: newLead.resp_emp_name,
       resp_emp_job: newLead.resp_emp_job,
@@ -497,20 +499,70 @@ interface LeadCreateScreenProps {
                  </div>
 
                  <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-                   <SectionHeader icon={Icons.FileText} title="Proposta Novo Plano" colorClass="bg-blue-50 text-blue-600" />
-                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                     <div>
-                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Status no Funil</label>
-                       <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" value={newLead.status} onChange={e => setNewLead({...newLead, status: e.target.value})}>
-                         {stages.map(s => <option key={s.id} value={s.name}>{s.label}</option>)}
-                       </select>
-                     </div>
-                     <InputField label="Operadora Proposta" value={newLead.carrier} onChange={(v:any) => setNewLead({...newLead, carrier: v})} />
-                     <InputField label="Produto Proposta" value={newLead.product} onChange={(v:any) => setNewLead({...newLead, product: v})} />
-                     <InputField label="Qtde Vidas" type="number" value={newLead.interested_lives} onChange={(v:any) => setNewLead({...newLead, interested_lives: v})} />
-                     <InputField label="Valor Proposta" type="number" value={newLead.deal_value} onChange={(v:any) => setNewLead({...newLead, deal_value: v})} />
-                   </div>
-                 </div>
+                    <SectionHeader icon={Icons.FileText} title="Proposta Novo Plano" colorClass="bg-blue-50 text-blue-600" />
+                    <div className="space-y-8">
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-4 ml-1">Tipo de Plano</label>
+                        <div className="flex flex-wrap gap-3">
+                          {['Saúde', 'Odonto', 'Saúde + Odonto'].map((type) => (
+                            <button
+                              key={type}
+                              type="button"
+                              onClick={() => setNewLead({ ...newLead, plan_type: type as any })}
+                              className={cn(
+                                "px-6 py-3 rounded-2xl font-bold transition-all border-2 text-sm",
+                                newLead.plan_type === type 
+                                  ? "bg-blue-50 border-blue-500 text-blue-600 shadow-md shadow-blue-100" 
+                                  : "bg-slate-50 border-transparent text-slate-400 hover:bg-slate-100"
+                              )}
+                            >
+                              {type}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Status no Funil</label>
+                          <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" value={newLead.status} onChange={e => setNewLead({...newLead, status: e.target.value})}>
+                            {stages.map(s => <option key={s.id} value={s.name}>{s.label}</option>)}
+                          </select>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Operadora Proposta</label>
+                          <select 
+                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" 
+                            value={newLead.carrier} 
+                            onChange={e => setNewLead({...newLead, carrier: e.target.value, product: ''})}
+                          >
+                            <option value="">Selecione...</option>
+                            {carriers.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Produto Proposta</label>
+                          <select 
+                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" 
+                            value={newLead.product} 
+                            disabled={!newLead.carrier}
+                            onChange={e => setNewLead({...newLead, product: e.target.value})}
+                          >
+                            <option value="">{newLead.carrier ? "Selecione..." : "Selecione a Operadora..."}</option>
+                            {products
+                              .filter(p => !newLead.carrier || p.carrier_id === carriers.find(c => c.name === newLead.carrier)?.id)
+                              .map(p => <option key={p.id} value={p.name}>{p.name}</option>)
+                            }
+                          </select>
+                        </div>
+
+                        <InputField label="Qtde Vidas" type="number" value={newLead.interested_lives} onChange={(v:any) => setNewLead({...newLead, interested_lives: v})} />
+                        <InputField label="Valor Proposta" type="number" value={newLead.deal_value} onChange={(v:any) => setNewLead({...newLead, deal_value: v})} />
+                      </div>
+                    </div>
+                  </div>
                </div>
 
                {/* Sticky Sidebar Summary */}
@@ -541,6 +593,10 @@ interface LeadCreateScreenProps {
                      <div className="flex items-center justify-between">
                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Email</span>
                        <span className="text-sm font-bold text-slate-700 truncate ml-4" title={newLead.email}>{newLead.email || "---"}</span>
+                     </div>
+                     <div className="flex items-center justify-between">
+                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Tipo de Plano</span>
+                       <span className="text-sm font-bold text-slate-700">{newLead.plan_type}</span>
                      </div>
                      <div className="flex items-center justify-between">
                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Vidas Presumidas</span>

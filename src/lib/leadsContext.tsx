@@ -18,6 +18,12 @@ interface LeadsContextType {
   fetchJobTitles: () => Promise<void>;
   unreadLeads: string[];
   unreadCounts: Record<string, number>;
+  carriers: any[];
+  products: any[];
+  loadingCarriers: boolean;
+  loadingProducts: boolean;
+  fetchCarriers: () => Promise<void>;
+  fetchProducts: () => Promise<void>;
 }
 
 const LeadsContext = createContext<LeadsContextType | undefined>(undefined);
@@ -33,6 +39,10 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
   const [loadingJobTitles, setLoadingJobTitles] = useState(true);
   const [unreadLeads, setUnreadLeads] = useState<string[]>([]);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [carriers, setCarriers] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [loadingCarriers, setLoadingCarriers] = useState(true);
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
   const fetchStages = async () => {
     setLoadingStages(true);
@@ -71,6 +81,34 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
       setJobTitles(data);
     }
     setLoadingJobTitles(false);
+  };
+
+  const fetchCarriers = async () => {
+    setLoadingCarriers(true);
+    const { data, error } = await supabase
+      .from('carriers')
+      .select('*')
+      .eq('active', true)
+      .order('name', { ascending: true });
+    
+    if (!error && data) {
+      setCarriers(data);
+    }
+    setLoadingCarriers(false);
+  };
+
+  const fetchProducts = async () => {
+    setLoadingProducts(true);
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('status', 'Ativo')
+      .order('name', { ascending: true });
+    
+    if (!error && data) {
+      setProducts(data);
+    }
+    setLoadingProducts(false);
   };
 
   const fetchLeads = async () => {
@@ -129,6 +167,8 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
     fetchStages();
     fetchContactTypes();
     fetchJobTitles();
+    fetchCarriers();
+    fetchProducts();
     fetchUnread();
 
     const channel = supabase
@@ -167,7 +207,13 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
       loadingJobTitles,
       fetchJobTitles,
       unreadLeads,
-      unreadCounts
+      unreadCounts,
+      carriers,
+      products,
+      loadingCarriers,
+      loadingProducts,
+      fetchCarriers,
+      fetchProducts
     }}>
       {children}
     </LeadsContext.Provider>
