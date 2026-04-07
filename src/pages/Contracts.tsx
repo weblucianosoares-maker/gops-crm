@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Icons } from "../components/Icons";
 import { formatCurrency, cn } from "../lib/utils";
 import { supabase } from "../lib/supabase";
 import { useAlerts } from "../hooks/useAlerts";
 import { getTier, calculateNetCommission } from "../lib/commissionRules";
+import { ContractCreateDrawer } from "../components/ContractCreateDrawer";
 
 export default function Contracts() {
   const [contracts, setContracts] = useState<any[]>([]);
@@ -12,9 +13,10 @@ export default function Contracts() {
   const [financials, setFinancials] = useState<any[]>([]);
   const [selectedContract, setSelectedContract] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const { alerts } = useAlerts();
  
-  const contractAlerts = alerts.filter(a => a.type === 'contract');
+  const contractAlerts = alerts.filter(a => a.type === 'contract' || a.type === 'expiry');
 
   // Gamificação: Calcular a Pedra (Gema) baseada no mês passado
   const stoneData = useMemo(() => {
@@ -32,7 +34,7 @@ export default function Contracts() {
     
     return getTier(vgv);
   }, [contracts]);
- 
+  
   const totalCommissions = useMemo(() => {
     const now = new Date();
     const currentMonth = now.getMonth();
@@ -50,8 +52,8 @@ export default function Contracts() {
   }, [contracts, stoneData]);
 
   const activeBeneficiaries = useMemo(() => {
-    if (!selectedContract) return beneficiaries;
-    return beneficiaries;
+    if (!selectedContract) return [];
+    return beneficiaries.filter(b => b.contract_id === selectedContract.id);
   }, [beneficiaries, selectedContract]);
 
   useEffect(() => {
@@ -68,7 +70,7 @@ export default function Contracts() {
     setContracts(cRes.data || []);
     setBeneficiaries(bRes.data || []);
     setFinancials(fRes.data || []);
-    if (cRes.data && cRes.data.length > 0) setSelectedContract(cRes.data[0]);
+    if (cRes.data && cRes.data.length > 0 && !selectedContract) setSelectedContract(cRes.data[0]);
     setLoading(false);
   };
 
@@ -97,7 +99,7 @@ export default function Contracts() {
                   <p className="text-xs text-slate-500">{alert.description}</p>
                 </div>
                 <div className="text-right">
-                  <p className={cn("text-xs font-bold", alert.severity === 'urgent' ? "text-red-500" : "text-blue-500")}>Anniversary</p>
+                  <p className={cn("text-xs font-bold", alert.severity === 'urgent' ? "text-red-500" : "text-blue-500")}>Anticipation</p>
                   <p className="text-[0.6875rem] text-slate-400 uppercase">{new Date(alert.date).toLocaleDateString('pt-BR')}</p>
                 </div>
               </div>
@@ -136,7 +138,6 @@ export default function Contracts() {
         <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h3 className="text-lg font-bold text-blue-900">Contratos Ativos</h3>
           <div className="flex items-center gap-3">
-            {/* Botão Temporário para Resetar Dados Fictícios */}
             <button 
               onClick={async () => {
                 if (window.confirm("⚠️ ATENÇÃO: Isso apagará TODOS os contratos, beneficiários e histórico financeiro atuais. Deseja continuar?")) {
@@ -164,7 +165,10 @@ export default function Contracts() {
                 placeholder="Buscar cliente..." 
               />
             </div>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
+            <button 
+              onClick={() => setIsDrawerOpen(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-blue-700 transition-colors shadow-md shadow-blue-100"
+            >
               <Icons.Plus className="w-4 h-4" /> Novo Contrato
             </button>
           </div>
@@ -182,7 +186,7 @@ export default function Contracts() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {contracts.map(contract => (
+              {contracts.length > 0 ? contracts.map(contract => (
                 <tr 
                   key={contract.id} 
                   onClick={() => setSelectedContract(contract)}
@@ -193,7 +197,7 @@ export default function Contracts() {
                 >
                   <td className="px-6 py-4">
                     <p className="text-sm font-bold text-slate-900">{contract.client_name}</p>
-                    <p className="text-xs text-slate-400">CNPJ: {contract.cnpj || 'Não cadastrado'}</p>
+                    <p className="text-xs text-slate-400">{contract.type || 'PF'} • Docs: {contract.cnpj || '---'}</p>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
@@ -218,7 +222,10 @@ export default function Contracts() {
                     })()}
                   </td>
                   <td className="px-6 py-4">
-                    <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold uppercase">{contract.status}</span>
+                    <span className={cn(
+                      "px-2 py-1 rounded text-[10px] font-bold uppercase",
+                      contract.status === 'Ativo' ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"
+                    )}>{contract.status}</span>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button className={cn(
@@ -229,7 +236,11 @@ export default function Contracts() {
                     </button>
                   </td>
                 </tr>
-              ))}
+              )) : (
+                <tr>
+                  <td colSpan={6} className="px-6 py-20 text-center text-slate-400 uppercase text-[10px] font-black tracking-widest italic">Nenhum contrato ativo encontrado</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -238,22 +249,22 @@ export default function Contracts() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-7 space-y-8">
           <div className="bg-slate-50 p-6 rounded-xl border border-slate-100">
-            <h3 className="text-md font-bold text-blue-900 mb-6">Histórico Financeiro & Reajustes</h3>
-            <div className="bg-white rounded-lg overflow-hidden border border-slate-100">
+            <h3 className="text-md font-bold text-blue-900 mb-6 font-black uppercase tracking-widest text-[10px]">Histórico Financeiro & Reajustes</h3>
+            <div className="bg-white rounded-lg overflow-hidden border border-slate-100 min-h-[300px]">
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 border-b border-slate-100">
                   <tr>
-                    <th className="px-4 py-3 font-bold text-slate-500">Referência</th>
-                    <th className="px-4 py-3 font-bold text-right text-slate-500">Mensalidade</th>
-                    <th className="px-4 py-3 font-bold text-center text-slate-500">Reajuste</th>
-                    <th className="px-4 py-3 font-bold text-slate-500">Sinistralidade</th>
+                    <th className="px-4 py-3 font-bold text-slate-500 text-[10px] uppercase tracking-widest">Referência</th>
+                    <th className="px-4 py-3 font-bold text-right text-slate-500 text-[10px] uppercase tracking-widest">Mensalidade</th>
+                    <th className="px-4 py-3 font-bold text-center text-slate-500 text-[10px] uppercase tracking-widest">Reajuste</th>
+                    <th className="px-4 py-3 font-bold text-slate-500 text-[10px] uppercase tracking-widest">Sinistralidade</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {financials.map(fin => (
+                  {financials.length > 0 ? financials.map(fin => (
                     <tr key={fin.id}>
                       <td className="px-4 py-3 text-slate-700">{fin.reference_month}</td>
-                      <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(fin.monthly_fee)}</td>
+                      <td className="px-4 py-3 text-right text-slate-700 font-bold">{formatCurrency(fin.monthly_fee)}</td>
                       <td className="px-4 py-3 text-center text-red-500 font-bold">{fin.readjustment}%</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
@@ -264,7 +275,11 @@ export default function Contracts() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )) : (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-20 text-center text-slate-400 text-[9px] font-black uppercase tracking-[0.2em] italic">Selecione um contrato para ver o histórico</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -274,20 +289,20 @@ export default function Contracts() {
         <div className="lg:col-span-5 bg-white p-6 rounded-xl border border-slate-100 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-md font-bold text-blue-900">Beneficiários (Vidas)</h3>
-              <p className="text-xs text-slate-400">Contrato: {selectedContract?.client_name || 'Selecione um contrato'}</p>
+              <h3 className="text-md font-bold text-blue-900 font-black uppercase tracking-widest text-[10px]">Beneficiários (Vidas)</h3>
+              <p className="text-[11px] text-slate-500 font-bold">{selectedContract?.client_name || 'Selecione um contrato'}</p>
             </div>
-            <span className="text-[0.6875rem] font-bold px-2 py-1 bg-slate-100 text-slate-600 rounded">{activeBeneficiaries.length} Total</span>
+            <span className="text-[0.6875rem] font-bold px-2 py-1 bg-blue-50 text-blue-600 rounded">{activeBeneficiaries.length} Total</span>
           </div>
-          <div className="space-y-4 overflow-y-auto max-h-[300px] pr-2 custom-scrollbar">
-            {activeBeneficiaries.map((beneficiary) => (
-              <div key={beneficiary.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition-colors group">
+          <div className="space-y-4 overflow-y-auto max-h-[300px] pr-2 custom-scrollbar flex-1">
+            {activeBeneficiaries.length > 0 ? activeBeneficiaries.map((beneficiary) => (
+              <div key={beneficiary.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition-colors group border border-transparent hover:border-slate-100">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">{beneficiary.initials}</div>
+                  <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-black text-[10px]">{beneficiary.initials}</div>
                   <div>
-                    <p className="text-sm font-bold text-slate-900 leading-none mb-1">{beneficiary.name}</p>
+                    <p className="text-sm font-black text-slate-900 leading-none mb-1">{beneficiary.name}</p>
                     <div className="flex items-center gap-2">
-                      <span className="text-[9px] text-slate-400 uppercase font-black">{beneficiary.type}</span>
+                      <span className="text-[9px] text-slate-400 uppercase font-black tracking-tighter">{beneficiary.type}</span>
                       {beneficiary.birth_date && (
                         <>
                           <span className="w-1 h-1 bg-slate-200 rounded-full" />
@@ -299,13 +314,24 @@ export default function Contracts() {
                 </div>
                 <Icons.Info className="w-4 h-4 text-slate-300 group-hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-all" />
               </div>
-            ))}
+            )) : (
+              <div className="flex-1 flex flex-col items-center justify-center py-10 opacity-40">
+                 <Icons.Users className="w-10 h-10 mb-3" />
+                 <p className="text-[9px] font-black uppercase tracking-widest">Nenhuma vida cadastrada</p>
+              </div>
+            )}
           </div>
-          <button className="mt-6 w-full py-3 border border-dashed border-slate-300 rounded-lg text-xs font-bold text-slate-400 hover:bg-slate-50 transition-colors">
+          <button className="mt-6 w-full py-3 border border-dashed border-slate-300 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-colors">
             + Adicionar Vidas ao Contrato
           </button>
         </div>
       </div>
+
+      <ContractCreateDrawer 
+        isOpen={isDrawerOpen} 
+        onClose={() => setIsDrawerOpen(false)} 
+        onSuccess={fetchContractsData} 
+      />
     </div>
   );
 }

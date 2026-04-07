@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/src/lib/utils";
 import { Icons } from "./Icons";
@@ -61,10 +61,10 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (
                 to={item.path}
                 onClick={() => setIsOpen && setIsOpen(false)}
                 className={({ isActive }) => cn(
-                  "flex items-center pl-6 py-3 transition-all group",
-                  isActive 
-                    ? "text-blue-700 font-semibold bg-white rounded-l-lg ml-2 pl-4 shadow-sm" 
-                    : "text-slate-500 hover:text-blue-600 hover:translate-x-1"
+                   "flex items-center pl-6 py-3 transition-all group",
+                   isActive 
+                     ? "text-blue-700 font-semibold bg-white rounded-l-lg ml-2 pl-4 shadow-sm" 
+                     : "text-slate-500 hover:text-blue-600 hover:translate-x-1"
                 )}
               >
                 <item.icon className={cn("w-5 h-5 mr-3", "group-hover:text-blue-600")} />
@@ -135,7 +135,6 @@ function NotificationPanel({ setIsOpen }: { setIsOpen?: (val: boolean) => void }
   const { unreadLeads, leads, unreadCounts } = useLeads();
   const { openDrawer } = useDrawer();
 
-  // Filter leads that have unread messages
   const leadsWithUnread = unreadLeads
     .map(id => leads.find(l => l.id === id))
     .filter(Boolean);
@@ -197,22 +196,62 @@ function NotificationPanel({ setIsOpen }: { setIsOpen?: (val: boolean) => void }
 
 function GlobalAlertBar() {
   const { alerts } = useAlerts();
-  const todayAlerts = alerts.filter(a => a.isToday);
+  const { openDrawer } = useDrawer();
+  const [index, setIndex] = useState(0);
 
-  if (todayAlerts.length === 0) return null;
+  useEffect(() => {
+    if (alerts.length <= 1) return;
+    const timer = setInterval(() => {
+      setIndex((prev) => (prev + 1) % alerts.length);
+    }, 20000); // 20 Segundos
+    return () => clearInterval(timer);
+  }, [alerts.length]);
+
+  if (alerts.filter(a => a.isToday || a.severity === 'urgent' || a.severity === 'warning').length === 0) return null;
+
+  // Prioritize active/relevant alerts for the ticker
+  const activeAlerts = alerts.filter(a => a.isToday || a.severity === 'urgent' || a.severity === 'warning');
+  const current = activeAlerts[index % activeAlerts.length];
 
   return (
-    <div className="bg-blue-600 text-white px-4 py-2 flex items-center justify-center gap-4 animate-in slide-in-from-top duration-500 relative z-[100] shadow-lg">
-      <Icons.Cake className="w-4 h-4 animate-bounce" />
-      <div className="flex gap-4 overflow-x-auto no-scrollbar py-0.5">
-        {todayAlerts.map(alert => (
-          <div key={alert.id} className="flex items-center gap-2 whitespace-nowrap">
-            <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded">Hoje</span>
-            <span className="text-xs font-bold">{alert.title}</span>
-          </div>
-        ))}
-      </div>
-      <Icons.Cake className="w-4 h-4 animate-bounce" />
+    <div className="bg-slate-900 text-white h-9 flex items-center justify-between px-4 overflow-hidden relative z-[110] border-b border-white/10 shadow-lg">
+       <div className="flex items-center gap-2 overflow-hidden w-full justify-center">
+          <AnimatePresence mode="wait">
+            <motion.button
+               key={current.id}
+               initial={{ x: -100, opacity: 0 }}
+               animate={{ x: 0, opacity: 1 }}
+               exit={{ x: 100, opacity: 0 }}
+               transition={{ type: "spring", stiffness: 80, damping: 15 }}
+               onClick={() => current.leadData && openDrawer(current.leadData, 'details')}
+               className="flex items-center gap-4 px-6 h-full hover:bg-white/5 transition-all group cursor-pointer"
+            >
+               <span className={cn(
+                 "text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded shadow-sm",
+                 current.severity === 'urgent' ? "bg-red-500 text-white animate-pulse shadow-red-900/40" :
+                 current.severity === 'warning' ? "bg-amber-500 text-slate-900 shadow-amber-900/40" : "bg-blue-500 text-white"
+               )}>
+                 {current.isToday ? "Hoje" : current.type === 'expiry' ? "Alerta" : "Vencimento"}
+               </span>
+
+               <div className="flex items-center gap-3">
+                 <div className="flex items-center gap-3 pr-4 border-r border-white/10">
+                    {current.type === 'birthday' && <Icons.Cake className="w-3.5 h-3.5 text-pink-400" />}
+                    {current.type === 'marriage' && <Icons.Heart className="w-3.5 h-3.5 text-rose-400" />}
+                    {current.type === 'reminder' && <Icons.Bell className="w-3.5 h-3.5 text-amber-400" />}
+                    {current.type === 'expiry' && <Icons.AlertCircle className="w-3.5 h-3.5 text-red-400" />}
+                    <p className="text-[11px] font-black tracking-widest group-hover:text-amber-400 transition-colors uppercase whitespace-nowrap">{current.title}</p>
+                 </div>
+                 <p className="text-[10px] font-bold text-slate-400 group-hover:text-slate-100 transition-colors truncate max-w-lg hidden sm:block italic tracking-tight">{current.description}</p>
+               </div>
+
+               <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="text-[9px] font-black uppercase tracking-tighter text-blue-400">Ver Ficha</span>
+                  <Icons.ChevronRight className="w-3 h-3 text-blue-400 translate-x-0 group-hover:translate-x-1 transition-transform" />
+               </div>
+            </motion.button>
+          </AnimatePresence>
+       </div>
     </div>
   );
 }
@@ -261,9 +300,9 @@ export function TopBar({ title, onMenuClick }: { title: string; onMenuClick?: ()
   const { fetchLeads } = useLeads();
 
   return (
-    <header className="flex flex-col w-full sticky top-0 z-30">
+    <header className="flex flex-col w-full sticky top-0 z-[100]">
       <GlobalAlertBar />
-      <div className="flex justify-between items-center px-4 md:px-8 py-4 bg-white/80 backdrop-blur-md border-b border-slate-100">
+      <div className="flex justify-between items-center px-4 md:px-8 py-4 bg-white/80 backdrop-blur-md border-b border-slate-100 shadow-sm">
         <div className="flex items-center gap-4">
           <button className="md:hidden text-slate-500 hover:text-blue-700" onClick={onMenuClick}>
             <Icons.Menu className="w-5 h-5" />
@@ -305,7 +344,7 @@ export function TopBar({ title, onMenuClick }: { title: string; onMenuClick?: ()
                     </div>
                     <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
                       {alerts.length > 0 ? alerts.map((alert) => (
-                        <div key={alert.id} className="p-4 flex gap-4 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-none">
+                        <div key={alert.id} onClick={() => { if(alert.leadData) closeDrawer(); setTimeout(() => alert.leadData && openDrawer(alert.leadData, 'details'), 50); setShowNotifications(false); }} className="p-4 flex gap-4 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-none cursor-pointer">
                           <div className={cn(
                             "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
                             alert.type === 'birthday' ? "bg-pink-100 text-pink-600" :
