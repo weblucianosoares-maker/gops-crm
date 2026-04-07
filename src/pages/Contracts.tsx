@@ -76,7 +76,7 @@ export default function Contracts() {
 
   if (loading) return <div className="p-8">Carregando...</div>;
   return (
-    <div className="p-8 space-y-8">
+    <div className="h-full overflow-y-auto custom-scrollbar p-8 space-y-8">
       {/* Bento Stats Grid & Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Upcoming Renewals (Real Data) */}

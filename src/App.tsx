@@ -30,11 +30,12 @@ function AppContent() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex h-screen w-full bg-slate-50 overflow-hidden">
       <Sidebar isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} />
-      <div className="flex-1 md:ml-64 flex flex-col min-w-0 w-full">
+      <div className="flex-1 md:ml-64 flex flex-col min-w-0 w-full overflow-hidden">
         <TopBar title={getTitle(location.pathname)} onMenuClick={() => setIsMobileMenuOpen(true)} />
-        <main className="flex-1 overflow-y-auto custom-scrollbar">
+        {/* Main now has overflow-hidden to allow children pages to manage their own scrolling */}
+        <main className="flex-1 overflow-hidden relative">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/leads" element={<Leads />} />

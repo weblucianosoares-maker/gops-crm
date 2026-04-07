@@ -168,9 +168,10 @@ interface LeadDetailDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdate: (updatedLead?: any) => void;
+  onRefreshAlerts?: () => void;
 }
 
-export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate }: LeadDetailDrawerProps) {
+export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate, onRefreshAlerts }: LeadDetailDrawerProps) {
   const { stages, jobTitles, contactTypes, carriers, products } = useLeads();
   const { success, error: showError } = useToast();
   const [lead, setLead] = useState(initialLead);
@@ -180,6 +181,11 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
   const [activeTab, setActiveTab] = useState<'details' | 'chat' | 'history'>('details');
   const [loadingChat, setLoadingChat] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [noteContent, setNoteContent] = useState("");
+  const [isSavingNote, setIsSavingNote] = useState(false);
+  const [reminderTitle, setReminderTitle] = useState("");
+  const [reminderDate, setReminderDate] = useState("");
+  const [isSavingReminder, setIsSavingReminder] = useState(false);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -313,36 +319,137 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
     setHistory(data || []);
   };
 
+  const handleAddNote = async () => {
+    if (!noteContent.trim() || !lead?.id) return;
+    setIsSavingNote(true);
+    const content = `[NOTA] ${noteContent}`;
+    const { error } = await supabase.from('lead_history').insert([{ lead_id: lead.id, content }]);
+    setIsSavingNote(false);
+    if (!error) {
+       success("Nota adicionada ao histórico!");
+       setNoteContent("");
+       fetchHistory(lead.id);
+    } else {
+       showError("Erro ao salvar nota: " + error.message);
+    }
+  };
+
+  const handleAddReminder = async (days?: number) => {
+    if (!lead?.id) return;
+    let finalDate = reminderDate;
+    let finalTitle = reminderTitle || "Lembrete de acompanhamento";
+
+    if (days !== undefined) {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      finalDate = d.toISOString().split('T')[0];
+    }
+
+    if (!finalDate) {
+      showError("Selecione uma data para o lembrete.");
+      return;
+    }
+
+    setIsSavingReminder(true);
+    const { error } = await supabase.from('reminders').insert([{
+      lead_id: lead.id,
+      title: finalTitle,
+      due_date: finalDate,
+      status: 'pendente'
+    }]);
+    
+    setIsSavingReminder(false);
+    if (!error) {
+       success("Lembrete agendado com sucesso!");
+       setReminderTitle("");
+       setReminderDate("");
+       if (onRefreshAlerts) onRefreshAlerts();
+    } else {
+       showError("Erro ao salvar lembrete: " + error.message);
+    }
+  };
+
   const handleSave = async () => {
+    if (!lead.name?.trim()) {
+      showError("O nome é obrigatório para cadastrar ou atualizar.");
+      return;
+    }
+
     setIsSaving(true);
     const updates = { 
-      name: lead.name, email: lead.email, phone: lead.phone.replace(/\D/g, ''), status: lead.status, nickname: lead.nickname, 
-      lead_type: lead.lead_type, company_name: lead.company_name, contact_person: lead.contact_person, job_title: lead.job_title,
-      birth_date: lead.birth_date || null, marriage_date: lead.marriage_date || null, rg: lead.rg, cnpj: lead.cnpj?.replace(/\D/g, ''),
-      address_zip: lead.address_zip, address_street: lead.address_street, address_neighborhood: lead.address_neighborhood,
-      address_city: lead.address_city, address_state: lead.address_state, address_number: lead.address_number,
-      address_complement: lead.address_complement, current_carrier: lead.current_carrier, current_product: lead.current_product,
-      current_lives: lead.current_lives, current_value: lead.current_value, docs_link: lead.docs_link,
-      plan_type: lead.plan_type, carrier: lead.carrier, product: lead.product,
-      interested_lives: lead.interested_lives, deal_value: lead.deal_value,
+      name: lead.name, 
+      email: lead.email, 
+      phone: lead.phone?.replace(/\D/g, '') || null, 
+      status: lead.status, 
+      nickname: lead.nickname, 
+      lead_type: lead.lead_type || 'PF', 
+      company_name: lead.company_name, 
+      contact_person: lead.contact_person, 
+      job_title: lead.job_title,
+      birth_date: lead.birth_date || null, 
+      marriage_date: lead.marriage_date || null, 
+      rg: lead.rg, 
+      cnpj: lead.cnpj?.replace(/\D/g, '') || null,
+      address_zip: lead.address_zip, 
+      address_street: lead.address_street, 
+      address_neighborhood: lead.address_neighborhood,
+      address_city: lead.address_city, 
+      address_state: lead.address_state, 
+      address_number: lead.address_number,
+      address_complement: lead.address_complement, 
+      current_carrier: lead.current_carrier, 
+      current_product: lead.current_product,
+      current_lives: lead.current_lives, 
+      current_value: lead.current_value, 
+      docs_link: lead.docs_link,
+      plan_type: lead.plan_type, 
+      carrier: lead.carrier, 
+      product: lead.product,
+      interested_lives: lead.interested_lives, 
+      deal_value: lead.deal_value,
       has_current_plan: lead.has_current_plan,
       contract_expiry_date: lead.contract_expiry_date || null,
       has_broker: !!lead.has_broker,
+      source: lead.source || 'Manual',
+      initials: (lead.name || "?").substring(0, 2).toUpperCase(),
       // PME Data
-      resp_emp_name: lead.resp_emp_name, resp_emp_job: lead.resp_emp_job, resp_emp_birth_date: lead.resp_emp_birth_date || null,
-      resp_emp_marital_status: lead.resp_emp_marital_status, resp_emp_marriage_date: lead.resp_emp_marriage_date || null,
-      resp_emp_cpf: lead.resp_emp_cpf?.replace(/\D/g, ''), resp_emp_rg: lead.resp_emp_rg,
-      resp_emp_whatsapp: lead.resp_emp_whatsapp?.replace(/\D/g, ''), resp_emp_phone: lead.resp_emp_phone?.replace(/\D/g, ''),
+      resp_emp_name: lead.resp_emp_name, 
+      resp_emp_job: lead.resp_emp_job, 
+      resp_emp_birth_date: lead.resp_emp_birth_date || null,
+      resp_emp_marital_status: lead.resp_emp_marital_status, 
+      resp_emp_marriage_date: lead.resp_emp_marriage_date || null,
+      resp_emp_cpf: lead.resp_emp_cpf?.replace(/\D/g, '') || null, 
+      resp_emp_rg: lead.resp_emp_rg,
+      resp_emp_whatsapp: lead.resp_emp_whatsapp?.replace(/\D/g, '') || null, 
+      resp_emp_phone: lead.resp_emp_phone?.replace(/\D/g, '') || null,
       resp_emp_email: lead.resp_emp_email,
-      resp_con_name: lead.resp_con_name, resp_con_job: lead.resp_con_job, resp_con_birth_date: lead.resp_con_birth_date || null,
-      resp_con_marital_status: lead.resp_con_marital_status, resp_con_marriage_date: lead.resp_con_marriage_date || null,
-      resp_con_cpf: lead.resp_con_cpf?.replace(/\D/g, ''), resp_con_rg: lead.resp_con_rg,
-      resp_con_whatsapp: lead.resp_con_whatsapp?.replace(/\D/g, ''), resp_con_phone: lead.resp_con_phone?.replace(/\D/g, ''),
+      resp_con_name: lead.resp_con_name, 
+      resp_con_job: lead.resp_con_job, 
+      resp_con_birth_date: lead.resp_con_birth_date || null,
+      resp_con_marital_status: lead.resp_con_marital_status, 
+      resp_con_marriage_date: lead.resp_con_marriage_date || null,
+      resp_con_cpf: lead.resp_con_cpf?.replace(/\D/g, '') || null, 
+      resp_con_rg: lead.resp_con_rg,
+      resp_con_whatsapp: lead.resp_con_whatsapp?.replace(/\D/g, '') || null, 
+      resp_con_phone: lead.resp_con_phone?.replace(/\D/g, '') || null,
       resp_con_email: lead.resp_con_email
     };
-    const { error: err } = await supabase.from('leads').update(updates).eq('id', lead.id);
+
+    let result;
+    if (lead.id) {
+      result = await supabase.from('leads').update(updates).eq('id', lead.id);
+    } else {
+      result = await supabase.from('leads').insert([updates]);
+    }
+
     setIsSaving(false);
-    if (!err) { success("Lead atualizado!"); onUpdate(); onClose(); } else { showError("Erro ao salvar: " + err.message); }
+    if (!result.error) { 
+      success(lead.id ? "Lead atualizado!" : "Oportunidade cadastrada!"); 
+      onUpdate(); 
+      onClose(); 
+    } else { 
+      showError("Erro ao salvar: " + result.error.message); 
+    }
   };
 
   const handleDelete = async () => { if (window.confirm(`Excluir permanentemente "${lead.name}"?`)) { await supabase.from('leads').delete().eq('id', lead.id); onUpdate(); onClose(); } };
@@ -361,7 +468,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
               {(lead.name || "?").substring(0,1).toUpperCase()}
             </div>
             <div>
-              <h2 className="text-xl font-black text-slate-900 leading-tight">{lead.name || "Sem Nome"}</h2>
+              <h2 className="text-xl font-black text-slate-900 leading-tight">{lead.id ? (lead.name || "Sem Nome") : "Nova Oportunidade"}</h2>
               <div className="flex items-center gap-2 mt-1">
                  <span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded text-[9px] font-black uppercase tracking-tighter">{lead.lead_type || 'PF'}</span>
                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{stages.find(s => s.name === lead.status)?.label || lead.status}</span>
@@ -369,7 +476,9 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={handleDelete} title="Excluir Lead" className="p-2.5 text-red-500 hover:bg-red-50 rounded-xl transition-all"><Icons.Trash className="w-5 h-5"/></button>
+            {lead.id && (
+              <button onClick={handleDelete} title="Excluir Lead" className="p-2.5 text-red-500 hover:bg-red-50 rounded-xl transition-all"><Icons.Trash className="w-5 h-5"/></button>
+            )}
             <button onClick={handleSave} disabled={isSaving} className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md active:scale-95 disabled:opacity-50 transition-all flex items-center gap-2">
                {isSaving ? <Icons.Loader2 className="w-4 h-4 animate-spin" /> : <Icons.Save className="w-4 h-4" />}
                {isSaving ? "Salvando..." : "Salvar Alterações"}
@@ -519,7 +628,78 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
                        </div>
                     </div>
                   </div>
-                  <DetailField label="Link Documentação (Drive/Dropbox)" value={lead.docs_link} onChange={(v:any) => setLead({...lead, docs_link: v})} placeholder="https://..." />
+                  <div className="flex items-end gap-3">
+                    <div className="flex-1">
+                      <DetailField label="Link Documentação (Drive/Dropbox)" value={lead.docs_link} onChange={(v:any) => setLead({...lead, docs_link: v})} placeholder="https://..." />
+                    </div>
+                    {lead.docs_link && (
+                      <button 
+                        onClick={() => window.open(lead.docs_link.startsWith('http') ? lead.docs_link : `https://${lead.docs_link}`, '_blank')}
+                        className="mb-1 p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm flex items-center gap-2 group"
+                      >
+                        <Icons.ExternalLink className="w-4 h-4" />
+                        <span className="text-[10px] font-black uppercase tracking-widest hidden group-hover:block transition-all">Abrir Pasta</span>
+                      </button>
+                    )}
+                  </div>
+               </section>
+
+               {/* Ações Rápidas: Notas & Lembretes */}
+               <section className="pt-10 border-t border-slate-100 grid grid-cols-1 lg:grid-cols-2 gap-10">
+                  {/* Bloco de Notas */}
+                  <div className="space-y-6">
+                    <SectionHeader icon={Icons.FileText} title="Nova Anotação" colorClass="bg-blue-50 text-blue-600" />
+                    <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4">
+                      <textarea
+                        value={noteContent}
+                        onChange={e => setNoteContent(e.target.value)}
+                        placeholder="Digite aqui uma observação importante sobre o lead..."
+                        className="w-full bg-white border border-slate-100 rounded-2xl px-6 py-4 text-sm font-medium text-slate-700 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all min-h-[120px] resize-none"
+                      />
+                      <button 
+                        onClick={handleAddNote}
+                        disabled={isSavingNote || !noteContent.trim()}
+                        className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-blue-100 hover:bg-blue-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                      >
+                        {isSavingNote ? <Icons.Loader2 className="w-4 h-4 animate-spin" /> : <Icons.Check className="w-4 h-4" />}
+                        Salvar Nota no Histórico
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Bloco de Lembretes */}
+                  <div className="space-y-6">
+                    <SectionHeader icon={Icons.Bell} title="Agendar Follow-up" colorClass="bg-amber-50 text-amber-600" />
+                    <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4">
+                      <input 
+                        type="text" 
+                        value={reminderTitle}
+                        onChange={e => setReminderTitle(e.target.value)}
+                        placeholder="O que precisa ser feito?"
+                        className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-amber-500"
+                      />
+                      <div className="flex gap-2">
+                        <input 
+                          type="date" 
+                          value={reminderDate}
+                          onChange={e => setReminderDate(e.target.value)}
+                          className="flex-1 bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-amber-500"
+                        />
+                        <button 
+                          onClick={() => handleAddReminder()}
+                          disabled={isSavingReminder || !reminderDate}
+                          className="px-6 bg-amber-500 text-white rounded-xl font-bold text-xs uppercase shadow-lg shadow-amber-100 hover:bg-amber-600"
+                        >
+                          OK
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <button onClick={() => handleAddReminder(1)} className="py-2.5 bg-white border border-slate-100 rounded-xl text-[9px] font-black uppercase text-slate-400 hover:border-amber-500 hover:text-amber-500 transition-all">+1 Dia</button>
+                        <button onClick={() => handleAddReminder(3)} className="py-2.5 bg-white border border-slate-100 rounded-xl text-[9px] font-black uppercase text-slate-400 hover:border-amber-500 hover:text-amber-500 transition-all">+3 Dias</button>
+                        <button onClick={() => handleAddReminder(7)} className="py-2.5 bg-white border border-slate-100 rounded-xl text-[9px] font-black uppercase text-slate-400 hover:border-amber-500 hover:text-amber-500 transition-all">+7 Dias</button>
+                      </div>
+                    </div>
+                  </div>
                </section>
             </div>
           ) : activeTab === 'chat' ? (
@@ -554,13 +734,30 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate 
             <div className="p-8 space-y-6">
                 <SectionHeader icon={Icons.History} title="Histórico de Atividades" colorClass="bg-amber-50 text-amber-600" />
                 <div className="space-y-4">
-                  {history.length > 0 ? history.map(h => (
-                    <div key={h.id} className="p-5 bg-white rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group">
-                       <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500 opacity-20 group-hover:opacity-100 transition-opacity" />
-                       <p className="text-[10px] font-black text-slate-400 uppercase leading-none mb-2">{new Date(h.created_at).toLocaleString('pt-BR')}</p>
-                       <p className="text-sm text-slate-700 font-semibold leading-relaxed">{h.content}</p>
-                    </div>
-                  )) : (
+                  {history.length > 0 ? history.map(h => {
+                    const isManualNote = h.content?.startsWith('[NOTA]');
+                    const displayContent = isManualNote ? h.content.replace('[NOTA]', '').trim() : h.content;
+                    
+                    return (
+                      <div key={h.id} className={cn(
+                        "p-5 rounded-3xl border shadow-sm relative overflow-hidden group transition-all",
+                        isManualNote ? "bg-blue-50 border-blue-100 ring-2 ring-blue-500/5 shadow-blue-100" : "bg-white border-slate-100"
+                      )}>
+                         <div className={cn(
+                           "absolute left-0 top-0 bottom-0 w-1 opacity-20 group-hover:opacity-100 transition-opacity",
+                           isManualNote ? "bg-blue-600" : "bg-amber-500"
+                         )} />
+                         <div className="flex justify-between items-start mb-2">
+                            <p className="text-[10px] font-black text-slate-400 uppercase leading-none">{new Date(h.created_at).toLocaleString('pt-BR')}</p>
+                            {isManualNote && <span className="text-[8px] font-black uppercase bg-blue-600 text-white px-1.5 py-0.5 rounded tracking-tighter">Anotação Manual</span>}
+                         </div>
+                         <p className={cn(
+                           "text-sm leading-relaxed",
+                           isManualNote ? "text-blue-900 font-bold" : "text-slate-700 font-semibold"
+                         )}>{displayContent}</p>
+                      </div>
+                    );
+                  }) : (
                     <div className="py-20 text-center space-y-4">
                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-200"><Icons.History className="w-8 h-8"/></div>
                        <p className="text-sm text-slate-400 font-black uppercase tracking-widest italic">Nenhum evento registrado</p>

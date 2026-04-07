@@ -294,9 +294,9 @@ function BrokerProfileBadge() {
 }
 
 export function TopBar({ title, onMenuClick }: { title: string; onMenuClick?: () => void }) {
-  const { alerts } = useAlerts();
+  const { alerts, refresh } = useAlerts();
   const [showNotifications, setShowNotifications] = React.useState(false);
-  const { selectedLead, isOpen, closeDrawer } = useDrawer();
+  const { selectedLead, isOpen, closeDrawer, openDrawer } = useDrawer();
   const { fetchLeads } = useLeads();
 
   return (
@@ -384,6 +384,7 @@ export function TopBar({ title, onMenuClick }: { title: string; onMenuClick?: ()
         isOpen={isOpen} 
         onClose={closeDrawer} 
         onUpdate={fetchLeads} 
+        onRefreshAlerts={refresh}
       />
     </header>
   );

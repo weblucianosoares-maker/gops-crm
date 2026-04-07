@@ -29,7 +29,7 @@ export default function Carriers() {
 
   if (loading) return <div className="p-8 max-w-7xl mx-auto w-full">Carregando...</div>;
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full space-y-10">
+    <div className="h-full overflow-y-auto custom-scrollbar p-8 max-w-7xl mx-auto w-full space-y-10">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div className="space-y-1">

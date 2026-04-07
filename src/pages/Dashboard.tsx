@@ -231,7 +231,7 @@ export default function Dashboard() {
   </div>;
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="h-full overflow-y-auto custom-scrollbar p-6 space-y-8">
       {/* Summary Metrics - Fixed One Row Layout */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <motion.div 

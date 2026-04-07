@@ -258,7 +258,7 @@ export default function Leads() {
   }, [isModalOpen, selectedLead]);
 
   return (
-    <div className="px-8 pb-8 pt-2 space-y-8">
+    <div className="h-full overflow-y-auto custom-scrollbar px-8 pb-8 pt-2 space-y-8">
       {/* Popup de Resultado da Importação */}
       <AnimatePresence mode="wait">
         {importResult && (

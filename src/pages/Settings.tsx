@@ -1280,7 +1280,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-8">
+    <div className="h-full overflow-y-auto custom-scrollbar p-8 max-w-4xl mx-auto space-y-8">
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-black text-blue-900 italic tracking-tight">Configurações</h1>

@@ -9,6 +9,7 @@ import {
   Bell,
   Settings,
   TrendingUp,
+  ExternalLink,
   Cake,
   MoreVertical,
   Search,
@@ -116,5 +117,6 @@ export const Icons = {
   Mic: Mic,
   Play: Play,
   File: File,
-  Save: Save
+  Save: Save,
+  ExternalLink: ExternalLink
 };
