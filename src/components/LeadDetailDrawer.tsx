@@ -457,8 +457,8 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] overflow-hidden">
-      <div onClick={onClose} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
+    <div className="fixed inset-0 z-[200] overflow-hidden">
+      <div onClick={onClose} className="absolute inset-0 bg-slate-900/95 backdrop-blur-md" />
       <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} className="absolute right-0 top-0 h-[100dvh] w-full max-w-3xl bg-white shadow-2xl flex flex-col">
         
         {/* Header Premium */}
@@ -479,9 +479,9 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
             {lead.id && (
               <button onClick={handleDelete} title="Excluir Lead" className="p-2.5 text-red-500 hover:bg-red-50 rounded-xl transition-all"><Icons.Trash className="w-5 h-5"/></button>
             )}
-            <button onClick={handleSave} disabled={isSaving} className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md active:scale-95 disabled:opacity-50 transition-all flex items-center gap-2">
-               {isSaving ? <Icons.Loader2 className="w-4 h-4 animate-spin" /> : <Icons.Save className="w-4 h-4" />}
-               {isSaving ? "Salvando..." : "Salvar Alterações"}
+            <button onClick={handleSave} disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl text-sm font-black shadow-lg shadow-blue-200 active:scale-95 disabled:opacity-50 transition-all flex items-center gap-2 uppercase tracking-widest">
+               {isSaving ? <Icons.Loader2 className="w-4 h-4 animate-spin" /> : <Icons.CheckCircle className="w-4 h-4" />}
+               {isSaving ? "Salvando..." : "Salvar Oportunidade"}
             </button>
             <button onClick={onClose} className="p-2 text-slate-300 hover:text-slate-600 transition-colors"><Icons.X className="w-6 h-6"/></button>
           </div>

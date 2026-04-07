@@ -301,83 +301,85 @@ export function TopBar({ title, onMenuClick }: { title: string; onMenuClick?: ()
 
   return (
     <header className="flex flex-col w-full sticky top-0 z-[100]">
-      <GlobalAlertBar />
-      <div className="flex justify-between items-center px-4 md:px-8 py-4 bg-white/80 backdrop-blur-md border-b border-slate-100 shadow-sm">
-        <div className="flex items-center gap-4">
-          <button className="md:hidden text-slate-500 hover:text-blue-700" onClick={onMenuClick}>
-            <Icons.Menu className="w-5 h-5" />
-          </button>
-          <h2 className="text-xl font-bold text-blue-900">{title}</h2>
-          {title === "Visão Geral" && (
-            <span className="text-xs font-medium text-slate-400 mt-1 ml-2">
-              {new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date())}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-6">
-          <div className="relative group">
-            <button 
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-1 text-slate-500 hover:text-blue-700 transition-all rounded-full hover:bg-slate-50"
-            >
-              <Icons.Notifications className="w-6 h-6" />
-              {alerts.length > 0 && (
-                <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-[8px] font-black flex items-center justify-center rounded-full ring-2 ring-white">
-                  {alerts.length}
-                </span>
-              )}
+      {!isOpen && <GlobalAlertBar />}
+      {!isOpen && (
+        <div className="flex justify-between items-center px-4 md:px-8 py-4 bg-white/80 backdrop-blur-md border-b border-slate-100 shadow-sm">
+          <div className="flex items-center gap-4">
+            <button className="md:hidden text-slate-500 hover:text-blue-700" onClick={onMenuClick}>
+              <Icons.Menu className="w-5 h-5" />
             </button>
-
-            <AnimatePresence>
-              {showNotifications && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-4 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-50"
-                  >
-                    <div className="p-4 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
-                      <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Notificações</span>
-                      <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{alerts.length} Ativas</span>
-                    </div>
-                    <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
-                      {alerts.length > 0 ? alerts.map((alert) => (
-                        <div key={alert.id} onClick={() => { if(alert.leadData) closeDrawer(); setTimeout(() => alert.leadData && openDrawer(alert.leadData, 'details'), 50); setShowNotifications(false); }} className="p-4 flex gap-4 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-none cursor-pointer">
-                          <div className={cn(
-                            "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-                            alert.type === 'birthday' ? "bg-pink-100 text-pink-600" :
-                            alert.type === 'marriage' ? "bg-rose-100 text-rose-600" : "bg-blue-100 text-blue-600"
-                          )}>
-                            {alert.type === 'birthday' ? <Icons.Cake className="w-5 h-5" /> :
-                             alert.type === 'marriage' ? <Icons.Heart className="w-5 h-5" /> : <Icons.History className="w-5 h-5" />}
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold text-slate-900 leading-tight">{alert.title}</p>
-                            <p className="text-[11px] text-slate-500 mt-1 font-medium">{alert.description}</p>
-                          </div>
-                        </div>
-                      )) : (
-                        <div className="p-10 text-center">
-                          <Icons.Bell className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-                          <p className="text-xs text-slate-400 font-bold uppercase">Sem notificações</p>
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
+            <h2 className="text-xl font-bold text-blue-900">{title}</h2>
+            {title === "Visão Geral" && (
+              <span className="text-xs font-medium text-slate-400 mt-1 ml-2">
+                {new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date())}
+              </span>
+            )}
           </div>
-          <NavLink to="/settings">
-            <Icons.Settings className="w-5 h-5 text-slate-500 hover:text-blue-700 cursor-pointer transition-all" />
-          </NavLink>
-          <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
-            <BrokerProfileBadge />
+          <div className="flex items-center gap-6">
+            <div className="relative group">
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-1 text-slate-500 hover:text-blue-700 transition-all rounded-full hover:bg-slate-50"
+              >
+                <Icons.Notifications className="w-6 h-6" />
+                {alerts.length > 0 && (
+                  <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-[8px] font-black flex items-center justify-center rounded-full ring-2 ring-white">
+                    {alerts.length}
+                  </span>
+                )}
+              </button>
+
+              <AnimatePresence>
+                {showNotifications && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute right-0 mt-4 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-50"
+                    >
+                      <div className="p-4 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
+                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Notificações</span>
+                        <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{alerts.length} Ativas</span>
+                      </div>
+                      <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                        {alerts.length > 0 ? alerts.map((alert) => (
+                          <div key={alert.id} onClick={() => { if(alert.leadData) closeDrawer(); setTimeout(() => alert.leadData && openDrawer(alert.leadData, 'details'), 50); setShowNotifications(false); }} className="p-4 flex gap-4 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-none cursor-pointer">
+                            <div className={cn(
+                              "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+                              alert.type === 'birthday' ? "bg-pink-100 text-pink-600" :
+                              alert.type === 'marriage' ? "bg-rose-100 text-rose-600" : "bg-blue-100 text-blue-600"
+                            )}>
+                              {alert.type === 'birthday' ? <Icons.Cake className="w-5 h-5" /> :
+                               alert.type === 'marriage' ? <Icons.Heart className="w-5 h-5" /> : <Icons.History className="w-5 h-5" />}
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-slate-900 leading-tight">{alert.title}</p>
+                              <p className="text-[11px] text-slate-500 mt-1 font-medium">{alert.description}</p>
+                            </div>
+                          </div>
+                        )) : (
+                          <div className="p-10 text-center">
+                            <Icons.Bell className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+                            <p className="text-xs text-slate-400 font-bold uppercase">Sem notificações</p>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+            <NavLink to="/settings">
+              <Icons.Settings className="w-5 h-5 text-slate-500 hover:text-blue-700 cursor-pointer transition-all" />
+            </NavLink>
+            <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
+              <BrokerProfileBadge />
+            </div>
           </div>
         </div>
-      </div>
+      )}
       
       <LeadDetailDrawer 
         lead={selectedLead} 
