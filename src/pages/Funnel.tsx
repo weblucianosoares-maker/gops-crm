@@ -119,11 +119,6 @@ export default function Funnel() {
                 </div>
               </div>
             </div>
-            <div className="bg-slate-100 h-16 w-px mt-1 hidden sm:block"></div>
-            <div className="flex flex-col mt-1 hidden sm:flex">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Valor em Negociação</span>
-              <span className="text-lg font-extrabold text-blue-600 mt-0.5">{formatCurrency(totalValue)}</span>
-            </div>
           </div>
 
           <div className="flex-1 px-8 hidden xl:flex items-center gap-10">
