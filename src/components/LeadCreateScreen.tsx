@@ -42,7 +42,8 @@ interface LeadCreateScreenProps {
      // Responsável Contrato
      resp_con_name: '', resp_con_job: '', resp_con_birth_date: '', resp_con_marital_status: '', 
      resp_con_marriage_date: '', resp_con_cpf: '', resp_con_rg: '', resp_con_whatsapp: '', 
-     resp_con_phone: '', resp_con_email: ''
+     resp_con_phone: '', resp_con_email: '',
+     temperature: 'Morno'
    });
 
    // Reset component when opening
@@ -185,7 +186,8 @@ interface LeadCreateScreenProps {
       resp_con_rg: newLead.resp_con_rg,
       resp_con_whatsapp: newLead.resp_con_whatsapp.replace(/\D/g, ''),
       resp_con_phone: newLead.resp_con_phone.replace(/\D/g, ''),
-      resp_con_email: newLead.resp_con_email
+      resp_con_email: newLead.resp_con_email,
+      temperature: newLead.temperature
     }]);
 
     setIsSaving(false);
@@ -542,6 +544,17 @@ interface LeadCreateScreenProps {
                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Status no Funil</label>
                           <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" value={newLead.status} onChange={e => setNewLead({...newLead, status: e.target.value})}>
                             {stages.map(s => <option key={s.id} value={s.name}>{s.label}</option>)}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Temperatura</label>
+                          <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700 font-black" value={newLead.temperature} onChange={e => setNewLead({...newLead, temperature: e.target.value})} required>
+                            <option value="Muito quente">Muito quente 🔥</option>
+                            <option value="Quente">Quente ☀️</option>
+                            <option value="Morno">Morno 🌤️</option>
+                            <option value="Frio">Frio ❄️</option>
+                            <option value="Congelado">Congelado 🧊</option>
                           </select>
                         </div>
                         

@@ -164,6 +164,16 @@ export default function Funnel() {
                      >
                        {leads
                          .filter(l => l.status === col.name)
+                         .sort((a, b) => {
+                           const weights: Record<string, number> = {
+                             'Muito quente': 5,
+                             'Quente': 4,
+                             'Morno': 3,
+                             'Frio': 2,
+                             'Congelado': 1
+                           };
+                           return (weights[b.temperature || 'Morno'] || 0) - (weights[a.temperature || 'Morno'] || 0);
+                         })
                          .map((lead: any, index: number) => (
                            <Draggable key={`lead-${lead.id}`} draggableId={String(lead.id)} index={index}>
                              {(draggableProvided, draggableSnapshot) => (
@@ -191,11 +201,36 @@ export default function Funnel() {
                                       </span>
                                       <div className="flex items-center gap-2">
                                         <button onClick={(e) => handleDeleteLead(e, lead.id, lead.name)} className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100" title="Apagar Oportunidade"><Icons.Trash className="w-3.5 h-3.5" /></button>
-                                        <div className="w-6 h-6 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-slate-600">{lead.initials || lead.name?.substring(0, 2).toUpperCase()}</div>
+                                      <div className={cn(
+                                        "px-2 py-0.5 rounded-full text-[8px] font-black uppercase ring-2 ring-white shadow-sm shrink-0 transition-transform group-hover:scale-110",
+                                        lead.lead_type === 'PJ' ? "bg-indigo-600 text-white" : "bg-blue-600 text-white"
+                                      )}>
+                                        {lead.lead_type === 'PJ' ? 'PME' : 'PF'}
                                       </div>
                                     </div>
+                                    </div>
                                     
-                                    <h4 className="font-bold text-slate-900 mb-1 group-hover:text-blue-700 transition-colors uppercase text-[11px] tracking-tight">{lead.name || "Sem Nome"}</h4>
+                                    <h4 className="font-bold text-slate-900 mb-1 group-hover:text-blue-700 transition-colors uppercase text-[11px] tracking-tight line-clamp-1 truncate">{lead.name || "Sem Nome"}</h4>
+                                    
+                                    {/* Tag de Temperatura */}
+                                    <div className="mb-3 flex items-center gap-1.5 overflow-hidden">
+                                      <div className={cn(
+                                        "px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest flex items-center gap-1 shrink-0",
+                                        lead.temperature === 'Muito quente' ? "bg-red-50 text-red-600 border border-red-100" :
+                                        lead.temperature === 'Quente' ? "bg-orange-50 text-orange-600 border border-orange-100" :
+                                        lead.temperature === 'Morno' ? "bg-amber-50 text-amber-600 border border-amber-100" :
+                                        lead.temperature === 'Frio' ? "bg-blue-50 text-blue-600 border border-blue-100" :
+                                        "bg-slate-50 text-slate-400 border border-slate-100"
+                                      )}>
+                                        <span className="shrink-0">{
+                                          lead.temperature === 'Muito quente' ? '🔥' :
+                                          lead.temperature === 'Quente' ? '☀️' :
+                                          lead.temperature === 'Morno' ? '🌤️' :
+                                          lead.temperature === 'Frio' ? '❄️' : '🧊'
+                                        }</span>
+                                        <span className="truncate">{lead.temperature || 'Morno'}</span>
+                                      </div>
+                                    </div>
                                     
                                     <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold uppercase">
                                       <Icons.Heart className="w-3.5 h-3.5 text-slate-400" />

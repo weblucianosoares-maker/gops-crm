@@ -432,7 +432,8 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       resp_con_rg: lead.resp_con_rg,
       resp_con_whatsapp: lead.resp_con_whatsapp?.replace(/\D/g, '') || null, 
       resp_con_phone: lead.resp_con_phone?.replace(/\D/g, '') || null,
-      resp_con_email: lead.resp_con_email
+      resp_con_email: lead.resp_con_email,
+      temperature: lead.temperature || 'Morno'
     };
 
     let result;
@@ -520,6 +521,12 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                     <DetailField label="Data Nascimento" type="date" value={lead.birth_date} onChange={(v:any) => setLead({...lead, birth_date: v})} />
                     <DetailField label="Estado Civil" value={lead.marital_status} selectOptions={['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União Estável']} onChange={(v:any) => setLead({...lead, marital_status: v})} />
                     <DetailField label="Data Casamento" type="date" value={lead.marriage_date} onChange={(v:any) => setLead({...lead, marriage_date: v})} />
+                    <DetailField 
+                      label="Temperatura" 
+                      value={lead.temperature || 'Morno'} 
+                      selectOptions={['Muito quente', 'Quente', 'Morno', 'Frio', 'Congelado']} 
+                      onChange={(v:any) => setLead({...lead, temperature: v})} 
+                    />
                   </div>
                </section>
 
