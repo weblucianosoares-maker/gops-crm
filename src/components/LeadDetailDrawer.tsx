@@ -627,7 +627,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                              </div>
                           </div>
                           <DetailField label="Operadora Proposta" value={lead.carrier} selectOptions={carriers} onChange={(v:any) => setLead({...lead, carrier: v, product: ''})} />
-                          <DetailField label="Produto Proposta" value={lead.product} selectOptions={products.filter((p:any) => !lead.carrier || p.carrier_id === carriers.find((c:any) => c.name === lead.carrier)?.id)} onChange={(v:any) => setLead({...lead, product: v})} />
+                          <DetailField label="Produto Proposta" value={lead.product} onChange={(v:any) => setLead({...lead, product: v})} placeholder="Ex: Produto Saúde Master" />
                           <div className="grid grid-cols-2 gap-4">
                              <DetailField label="Interesse (Vidas)" type="number" value={lead.interested_lives} onChange={(v:any) => setLead({...lead, interested_lives: Number(v)})} />
                              <DetailField label="Valor Proposta" type="number" value={lead.deal_value} onChange={(v:any) => setLead({...lead, deal_value: Number(v)})} />

@@ -570,21 +570,12 @@ interface LeadCreateScreenProps {
                           </select>
                         </div>
 
-                        <div>
-                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Produto Proposta</label>
-                          <select 
-                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" 
-                            value={newLead.product} 
-                            disabled={!newLead.carrier}
-                            onChange={e => setNewLead({...newLead, product: e.target.value})}
-                          >
-                            <option value="">{newLead.carrier ? "Selecione..." : "Selecione a Operadora..."}</option>
-                            {products
-                              .filter(p => !newLead.carrier || p.carrier_id === carriers.find(c => c.name === newLead.carrier)?.id)
-                              .map(p => <option key={p.id} value={p.name}>{p.name}</option>)
-                            }
-                          </select>
-                        </div>
+                        <InputField 
+                          label="Produto Proposta" 
+                          value={newLead.product} 
+                          onChange={(v:any) => setNewLead({...newLead, product: v})} 
+                          placeholder="Ex: Produto Saúde Master"
+                        />
 
                         <InputField label="Qtde Vidas" type="number" value={newLead.interested_lives} onChange={(v:any) => setNewLead({...newLead, interested_lives: Number(v)})} />
                         <InputField label="Valor Proposta" type="number" value={newLead.deal_value} onChange={(v:any) => setNewLead({...newLead, deal_value: Number(v)})} />
