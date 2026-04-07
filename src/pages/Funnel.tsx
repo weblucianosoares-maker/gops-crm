@@ -30,6 +30,14 @@ export default function Funnel() {
   
   const activeCount = openOpportunities.length;
   const totalValue = openOpportunities.reduce((sum, l) => sum + Number(l.deal_value || 0), 0);
+
+  const stats = {
+    quotesSent: leads.filter(l => l.status === 'Cotação Enviada').reduce((sum, l) => sum + Number(l.deal_value || 0), 0),
+    quotesApproved: leads.filter(l => l.status === 'Cotação Aprovada').reduce((sum, l) => sum + Number(l.deal_value || 0), 0),
+    inCarrier: leads.filter(l => l.status === 'Proposta Operadora').reduce((sum, l) => sum + Number(l.deal_value || 0), 0),
+    contractReleased: leads.filter(l => l.status === 'Contrato').reduce((sum, l) => sum + Number(l.deal_value || 0), 0),
+    activeDeployment: leads.filter(l => l.status === 'Plano Ativo').reduce((sum, l) => sum + Number(l.deal_value || 0), 0)
+  };
   
   const filteredLeadsForSearch = leads.filter(l => {
     const searchLower = searchTerm.toLowerCase();
@@ -115,6 +123,46 @@ export default function Funnel() {
             <div className="flex flex-col mt-1 hidden sm:flex">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Valor em Negociação</span>
               <span className="text-lg font-extrabold text-blue-600 mt-0.5">{formatCurrency(totalValue)}</span>
+            </div>
+          </div>
+
+          <div className="flex-1 px-8 hidden xl:flex items-center gap-10">
+            <div className="flex flex-col gap-1 pr-6 border-r border-slate-100">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1">Pipeline de Vendas</span>
+              <div className="flex items-center gap-6">
+                <div className="flex flex-col">
+                   <div className="flex items-center gap-1.5 mb-0.5">
+                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Enviadas</span>
+                   </div>
+                   <span className="text-xs font-black text-slate-700">{formatCurrency(stats.quotesSent)}</span>
+                </div>
+                <div className="flex flex-col">
+                   <div className="flex items-center gap-1.5 mb-0.5">
+                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Aprovadas</span>
+                   </div>
+                   <span className="text-xs font-black text-emerald-600">{formatCurrency(stats.quotesApproved)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1">Status Operacional</span>
+              <div className="flex items-center gap-8">
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">Na Operadora</span>
+                  <span className="text-[11px] font-black text-slate-700">{formatCurrency(stats.inCarrier)}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">Contrato Liberado</span>
+                  <span className="text-[11px] font-black text-emerald-700">{formatCurrency(stats.contractReleased)}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">Implantação Ativa</span>
+                  <span className="text-[11px] font-black text-blue-700">{formatCurrency(stats.activeDeployment)}</span>
+                </div>
+              </div>
             </div>
           </div>
           <button 
