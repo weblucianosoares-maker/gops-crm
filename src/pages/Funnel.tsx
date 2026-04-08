@@ -18,10 +18,14 @@ export default function Funnel() {
   const [searchTerm, setSearchTerm] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const columns = stages.map(col => ({
-    ...col,
-    count: leads.filter(l => l.status === col.name).length
-  }));
+  const columns = stages.map(col => {
+    const stageLeads = leads.filter(l => l.status === col.name);
+    return {
+      ...col,
+      count: stageLeads.length,
+      totalValue: stageLeads.reduce((sum, l) => sum + Number(l.deal_value || 0), 0)
+    };
+  });
 
   const openStatuses = stages.map(s => s.name);
   const openOpportunities = leads.filter(l => 
@@ -192,9 +196,14 @@ export default function Funnel() {
                  <div className="flex flex-col mb-4 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm shrink-0">
                     <div className={cn("h-1 w-full", col.color)}></div>
                     <div className="flex items-center justify-between p-3">
-                       <div className="flex items-center gap-2">
-                          <div className={cn("w-2.5 h-2.5 rounded-full shadow-sm", col.color)}></div>
-                          <h3 className="font-black text-[10px] uppercase tracking-[0.1em] text-slate-700">{col.label}</h3>
+                       <div className="flex flex-col gap-0.5">
+                          <div className="flex items-center gap-2">
+                             <div className={cn("w-2.5 h-2.5 rounded-full shadow-sm", col.color)}></div>
+                             <h3 className="font-black text-[10px] uppercase tracking-[0.1em] text-slate-700 truncate max-w-[150px]">{col.label}</h3>
+                          </div>
+                          <span className="text-[10px] font-black text-blue-600 pl-[18px]">
+                            {formatCurrency(col.totalValue)}
+                          </span>
                        </div>
                        <span className="text-[10px] font-black text-slate-500 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">
                          {col.count}
