@@ -103,10 +103,6 @@ export default function Dashboard() {
     // Calcula vidas ativas estritamente dos contratos que passaram no filtro acima
     const vidasAtivas = activeContracts.reduce((acc, c) => acc + (Number(c.lives) || 0), 0);
     
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
     // Valores específicos solicitados pelo usuário
     const negociaçõesTotais = leads
       .filter(l => !['Ganhos', 'Perdidos', 'Arquivado'].includes(l.status || ''))

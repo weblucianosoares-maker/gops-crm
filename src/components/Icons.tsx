@@ -54,7 +54,8 @@ import {
   Mic,
   Play,
   File,
-  Save
+  Save,
+  Rocket
 } from "lucide-react";
 
 export const Icons = {
@@ -118,5 +119,6 @@ export const Icons = {
   Play: Play,
   File: File,
   Save: Save,
-  ExternalLink: ExternalLink
+  ExternalLink: ExternalLink,
+  Rocket: Rocket
 };

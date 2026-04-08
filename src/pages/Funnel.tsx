@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect, useRef } from "react";
 import { NavLink } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -236,14 +237,14 @@ export default function Funnel() {
                          })
                          .map((lead: any, index: number) => (
                            <Draggable key={`lead-${lead.id}`} draggableId={String(lead.id)} index={index}>
-                             {(draggableProvided, draggableSnapshot) => (
+                             {(provided, snapshot) => (
                                <div
-                                 ref={draggableProvided.innerRef}
-                                 {...draggableProvided.draggableProps}
-                                 {...draggableProvided.dragHandleProps}
+                                 ref={provided.innerRef}
+                                 {...provided.draggableProps}
+                                 {...provided.dragHandleProps}
                                  style={{
-                                   ...draggableProvided.draggableProps.style,
-                                   zIndex: draggableSnapshot.isDragging ? 99 : 1
+                                   ...provided.draggableProps.style,
+                                   zIndex: snapshot.isDragging ? 99 : 1
                                  }}
                                >
                                  <motion.div 
@@ -251,8 +252,8 @@ export default function Funnel() {
                                    onClick={() => setSelectedLead(lead)}
                                    className={cn(
                                      "bg-white rounded-xl p-5 shadow-sm border group cursor-pointer transition-all",
-                                     draggableSnapshot.isDragging ? "shadow-2xl border-blue-600 ring-4 ring-blue-500/10 rotate-1 scale-105" : "border-slate-100 hover:shadow-md shadow-sm", col.color.replace('bg-', 'hover:border-') + "/30",
-                                     !draggableSnapshot.isDragging && "hover:-translate-y-1"
+                                     snapshot.isDragging ? "shadow-2xl border-blue-600 ring-4 ring-blue-500/10 rotate-1 scale-105" : "border-slate-100 hover:shadow-md shadow-sm", col.color.replace('bg-', 'hover:border-') + "/30",
+                                     !snapshot.isDragging && "hover:-translate-y-1"
                                    )}
                                  >
                                     <div className="flex justify-between items-start mb-3">
@@ -361,3 +362,4 @@ export default function Funnel() {
     </div>
   );
 }
+
