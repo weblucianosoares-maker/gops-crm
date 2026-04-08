@@ -12,7 +12,30 @@ interface LeadCreateScreenProps {
   onSuccess: () => void;
 }
 
- export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScreenProps) {
+const SectionHeader = ({ icon: Icon, title, colorClass }: { icon: any, title: string, colorClass: string }) => (
+  <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
+    <div className={cn("p-2 rounded-lg", colorClass)}>
+      <Icon className="w-5 h-5" />
+    </div>
+    <h4 className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-400">{title}</h4>
+  </div>
+);
+
+const InputField = ({ label, value, onChange, placeholder, type = "text", required = false, mask }: any) => (
+  <div>
+    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">{label}</label>
+    <input 
+      type={type}
+      required={required}
+      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
+      placeholder={placeholder}
+      value={mask ? mask(value) : value}
+      onChange={e => onChange(e.target.value)}
+    />
+  </div>
+);
+
+export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScreenProps) {
    const { stages, jobTitles, contactTypes, carriers, products } = useLeads();
    const { success, error, toast: showToast } = useToast();
    const [isSaving, setIsSaving] = useState(false);
@@ -215,28 +238,6 @@ interface LeadCreateScreenProps {
     }
   };
 
-  const SectionHeader = ({ icon: Icon, title, colorClass }: { icon: any, title: string, colorClass: string }) => (
-    <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
-      <div className={cn("p-2 rounded-lg", colorClass)}>
-        <Icon className="w-5 h-5" />
-      </div>
-      <h4 className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-400">{title}</h4>
-    </div>
-  );
-
-  const InputField = ({ label, value, onChange, placeholder, type = "text", required = false, mask }: any) => (
-    <div>
-      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">{label}</label>
-      <input 
-        type={type}
-        required={required}
-        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
-        placeholder={placeholder}
-        value={mask ? mask(value) : value}
-        onChange={e => onChange(e.target.value)}
-      />
-    </div>
-  );
 
   if (!isOpen) return null;
 
