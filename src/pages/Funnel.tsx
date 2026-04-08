@@ -10,6 +10,14 @@ import { supabase } from "../lib/supabase";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useToast } from "../components/Toasts";
 
+const interactionStatusOptions = [
+  { label: 'Sem Status', value: 'Sem Status', color: 'bg-slate-100 text-slate-500' },
+  { label: 'Aguardando Retorno', value: 'Aguardando Retorno', color: 'bg-amber-100 text-amber-700' },
+  { label: 'Não Responde', value: 'Não Responde', color: 'bg-red-100 text-red-700' },
+  { label: 'Analisando Cotação', value: 'Analisando Cotação', color: 'bg-indigo-100 text-indigo-700' },
+  { label: 'Realizei Contato', value: 'Realizei Contato', color: 'bg-emerald-100 text-emerald-700' },
+];
+
 export default function Funnel() {
   const { leads, fetchLeads, stages, loadingStages } = useLeads();
   const { success, error } = useToast();
@@ -91,6 +99,19 @@ export default function Funnel() {
       success("Lead movido!");
     }
     await fetchLeads();
+  };
+  
+  const updateInteractionStatus = async (leadId: string, newStatus: string) => {
+    const { error: supabaseError } = await supabase
+      .from('leads')
+      .update({ interaction_status: newStatus })
+      .eq('id', leadId);
+    
+    if (supabaseError) {
+      error("Erro ao atualizar status: " + supabaseError.message);
+    } else {
+      fetchLeads();
+    }
   };
   
   const handleDeleteLead = async (e: React.MouseEvent, leadId: string, leadName: string) => {
@@ -283,8 +304,28 @@ export default function Funnel() {
                                     
                                     <h4 className="font-bold text-slate-900 mb-1 group-hover:text-blue-700 transition-colors uppercase text-[11px] tracking-tight line-clamp-1 truncate">{lead.name || "Sem Nome"}</h4>
                                     
-                                    {/* Tag de Temperatura */}
-                                    <div className="mb-3 flex items-center gap-1.5 overflow-hidden">
+                                    {/* Tags de Status & Temperatura */}
+                                    <div className="mb-3 flex flex-wrap items-center gap-1.5 overflow-hidden">
+                                      {/* Interaction Status Picker */}
+                                      <div className="relative group/status shrink-0">
+                                        <select 
+                                          value={lead.interaction_status || 'Sem Status'}
+                                          onChange={(e) => {
+                                            e.stopPropagation();
+                                            updateInteractionStatus(lead.id, e.target.value);
+                                          }}
+                                          onClick={(e) => e.stopPropagation()}
+                                          className={cn(
+                                            "text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border-0 cursor-pointer outline-none transition-all appearance-none text-center",
+                                            interactionStatusOptions.find(o => o.value === (lead.interaction_status || 'Sem Status'))?.color || 'bg-slate-100 text-slate-500'
+                                          )}
+                                        >
+                                          {interactionStatusOptions.map(opt => (
+                                            <option key={opt.value} value={opt.value} className="bg-white text-slate-900 uppercase font-bold text-[10px]">{opt.label}</option>
+                                          ))}
+                                        </select>
+                                      </div>
+
                                       <div className={cn(
                                         "px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest flex items-center gap-1 shrink-0",
                                         lead.temperature === 'Muito quente' ? "bg-red-50 text-red-600 border border-red-100" :
