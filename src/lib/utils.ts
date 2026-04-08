@@ -60,3 +60,23 @@ export function formatCEP(value: string | undefined) {
     .replace(/(\d{5})(\d)/, "$1-$2")
     .substring(0, 9);
 }
+
+export function formatCurrencyValue(value: string | number | undefined) {
+  if (value === undefined || value === null || value === "") return "";
+  
+  // Convert to string and keep only digits
+  const digits = String(value).replace(/\D/g, "");
+  if (!digits) return "";
+  
+  const amount = parseInt(digits) / 100;
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(amount);
+}
+
+export function parseCurrencyValue(value: string): number {
+  if (!value) return 0;
+  const digits = value.replace(/\D/g, "");
+  return digits ? parseInt(digits) / 100 : 0;
+}

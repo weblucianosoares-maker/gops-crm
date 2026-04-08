@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icons } from "./Icons";
-import { cn, formatCPF, formatPhone, formatCNPJ, formatCEP } from "../lib/utils";
+import { cn, formatCPF, formatPhone, formatCNPJ, formatCEP, formatCurrencyValue, parseCurrencyValue } from "../lib/utils";
 import { supabase } from "../lib/supabase";
 import { useLeads } from "../lib/leadsContext";
 import { evolutionService } from "../lib/evolution";
@@ -622,7 +622,13 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                                <DetailField label="Produto Atual" value={lead.current_product} onChange={(v:any) => setLead({...lead, current_product: v})} />
                                <div className="grid grid-cols-2 gap-4">
                                   <DetailField label="Vidas" type="number" value={lead.current_lives} onChange={(v:any) => setLead({...lead, current_lives: Number(v)})} />
-                                  <DetailField label="Valor Atual" type="number" value={lead.current_value} onChange={(v:any) => setLead({...lead, current_value: Number(v)})} />
+                                  <DetailField 
+                                    label="Valor Atual" 
+                                    value={lead.current_value ? (lead.current_value * 100).toString() : ""} 
+                                    mask={formatCurrencyValue}
+                                    onChange={(v:any) => setLead({...lead, current_value: parseCurrencyValue(v)})} 
+                                    placeholder="R$ 0,00"
+                                  />
                                </div>
                                <div className="grid grid-cols-2 gap-4">
                                   <DetailField label="Vencimento Contrato" type="date" value={lead.contract_expiry_date} onChange={(v:any) => setLead({...lead, contract_expiry_date: v})} />
@@ -653,7 +659,13 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                           <DetailField label="Produto Proposta" value={lead.product} onChange={(v:any) => setLead({...lead, product: v})} placeholder="Ex: Produto Saúde Master" />
                           <div className="grid grid-cols-2 gap-4">
                              <DetailField label="Interesse (Vidas)" type="number" value={lead.interested_lives} onChange={(v:any) => setLead({...lead, interested_lives: Number(v)})} />
-                             <DetailField label="Valor Proposta" type="number" value={lead.deal_value} onChange={(v:any) => setLead({...lead, deal_value: Number(v)})} />
+                             <DetailField 
+                               label="Valor Proposta" 
+                               value={lead.deal_value ? (lead.deal_value * 100).toString() : ""} 
+                               mask={formatCurrencyValue}
+                               onChange={(v:any) => setLead({...lead, deal_value: parseCurrencyValue(v)})} 
+                               placeholder="R$ 0,00"
+                             />
                           </div>
                        </div>
                     </div>

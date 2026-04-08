@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icons } from "./Icons";
-import { cn, formatCPF, formatPhone, formatCNPJ, formatCEP } from "../lib/utils";
+import { cn, formatCPF, formatPhone, formatCNPJ, formatCEP, formatCurrencyValue, parseCurrencyValue } from "../lib/utils";
 import { supabase } from "../lib/supabase";
 import { useLeads } from "../lib/leadsContext";
 import { useToast } from "./Toasts";
@@ -512,7 +512,13 @@ interface LeadCreateScreenProps {
                               <InputField label="Operadora Atual" value={newLead.current_carrier} onChange={(v:any) => setNewLead({...newLead, current_carrier: v})} />
                               <InputField label="Produto Atual" value={newLead.current_product} onChange={(v:any) => setNewLead({...newLead, current_product: v})} />
                               <InputField label="Qtde Vidas" type="number" value={newLead.current_lives} onChange={(v:any) => setNewLead({...newLead, current_lives: Number(v)})} />
-                              <InputField label="Valor Pago Atual" type="number" value={newLead.current_value} onChange={(v:any) => setNewLead({...newLead, current_value: Number(v)})} />
+                              <InputField 
+                                label="Valor Pago Atual" 
+                                value={newLead.current_value ? (newLead.current_value * 100).toString() : ""} 
+                                mask={formatCurrencyValue}
+                                onChange={(v:any) => setNewLead({...newLead, current_value: parseCurrencyValue(v)})} 
+                                placeholder="R$ 0,00"
+                              />
                            </div>
                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                               <InputField label="Vencimento Contrato" type="date" value={newLead.contract_expiry_date} onChange={(v:any) => setNewLead({...newLead, contract_expiry_date: v})} />
@@ -604,7 +610,13 @@ interface LeadCreateScreenProps {
                         />
 
                         <InputField label="Qtde Vidas" type="number" value={newLead.interested_lives} onChange={(v:any) => setNewLead({...newLead, interested_lives: Number(v)})} />
-                        <InputField label="Valor Proposta" type="number" value={newLead.deal_value} onChange={(v:any) => setNewLead({...newLead, deal_value: Number(v)})} />
+                        <InputField 
+                          label="Valor Proposta" 
+                          value={newLead.deal_value ? (newLead.deal_value * 100).toString() : ""} 
+                          mask={formatCurrencyValue}
+                          onChange={(v:any) => setNewLead({...newLead, deal_value: parseCurrencyValue(v)})} 
+                          placeholder="R$ 0,00"
+                        />
                       </div>
                     </div>
                   </div>
