@@ -52,11 +52,35 @@ async function fetchAndInportContacts(accessToken: string, onSuccess: (count: nu
     const data = await response.json();
     const connections = data.connections || [];
 
-    // Buscar leads atuais para checar duplicados
-    const { data: existingLeads } = await supabase.from('leads').select('name, email, phone');
-    const existingPhones = new Set(existingLeads?.map(l => l.phone).filter(Boolean));
-    const existingEmails = new Set(existingLeads?.map(l => l.email?.toLowerCase().trim()).filter(Boolean));
-    const existingNames = new Set(existingLeads?.map(l => l.name?.toLowerCase().trim()).filter(Boolean));
+    // Buscar TODOS os leads atuais para checar duplicados (tratando paginação do Supabase)
+    let allExistingLeads: any[] = [];
+    let from = 0;
+    let to = 999;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('leads')
+        .select('name, email, phone')
+        .range(from, to);
+      
+      if (error) {
+        console.error("Erro ao buscar leads para checar duplicidade:", error);
+        break;
+      }
+      
+      if (data && data.length > 0) {
+        allExistingLeads = [...allExistingLeads, ...data];
+        if (data.length < 1000) hasMore = false;
+        else { from += 1000; to += 1000; }
+      } else {
+        hasMore = false;
+      }
+    }
+
+    const existingPhones = new Set(allExistingLeads.map(l => (l.phone || '').replace(/\D/g, '')).filter(Boolean));
+    const existingEmails = new Set(allExistingLeads.map(l => l.email?.toLowerCase().trim()).filter(Boolean));
+    const existingNames = new Set(allExistingLeads.map(l => l.name?.toLowerCase().trim()).filter(Boolean));
 
     let importedCount = 0;
     let duplicatedCount = 0;
