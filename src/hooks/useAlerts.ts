@@ -11,6 +11,8 @@ export interface AlertNotification {
   severity: 'info' | 'warning' | 'urgent';
   entityId: string;
   leadData?: any; // To allow quick opening
+  typeLabel: string;
+  statusLabel: string;
 }
 
 export function useAlerts() {
@@ -58,7 +60,9 @@ export function useAlerts() {
             isToday: true,
             severity: 'urgent',
             entityId: lead.id,
-            leadData: lead
+            leadData: lead,
+            typeLabel: 'Aniversário',
+            statusLabel: 'Hoje'
           });
         }
         
@@ -73,27 +77,29 @@ export function useAlerts() {
             isToday: true,
             severity: 'info',
             entityId: lead.id,
-            leadData: lead
+            leadData: lead,
+            typeLabel: 'Bodas',
+            statusLabel: 'Hoje'
           });
         }
 
         // VENCIMENTO DE CONTRATO (Alterado para 90 dias de antecedência)
         if (lead.contract_expiry_date) {
            const daysToExpiry = getDiffDays(lead.contract_expiry_date);
-           // Gatilhos específicos solicitados: 90, 30, 15, 7 ou hoje
-           // Mostramos alertas se estiver dentro dessa faixa de monitoramento crítico
-           if (daysToExpiry !== null && daysToExpiry >= 0 && daysToExpiry <= 90) {
-              const severity = daysToExpiry <= 7 ? 'urgent' : daysToExpiry <= 30 ? 'warning' : 'info';
+           if (daysToExpiry !== null && daysToExpiry >= -30 && daysToExpiry <= 90) {
+              const severity = daysToExpiry <= 0 ? 'urgent' : daysToExpiry <= 30 ? 'warning' : 'info';
               newAlerts.push({
                 id: `expiry-lead-${lead.id}`,
                 type: 'expiry',
                 title: `Vencimento: ${lead.name}`,
-                description: daysToExpiry === 0 ? "O contrato vence HOJE!" : `O contrato vence em ${daysToExpiry} dias. Renovar?`,
+                description: daysToExpiry === 0 ? "O contrato vence HOJE!" : daysToExpiry < 0 ? `Vencido há ${Math.abs(daysToExpiry)} dias!` : `O contrato vence em ${daysToExpiry} dias. Renovar?`,
                 date: new Date(lead.contract_expiry_date),
                 isToday: daysToExpiry === 0,
                 severity: severity,
                 entityId: lead.id,
-                leadData: lead
+                leadData: lead,
+                typeLabel: 'Contrato',
+                statusLabel: daysToExpiry === 0 ? 'Hoje' : daysToExpiry < 0 ? 'Vencido' : 'A vencer'
               });
            }
         }
@@ -112,7 +118,9 @@ export function useAlerts() {
             isToday: true,
             severity: 'urgent',
             entityId: dep.lead_id || '',
-            leadData: lead
+            leadData: lead,
+            typeLabel: 'Aniversário',
+            statusLabel: 'Hoje'
           });
         }
       });
@@ -123,17 +131,19 @@ export function useAlerts() {
         remDate.setHours(0,0,0,0);
         const diffDays = Math.ceil((remDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         
-        if (diffDays <= 7 && diffDays >= -1) { 
+        if (diffDays <= 7 && diffDays >= -15) { 
           newAlerts.push({
             id: `rem-${rem.id}`,
             type: 'reminder',
             title: `Compromisso: ${rem.title}`,
-            description: diffDays === 0 ? "Ação agendada para HOJE." : `Agendado para o lead ${(rem.leads as any)?.name}.`,
+            description: diffDays === 0 ? "Ação agendada para HOJE." : diffDays < 0 ? "Compromisso atrasado!" : `Agendado para o lead ${(rem.leads as any)?.name}.`,
             date: remDate,
             isToday: diffDays === 0,
             severity: diffDays <= 0 ? 'urgent' : 'warning',
             entityId: rem.lead_id,
-            leadData: rem.leads
+            leadData: rem.leads,
+            typeLabel: 'Lembrete',
+            statusLabel: diffDays === 0 ? 'Hoje' : diffDays < 0 ? 'Vencido' : 'A vencer'
           });
         }
       });

@@ -150,7 +150,7 @@ function GlobalAlertBar() {
   const current = activeAlerts[index % activeAlerts.length];
 
   return (
-    <div className="bg-slate-900 text-white h-9 flex items-center justify-between px-4 overflow-hidden relative z-[110] border-b border-white/10 shadow-lg">
+    <div className="bg-slate-900 text-white h-10 flex items-center justify-between px-4 overflow-hidden relative z-[110] border-b border-white/10 shadow-lg">
        <div className="flex items-center gap-2 overflow-hidden w-full justify-center">
           <AnimatePresence mode="wait">
             <motion.button
@@ -159,24 +159,39 @@ function GlobalAlertBar() {
                animate={{ x: 0, opacity: 1 }}
                exit={{ x: 100, opacity: 0 }}
                transition={{ type: "spring", stiffness: 80, damping: 15 }}
-               onClick={() => current.leadData && openDrawer(current.leadData, 'details')}
+               onClick={() => {
+                 if (current.leadData) {
+                    console.log("Opening lead from alert:", current.leadData.name);
+                    openDrawer(current.leadData, 'details');
+                 }
+               }}
                className="flex items-center gap-4 px-6 h-full hover:bg-white/5 transition-all group cursor-pointer"
             >
-               <span className={cn(
-                 "text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded shadow-sm",
-                 current.severity === 'urgent' ? "bg-red-500 text-white animate-pulse shadow-red-900/40" :
-                 current.severity === 'warning' ? "bg-amber-500 text-slate-900 shadow-amber-900/40" : "bg-blue-500 text-white"
-               )}>
-                 {current.isToday ? "Hoje" : current.type === 'expiry' ? "Alerta" : "Vencimento"}
-               </span>
+               <div className="flex items-center gap-2">
+                 <span className={cn(
+                   "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-sm",
+                   current.severity === 'urgent' ? "bg-red-500 text-white animate-pulse shadow-red-900/40" :
+                   current.severity === 'warning' ? "bg-amber-500 text-slate-900 shadow-amber-900/40" : "bg-blue-500 text-white"
+                 )}>
+                   {current.typeLabel}
+                 </span>
+                 <span className={cn(
+                    "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-white/10 text-slate-300 border border-white/5",
+                    current.statusLabel === 'Vencido' ? "text-red-400 border-red-400/20 bg-red-400/5" : 
+                    current.statusLabel === 'Hoje' ? "text-amber-400 border-amber-400/20 bg-amber-400/5" : ""
+                 )}>
+                   {current.statusLabel}
+                 </span>
+               </div>
 
                <div className="flex items-center gap-3">
                  <div className="flex items-center gap-3 pr-4 border-r border-white/10">
-                    {current.type === 'birthday' && <Icons.Cake className="w-3.5 h-3.5 text-pink-400" />}
-                    {current.type === 'marriage' && <Icons.Heart className="w-3.5 h-3.5 text-rose-400" />}
-                    {current.type === 'reminder' && <Icons.Bell className="w-3.5 h-3.5 text-amber-400" />}
-                    {current.type === 'expiry' && <Icons.AlertCircle className="w-3.5 h-3.5 text-red-400" />}
-                    <p className="text-[11px] font-black tracking-widest group-hover:text-amber-400 transition-colors uppercase whitespace-nowrap">{current.title}</p>
+                    <div className="flex flex-col items-start">
+                       <p className="text-[11px] font-black tracking-widest group-hover:text-amber-400 transition-colors uppercase whitespace-nowrap">{current.title}</p>
+                       <p className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter">
+                         Data: {new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(current.date)}
+                       </p>
+                    </div>
                  </div>
                  <p className="text-[10px] font-bold text-slate-400 group-hover:text-slate-100 transition-colors truncate max-w-lg hidden sm:block italic tracking-tight">{current.description}</p>
                </div>
