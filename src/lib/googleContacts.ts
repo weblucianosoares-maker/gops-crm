@@ -40,17 +40,34 @@ export async function syncGoogleContacts(onSuccess: (count: number, duplicated: 
 
 async function fetchAndInportContacts(accessToken: string, onSuccess: (count: number, duplicated: number) => void, onError: (err: any) => void) {
   try {
-    const response = await fetch(
-      'https://people.googleapis.com/v1/people/me/connections?personFields=names,emailAddresses,phoneNumbers,memberships&pageSize=1000',
-      {
+    let connections: any[] = [];
+    let pageToken = '';
+    let hasMorePages = true;
+
+    while (hasMorePages) {
+      const url = `https://people.googleapis.com/v1/people/me/connections?personFields=names,emailAddresses,phoneNumbers,memberships&pageSize=1000${pageToken ? `&pageToken=${pageToken}` : ''}`;
+      
+      const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
-      }
-    );
+      });
 
-    const data = await response.json();
-    const connections = data.connections || [];
+      if (!response.ok) {
+        throw new Error(`Erro na API do Google: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      if (data.connections) {
+        connections = [...connections, ...data.connections];
+      }
+
+      if (data.nextPageToken) {
+        pageToken = data.nextPageToken;
+      } else {
+        hasMorePages = false;
+      }
+    }
 
     // Buscar TODOS os leads atuais para checar duplicados (tratando paginação do Supabase)
     let allExistingLeads: any[] = [];
