@@ -103,21 +103,59 @@ export default function Dashboard() {
     // Calcula vidas ativas estritamente dos contratos que passaram no filtro acima
     const vidasAtivas = activeContracts.reduce((acc, c) => acc + (Number(c.lives) || 0), 0);
     
-    const receitaEmRisco = leads.filter(l => l.status === 'Negociação').reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
-    const receitaStandby = leads.filter(l => l.status === 'Novo' || l.status === 'Interesse').reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // Valores específicos solicitados pelo usuário
+    const negociaçõesTotais = leads
+      .filter(l => !['Ganhos', 'Perdidos', 'Arquivado'].includes(l.status || ''))
+      .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
+
+    const propostasEnviadas = leads
+      .filter(l => l.status === 'Cotação Enviada')
+      .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
+
+    const propostasNaOperadora = leads
+      .filter(l => l.status === 'Proposta Operadora')
+      .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
+
+    const contratoLiberado = leads
+      .filter(l => l.status === 'Contrato')
+      .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
+
+    const implantaçãoAtiva = leads
+      .filter(l => l.status === 'Plano Ativo')
+      .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
+
+    // Meta Mensal (R$ 15.000) baseada em Contratos/Vidas convertidas este mês
+    const metaMensal = 15000;
+    const atingidoMeta = leads
+      .filter(l => {
+        if (!['Contrato', 'Plano Ativo'].includes(l.status || '')) return false;
+        const d = new Date(l.updated_at || l.created_at);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      })
+      .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
     
+    const progressMeta = Math.min((atingidoMeta / metaMensal) * 100, 100);
+
     setStats({ 
-      totalLeads, 
-      totalActiveContracts,
-      vidasAtivas,
-      receitaEmRisco, 
-      receitaStandby, 
-      lastMonthVgv, 
-      currentMonthVgv, 
-      stoneStatus, 
-      nextTier, 
-      progressToNext,
-      comissaoLiquidaTotal 
+      totalLeads: leads.length, 
+      totalActiveContracts: contracts.filter(c => c.status?.toLowerCase() === 'ativo').length,
+      vidasAtivas: contracts.filter(c => c.status?.toLowerCase() === 'ativo').reduce((acc, c) => acc + (Number(c.lives) || 0), 0),
+      negociaçõesTotais,
+      propostasEnviadas,
+      propostasNaOperadora,
+      contratoLiberado,
+      implantaçãoAtiva,
+      atingidoMeta,
+      metaMensal,
+      progressMeta,
+      comissaoLiquidaTotal: comissaoLiquidaTotal,
+      stoneStatus,
+      nextTier,
+      progressToNext
     });
 
     // Funnel Dinâmico
@@ -223,6 +261,36 @@ export default function Dashboard() {
     }
   }, [leads, stages]);
 
+  const MetricCard = ({ label, value, color, icon: Icon, delay }: any) => (
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+      className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden group"
+    >
+      <div className="relative z-10">
+        <div className="flex items-center gap-2 mb-2">
+          <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center", 
+            color === 'blue' ? "bg-blue-50 text-blue-600" :
+            color === 'emerald' ? "bg-emerald-50 text-emerald-600" :
+            color === 'amber' ? "bg-amber-50 text-amber-600" :
+            color === 'sky' ? "bg-sky-50 text-sky-600" : "bg-indigo-50 text-indigo-600"
+          )}>
+            <Icon className="w-4 h-4" />
+          </div>
+          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">{label}</span>
+        </div>
+        <h3 className="text-lg font-black text-slate-900 truncate">{formatCurrency(value)}</h3>
+      </div>
+      <div className={cn("absolute -right-4 -bottom-4 w-12 h-12 rounded-full blur-xl opacity-20",
+        color === 'blue' ? "bg-blue-400" :
+        color === 'emerald' ? "bg-emerald-400" :
+        color === 'amber' ? "bg-amber-400" :
+        color === 'sky' ? "bg-sky-400" : "bg-indigo-400"
+      )} />
+    </motion.div>
+  );
+
   if (!stats) return <div className="p-8 flex items-center justify-center min-h-[400px]">
     <div className="flex flex-col items-center gap-4">
       <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
@@ -233,105 +301,153 @@ export default function Dashboard() {
   return (
     <div className="h-full overflow-y-auto custom-scrollbar p-6 space-y-8">
       {/* Summary Metrics - Fixed One Row Layout */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* Summary Metrics - Fixed One Row Layout */}
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+        {/* Row 1/2 Toggle */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white p-5 rounded-xl relative overflow-hidden group border border-slate-100 shadow-sm"
-        >
-          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-110 duration-500" />
-          <p className="text-[0.6rem] uppercase tracking-widest text-slate-500 font-bold mb-1">Total de Leads</p>
-          <h3 className="text-2xl font-black text-blue-900 tracking-tight">{stats.totalLeads.toLocaleString()}</h3>
-        </motion.div>
-
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white p-5 rounded-xl relative overflow-hidden group border border-slate-100 shadow-sm"
-        >
-          <div className="absolute top-0 right-0 w-24 h-24 bg-green-50 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-110 duration-500" />
-          <p className="text-[0.6rem] uppercase tracking-widest text-slate-500 font-bold mb-1">Contratos / Vidas Ativas</p>
-          <h3 className="text-2xl font-black text-blue-900 tracking-tight">
-            {stats.totalActiveContracts} / {stats.vidasAtivas}
-          </h3>
-        </motion.div>
-
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-blue-600 p-5 rounded-xl text-white relative overflow-hidden group shadow-lg shadow-blue-100"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm col-span-1 xl:col-span-2 relative overflow-hidden group"
         >
           <div className="relative z-10">
-            <p className="text-[0.6rem] uppercase tracking-widest text-blue-100 font-bold mb-1">Comissão Líquida (Prev.)</p>
-            <h3 className="text-lg font-black tracking-tight truncate">{formatCurrency(stats.comissaoLiquidaTotal)}</h3>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Meta de Vendas</span>
+              <Icons.Target className="w-4 h-4 text-emerald-500" />
+            </div>
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-2xl font-black text-slate-900">{formatCurrency(stats.atingidoMeta)}</h3>
+              <p className="text-[10px] font-black text-slate-400 uppercase">/ {formatCurrency(stats.metaMensal)}</p>
+            </div>
+            <div className="mt-4">
+              <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase mb-1.5 tracking-tighter">
+                <span>Progresso Mensal</span>
+                <span className={cn(stats.progressMeta >= 100 ? "text-emerald-500" : "text-blue-600")}>
+                  {Math.round(stats.progressMeta)}%
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${stats.progressMeta}%` }}
+                  transition={{ duration: 1.5, ease: "easeOut" }}
+                  className={cn(
+                    "h-full rounded-full transition-colors",
+                    stats.progressMeta >= 100 ? "bg-emerald-500" : "bg-blue-600"
+                  )}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-emerald-50 rounded-full blur-2xl group-hover:bg-emerald-100/50 transition-colors" />
+        </motion.div>
+
+        <MetricCard 
+          label="Em Negociação" 
+          value={stats.negociaçõesTotais} 
+          color="blue" 
+          icon={Icons.Funnel} 
+          delay={0.1}
+        />
+        
+        <MetricCard 
+          label="Cotações Enviadas" 
+          value={stats.propostasEnviadas} 
+          color="sky" 
+          icon={Icons.MessageSquare} 
+          delay={0.2}
+        />
+
+        <MetricCard 
+          label="Na Operadora" 
+          value={stats.propostasNaOperadora} 
+          color="amber" 
+          icon={Icons.History} 
+          delay={0.3}
+        />
+
+        <MetricCard 
+          label="Contrato Liberado" 
+          value={stats.contratoLiberado} 
+          color="emerald" 
+          icon={Icons.CheckCircle} 
+          delay={0.4}
+        />
+
+        <MetricCard 
+          label="Implantação Ativa" 
+          value={stats.implantaçãoAtiva} 
+          color="indigo" 
+          icon={Icons.Rocket} 
+          delay={0.5}
+        />
+      </section>
+
+      {/* Secondary Row: Leads and Broker Stats */}
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
+          className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center justify-between"
+        >
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total de Leads</p>
+            <h3 className="text-xl font-black text-slate-900">{stats.totalLeads.toLocaleString()}</h3>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+            <Icons.Leads className="w-5 h-5" />
           </div>
         </motion.div>
 
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}
+          className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center justify-between"
+        >
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Vidas Ativas</p>
+            <h3 className="text-xl font-black text-slate-900">{stats.vidasAtivas}</h3>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+            <Icons.Users className="w-5 h-5" />
+          </div>
+        </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}
           className={cn(
             "p-5 rounded-xl text-white relative overflow-hidden group shadow-lg",
             stats.stoneStatus.color === 'amber' ? "bg-amber-500 shadow-amber-100" :
             stats.stoneStatus.color === 'blue' ? "bg-blue-700 shadow-blue-100" :
             stats.stoneStatus.color === 'emerald' ? "bg-emerald-600 shadow-emerald-100" :
-            stats.stoneStatus.color === 'cyan' ? "bg-cyan-600 shadow-cyan-100" :
-            stats.stoneStatus.color === 'sky' ? "bg-sky-500 shadow-sky-100" :
             stats.stoneStatus.color === 'red' ? "bg-red-600 shadow-red-100" : "bg-slate-600 shadow-slate-100"
           )}
         >
-          <div className="relative z-10">
-             <div className="flex items-center justify-between mb-1">
-               <p className="text-[0.6rem] uppercase tracking-widest opacity-80 font-bold">Status Invictos</p>
-               <Icons.Trophy className="w-3 h-3 opacity-50" />
-             </div>
-            <h3 className="text-lg font-black tracking-tight truncate uppercase italic">{stats.stoneStatus.label}</h3>
-            {stats.nextTier && (
-              <div className="mt-2">
-                <div className="flex justify-between text-[8px] font-bold mb-1 opacity-70 uppercase tracking-tighter">
-                  <span>Próxima: {stats.nextTier.name}</span>
-                  <span>{Math.round(stats.progressToNext)}%</span>
-                </div>
-                <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
-                  <div className="bg-white h-full transition-all duration-1000" style={{ width: `${stats.progressToNext}%` }} />
-                </div>
-              </div>
-            )}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-widest opacity-80 mb-1">Status Invictos</p>
+              <h3 className="text-lg font-black italic uppercase">{stats.stoneStatus.label}</h3>
+            </div>
+            <Icons.Trophy className="w-6 h-6 opacity-30" />
           </div>
-          <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform" />
         </motion.div>
 
-        {/* NEW: Birthday Month Card */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white p-5 rounded-xl relative overflow-hidden group border border-slate-100 shadow-sm"
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}
+          className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4"
         >
-          <div className="absolute top-0 right-0 w-24 h-24 bg-pink-50 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-110 duration-500" />
-          <div className="flex items-center gap-3 relative z-10">
-            <div className="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center shrink-0">
-              <Icons.Cake className="w-5 h-5 text-pink-600" />
+          <div className="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center shrink-0">
+            <Icons.Cake className="w-5 h-5 text-pink-600" />
+          </div>
+          <div className="flex-1 flex justify-between items-center pr-2">
+            <div className="text-center">
+              <p className="text-[8px] font-black text-slate-400 uppercase">Dia</p>
+              <p className="text-sm font-black text-pink-600 leading-none">{birthdaysDay}</p>
             </div>
-            <div className="flex-1">
-              <h3 className="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest mb-1">Aniv.</h3>
-              <div className="flex items-center justify-between text-center">
-                <div className="space-y-0">
-                  <p className="text-[8px] font-black text-slate-400 uppercase">Dia</p>
-                  <p className="text-sm font-black text-pink-600 leading-none">{birthdaysDay}</p>
-                </div>
-                <div className="space-y-0 px-2 border-x border-slate-100">
-                  <p className="text-[8px] font-black text-slate-400 uppercase">Sem</p>
-                  <p className="text-sm font-black text-pink-600 leading-none">{birthdaysWeek}</p>
-                </div>
-                <div className="space-y-0">
-                  <p className="text-[8px] font-black text-slate-400 uppercase">Mês</p>
-                  <p className="text-sm font-black text-pink-600 leading-none">{birthdaysMonth}</p>
-                </div>
-              </div>
+            <div className="text-center px-4 border-x border-slate-100">
+              <p className="text-[8px] font-black text-slate-400 uppercase">Sem</p>
+              <p className="text-sm font-black text-pink-600 leading-none">{birthdaysWeek}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[8px] font-black text-slate-400 uppercase">Mês</p>
+              <p className="text-sm font-black text-pink-600 leading-none">{birthdaysMonth}</p>
             </div>
           </div>
         </motion.div>

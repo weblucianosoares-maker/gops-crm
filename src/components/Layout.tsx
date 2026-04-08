@@ -81,8 +81,6 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (
         })}
       </nav>
 
-      <NotificationPanel setIsOpen={setIsOpen} />
-
       <div className="mt-auto border-t border-slate-100 pt-6 px-6 space-y-1">
         <button className="flex items-center w-full text-slate-500 py-3 hover:text-blue-600 transition-all">
           <Icons.Support className="w-5 h-5 mr-3" />
@@ -127,68 +125,6 @@ function LeadsSubMenu({ setIsOpen }: { setIsOpen?: (val: boolean) => void }) {
           </span>
         </button>
       ))}
-    </div>
-  );
-}
-
-function NotificationPanel({ setIsOpen }: { setIsOpen?: (val: boolean) => void }) {
-  const { unreadLeads, leads, unreadCounts } = useLeads();
-  const { openDrawer } = useDrawer();
-
-  const leadsWithUnread = unreadLeads
-    .map(id => leads.find(l => l.id === id))
-    .filter(Boolean);
-
-  if (leadsWithUnread.length === 0) return null;
-
-  return (
-    <div className="px-6 py-4 border-t border-slate-100/50 mt-4">
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Mensagens Diretas</span>
-        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-green-500 text-[8px] font-bold text-white animate-pulse">
-          {leadsWithUnread.length}
-        </span>
-      </div>
-      
-      <div className="space-y-1.5 overflow-y-auto max-h-[300px] no-scrollbar">
-        {leadsWithUnread.map((lead) => (
-          <button
-            key={lead.id}
-            onClick={() => {
-              openDrawer(lead, 'chat');
-              if (window.innerWidth < 768 && setIsOpen) setIsOpen(false);
-            }}
-            className="flex items-center w-full group p-2 hover:bg-white rounded-xl transition-all border border-transparent hover:border-slate-100 hover:shadow-sm"
-          >
-            <div className="relative shrink-0">
-              <div className="w-9 h-9 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center font-bold text-xs text-slate-600 overflow-hidden group-hover:scale-105 transition-transform">
-                {lead.avatar_url ? (
-                  <img src={lead.avatar_url} alt={lead.name} className="w-full h-full object-cover" />
-                ) : (
-                  (lead.name || "N").substring(0, 2).toUpperCase()
-                )}
-              </div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full flex items-center justify-center">
-                <Icons.MessageSquare className="w-2 h-2 text-white" />
-              </div>
-            </div>
-            
-            <div className="ml-3 flex-1 text-left min-w-0">
-              <p className="text-[11px] font-bold text-slate-700 truncate leading-tight group-hover:text-blue-600 transition-colors">
-                {lead.name}
-              </p>
-              <div className="flex items-center justify-between mt-0.5">
-                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tight">WhatsApp</p>
-                {unreadCounts[lead.id] > 1 && (
-                  <span className="bg-slate-100 text-slate-500 text-[8px] px-1.5 py-0.5 rounded-full font-black">
-                    {unreadCounts[lead.id]}
-                  </span>
-                )}
-              </div>
-            </div>
-          </button>
-        ))}
-      </div>
     </div>
   );
 }
