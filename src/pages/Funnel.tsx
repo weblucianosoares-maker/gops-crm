@@ -24,7 +24,7 @@ export default function Funnel() {
     return {
       ...col,
       count: stageLeads.length,
-      totalValue: stageLeads.reduce((sum, l) => sum + Number(l.deal_value || 0), 0)
+      totalValue: stageLeads.reduce((sum, l) => sum + Number(l.deal_value || l.current_value || 0), 0)
     };
   });
 
@@ -34,14 +34,14 @@ export default function Funnel() {
   );
   
   const activeCount = openOpportunities.length;
-  const totalValue = openOpportunities.reduce((sum, l) => sum + Number(l.deal_value || 0), 0);
+  const totalValue = openOpportunities.reduce((sum, l) => sum + Number(l.deal_value || l.current_value || 0), 0);
 
   const stats = {
-    quotesSent: leads.filter(l => l.status === 'Cotação Enviada').reduce((sum, l) => sum + Number(l.deal_value || 0), 0),
-    quotesApproved: leads.filter(l => l.status === 'Cotação Aprovada').reduce((sum, l) => sum + Number(l.deal_value || 0), 0),
-    inCarrier: leads.filter(l => l.status === 'Proposta Operadora').reduce((sum, l) => sum + Number(l.deal_value || 0), 0),
-    contractReleased: leads.filter(l => l.status === 'Contrato').reduce((sum, l) => sum + Number(l.deal_value || 0), 0),
-    activeDeployment: leads.filter(l => l.status === 'Plano Ativo').reduce((sum, l) => sum + Number(l.deal_value || 0), 0)
+    quotesSent: leads.filter(l => l.status === 'Cotação Enviada').reduce((sum, l) => sum + Number(l.deal_value || l.current_value || 0), 0),
+    quotesApproved: leads.filter(l => l.status === 'Cotação Aprovada').reduce((sum, l) => sum + Number(l.deal_value || l.current_value || 0), 0),
+    inCarrier: leads.filter(l => l.status === 'Proposta Operadora').reduce((sum, l) => sum + Number(l.deal_value || l.current_value || 0), 0),
+    contractReleased: leads.filter(l => l.status === 'Contrato').reduce((sum, l) => sum + Number(l.deal_value || l.current_value || 0), 0),
+    activeDeployment: leads.filter(l => l.status === 'Plano Ativo').reduce((sum, l) => sum + Number(l.deal_value || l.current_value || 0), 0)
   };
   
   const filteredLeadsForSearch = leads.filter(l => {
@@ -257,9 +257,19 @@ export default function Funnel() {
                                    )}
                                  >
                                     <div className="flex justify-between items-start mb-3">
-                                      <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
-                                        {formatCurrency(Number(lead.deal_value || 0))}
-                                      </span>
+                                      <div className="flex flex-col items-start gap-1">
+                                        <span className={cn(
+                                          "text-[10px] font-black px-2.5 py-1 rounded-lg",
+                                          (!lead.deal_value || Number(lead.deal_value) === 0) 
+                                            ? "bg-red-50 text-red-600" 
+                                            : "bg-blue-50 text-blue-600"
+                                        )}>
+                                          {formatCurrency(Number(lead.deal_value || lead.current_value || 0))}
+                                        </span>
+                                        {(!lead.deal_value || Number(lead.deal_value) === 0) && (
+                                          <span className="text-[7px] font-black uppercase text-red-500 tracking-widest ml-1">Potencial</span>
+                                        )}
+                                      </div>
                                       <div className="flex items-center gap-2">
                                         <button onClick={(e) => handleDeleteLead(e, lead.id, lead.name)} className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100" title="Apagar Oportunidade"><Icons.Trash className="w-3.5 h-3.5" /></button>
                                       <div className={cn(
