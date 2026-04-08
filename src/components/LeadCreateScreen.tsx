@@ -17,6 +17,7 @@ interface LeadCreateScreenProps {
    const { success, error, toast: showToast } = useToast();
    const [isSaving, setIsSaving] = useState(false);
    const [showSelection, setShowSelection] = useState(true);
+   const [isSearchingCNPJ, setIsSearchingCNPJ] = useState(false);
    
    const [newLead, setNewLead] = useState({ 
      name: '', email: '', phone: '', secondary_phone: '', source: 'Manual', status: stages[0]?.name || 'Novo', contact_type: '',
@@ -35,6 +36,8 @@ interface LeadCreateScreenProps {
      birth_date: '',
      marriage_date: '',
      deal_value: 0,
+     cnae: '',
+     opening_date: '',
      // Responsável Empresa
      resp_emp_name: '', resp_emp_job: '', resp_emp_birth_date: '', resp_emp_marital_status: '', 
      resp_emp_marriage_date: '', resp_emp_cpf: '', resp_emp_rg: '', resp_emp_whatsapp: '', 
@@ -88,25 +91,33 @@ interface LeadCreateScreenProps {
     setNewLead(prev => ({ ...prev, cnpj: formatted }));
     
     if (cleanCNPJ.length === 14) {
+      setIsSearchingCNPJ(true);
       try {
         const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCNPJ}`);
         const data = await response.json();
         if (response.ok && !data.error) {
           setNewLead(prev => ({
             ...prev,
-            company_name: data.razao_social,
-            name: data.razao_social,
-            nickname: data.nome_fantasia || prev.nickname,
-            address_zip: data.cep || prev.address_zip,
+            company_name: data.razao_social || data.nome_fantasia || prev.company_name,
+            name: data.razao_social || data.nome_fantasia || prev.name,
+            nickname: data.nome_fantasia || data.razao_social || prev.nickname,
+            address_zip: data.cep ? formatCEP(data.cep) : prev.address_zip,
             address_street: data.logradouro || prev.address_street,
             address_neighborhood: data.bairro || prev.address_neighborhood,
             address_city: data.municipio || prev.address_city,
             address_state: data.uf || prev.address_state,
             address_number: data.numero || prev.address_number,
+            cnae: data.cnae_fiscal_descricao || data.cnae_fiscal || prev.cnae,
+            opening_date: data.data_abertura || prev.opening_date,
+            email: data.email || prev.email,
+            phone: data.ddd_telefone_1 ? formatPhone(data.ddd_telefone_1) : prev.phone
           }));
+          showToast("Dados do CNPJ carregados com sucesso!", "success");
         }
       } catch (e) {
         console.error("Erro ao buscar CNPJ:", e);
+      } finally {
+        setIsSearchingCNPJ(false);
       }
     }
   };
@@ -166,6 +177,8 @@ interface LeadCreateScreenProps {
       deal_value: newLead.deal_value,
       has_current_plan: newLead.has_current_plan,
       plan_type: newLead.plan_type,
+      cnae: newLead.cnae,
+      opening_date: newLead.opening_date || null,
       // PME Data
       resp_emp_name: newLead.resp_emp_name,
       resp_emp_job: newLead.resp_emp_job,
