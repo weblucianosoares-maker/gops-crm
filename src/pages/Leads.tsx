@@ -9,6 +9,7 @@ import { useLeads } from "../lib/leadsContext";
 import { LeadDetailDrawer } from "../components/LeadDetailDrawer";
 import { LeadCreateScreen } from "../components/LeadCreateScreen";
 import { useToast } from "../components/Toasts";
+import { syncGoogleContacts } from "../lib/googleContacts";
 
 export default function Leads() {
   const { leads, filter, fetchLeads, stages, contactTypes, jobTitles } = useLeads();
@@ -25,6 +26,7 @@ export default function Leads() {
   const [leadToDelete, setLeadToDelete] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isSyncingGoogle, setIsSyncingGoogle] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -155,6 +157,22 @@ export default function Leads() {
         }
       }
     });
+  };
+
+  const handleGoogleSync = () => {
+    setIsSyncingGoogle(true);
+    syncGoogleContacts(
+      (imported, duplicated) => {
+        setIsSyncingGoogle(false);
+        setImportResult({ imported, duplicated });
+        fetchLeads();
+        success(`Sincronização com Google concluída: ${imported} novos contatos.`);
+      },
+      (err) => {
+        setIsSyncingGoogle(false);
+        error("Erro na sincronização Google: " + (err?.message || "Erro de conexão"));
+      }
+    );
   };
 
 
@@ -364,6 +382,22 @@ export default function Leads() {
           >
             <Icons.Plus className="w-5 h-5" />
             Novo Lead
+          </button>
+
+          <button 
+            onClick={handleGoogleSync}
+            disabled={isSyncingGoogle}
+            className="bg-white text-slate-700 border border-slate-200 px-6 py-3.5 rounded-xl font-bold flex items-center gap-3 hover:bg-slate-50 transition-all shadow-sm h-fit disabled:opacity-50 group"
+          >
+            {isSyncingGoogle ? (
+              <Icons.Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+            ) : (
+              <Icons.Google className="w-5 h-5 text-blue-600 group-hover:scale-110 transition-transform" />
+            )}
+            <div className="text-left">
+              <p className="text-[10px] uppercase tracking-widest text-slate-400 leading-none mb-1">Direto do</p>
+              <p className="text-sm">Google Contacts</p>
+            </div>
           </button>
           <div 
             className={cn("bg-slate-50 p-6 rounded-xl flex items-center space-x-6 min-w-[240px] border border-slate-100 cursor-pointer hover:border-blue-300 transition-colors", isUploading && "opacity-50 pointer-events-none")}

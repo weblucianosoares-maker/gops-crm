@@ -295,10 +295,10 @@ export default function Dashboard() {
   </div>;
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar p-6 space-y-8">
+    <div className="h-full overflow-y-auto overflow-x-hidden custom-scrollbar p-6 space-y-8">
       {/* Summary Metrics - Fixed One Row Layout */}
       {/* Summary Metrics - Fixed One Row Layout */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3 xl:gap-4">
         {/* Row 1/2 Toggle */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
@@ -510,9 +510,9 @@ export default function Dashboard() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: idx * 0.1 }}
-                  className="p-4 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between group hover:border-blue-200 transition-all cursor-default"
+                  className="p-4 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between group hover:border-blue-200 transition-all cursor-default overflow-hidden"
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
                     <div className={cn(
                       "w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black shadow-sm",
                       event.type === 'Aniversário' ? "bg-blue-100 text-blue-600" :
