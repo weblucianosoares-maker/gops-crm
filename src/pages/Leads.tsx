@@ -11,6 +11,14 @@ import { LeadCreateScreen } from "../components/LeadCreateScreen";
 import { useToast } from "../components/Toasts";
 import { syncGoogleContacts } from "../lib/googleContacts";
 
+const interactionStatusOptions = [
+  { label: 'Sem Status', value: 'Sem Status', color: 'bg-slate-100 text-slate-500' },
+  { label: 'Aguardando Retorno', value: 'Aguardando Retorno', color: 'bg-amber-100 text-amber-700' },
+  { label: 'Não Responde', value: 'Não Responde', color: 'bg-red-100 text-red-700' },
+  { label: 'Analisando Cotação', value: 'Analisando Cotação', color: 'bg-indigo-100 text-indigo-700' },
+  { label: 'Realizei Contato', value: 'Realizei Contato', color: 'bg-emerald-100 text-emerald-700' },
+];
+
 export default function Leads() {
   const { leads, filter, fetchLeads, stages, contactTypes, jobTitles } = useLeads();
   const { success, error, toast: showToast } = useToast();
@@ -192,6 +200,19 @@ export default function Leads() {
       success("Lead removido permanentemente.");
       setLeadToDelete(null);
       fetchLeads();
+    }
+  };
+
+  const updateInteractionStatus = async (leadId: string, newStatus: string) => {
+    const { error: supabaseError } = await supabase
+      .from('leads')
+      .update({ interaction_status: newStatus })
+      .eq('id', leadId);
+    
+    if (supabaseError) {
+      error("Erro ao atualizar status: " + supabaseError.message);
+    } else {
+      fetchLeads(); // Refresh leads
     }
   };
 
@@ -534,12 +555,33 @@ export default function Leads() {
                 >
                   <td className="px-6 py-5 rounded-l-lg border-l-2 border-transparent group-hover:border-blue-600">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold">
+                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold shrink-0">
                         {lead.initials}
                       </div>
                       <div>
-                        <p className="font-bold text-slate-900">{lead.name}</p>
-                        <p className="text-xs text-slate-500">{lead.email}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-slate-900 truncate max-w-[150px]">{lead.name}</p>
+                          {/* Interaction Status Tag */}
+                          <div className="relative group/status shrink-0">
+                            <select 
+                              value={lead.interaction_status || 'Sem Status'}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                updateInteractionStatus(lead.id, e.target.value);
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              className={cn(
+                                "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border-0 cursor-pointer outline-none transition-all appearance-none text-center",
+                                interactionStatusOptions.find(o => o.value === (lead.interaction_status || 'Sem Status'))?.color || 'bg-slate-100 text-slate-500'
+                              )}
+                            >
+                              {interactionStatusOptions.map(opt => (
+                                <option key={opt.value} value={opt.value} className="bg-white text-slate-900 uppercase font-bold text-[10px]">{opt.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        <p className="text-xs text-slate-500 truncate max-w-[150px]">{lead.email}</p>
                       </div>
                       {lead.birthday && (
                         <div className="ml-2 flex gap-1">

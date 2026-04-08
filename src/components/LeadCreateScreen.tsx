@@ -46,7 +46,8 @@ interface LeadCreateScreenProps {
      resp_con_name: '', resp_con_job: '', resp_con_birth_date: '', resp_con_marital_status: '', 
      resp_con_marriage_date: '', resp_con_cpf: '', resp_con_rg: '', resp_con_whatsapp: '', 
      resp_con_phone: '', resp_con_email: '',
-     temperature: 'Morno'
+     temperature: 'Morno',
+     interaction_status: 'Sem Status'
    });
 
    // Reset component when opening
@@ -200,7 +201,8 @@ interface LeadCreateScreenProps {
       resp_con_whatsapp: newLead.resp_con_whatsapp.replace(/\D/g, ''),
       resp_con_phone: newLead.resp_con_phone.replace(/\D/g, ''),
       resp_con_email: newLead.resp_con_email,
-      temperature: newLead.temperature
+      temperature: newLead.temperature,
+      interaction_status: newLead.interaction_status || 'Sem Status'
     }]);
 
     setIsSaving(false);
@@ -568,6 +570,17 @@ interface LeadCreateScreenProps {
                             <option value="Morno">Morno 🌤️</option>
                             <option value="Frio">Frio ❄️</option>
                             <option value="Congelado">Congelado 🧊</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Status de Interação</label>
+                          <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" value={newLead.interaction_status} onChange={e => setNewLead({...newLead, interaction_status: e.target.value})}>
+                            <option value="Sem Status">Sem Status</option>
+                            <option value="Aguardando Retorno">Aguardando Retorno</option>
+                            <option value="Não Responde">Não Responde</option>
+                            <option value="Analisando Cotação">Analisando Cotação</option>
+                            <option value="Realizei Contato">Realizei Contato</option>
                           </select>
                         </div>
                         

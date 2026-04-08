@@ -7,6 +7,14 @@ import { useLeads } from "../lib/leadsContext";
 import { evolutionService } from "../lib/evolution";
 import { useToast } from "./Toasts";
 
+const interactionStatusOptions = [
+  { label: 'Sem Status', value: 'Sem Status', color: 'bg-slate-100 text-slate-500' },
+  { label: 'Aguardando Retorno', value: 'Aguardando Retorno', color: 'bg-amber-100 text-amber-700' },
+  { label: 'Não Responde', value: 'Não Responde', color: 'bg-red-100 text-red-700' },
+  { label: 'Analisando Cotação', value: 'Analisando Cotação', color: 'bg-indigo-100 text-indigo-700' },
+  { label: 'Realizei Contato', value: 'Realizei Contato', color: 'bg-emerald-100 text-emerald-700' },
+];
+
 // Componente para renderizar mensagens com mídia
 const MediaMessage = ({ msg }: { msg: any }) => {
   const [mediaData, setMediaData] = useState<string | null>(null);
@@ -433,7 +441,8 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       resp_con_whatsapp: lead.resp_con_whatsapp?.replace(/\D/g, '') || null, 
       resp_con_phone: lead.resp_con_phone?.replace(/\D/g, '') || null,
       resp_con_email: lead.resp_con_email,
-      temperature: lead.temperature || 'Morno'
+      temperature: lead.temperature || 'Morno',
+      interaction_status: lead.interaction_status || 'Sem Status'
     };
 
     let result;
@@ -473,6 +482,20 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
               <div className="flex items-center gap-2 mt-1">
                  <span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded text-[9px] font-black uppercase tracking-tighter">{lead.lead_type || 'PF'}</span>
                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{stages.find(s => s.name === lead.status)?.label || lead.status}</span>
+                 <div className="relative">
+                    <select 
+                      value={lead.interaction_status || 'Sem Status'}
+                      onChange={(e) => setLead({ ...lead, interaction_status: e.target.value })}
+                      className={cn(
+                        "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border-0 cursor-pointer outline-none transition-all appearance-none text-center",
+                        interactionStatusOptions.find(o => o.value === (lead.interaction_status || 'Sem Status'))?.color || 'bg-slate-100 text-slate-500'
+                      )}
+                    >
+                      {interactionStatusOptions.map(opt => (
+                        <option key={opt.value} value={opt.value} className="bg-white text-slate-900 uppercase font-bold text-[10px]">{opt.label}</option>
+                      ) )}
+                    </select>
+                  </div>
               </div>
             </div>
           </div>
