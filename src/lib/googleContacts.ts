@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "643139667607-0hj6tkuuk4tprhm6su71sggj2kd6ngj4.apps.googleusercontent.com";
 
 export interface GoogleContact {
   id: string;
