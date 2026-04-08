@@ -558,30 +558,30 @@ export default function Leads() {
                       <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold shrink-0">
                         {lead.initials}
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-bold text-slate-900 truncate max-w-[150px]">{lead.name}</p>
-                          {/* Interaction Status Tag */}
-                          <div className="relative group/status shrink-0">
-                            <select 
-                              value={lead.interaction_status || 'Sem Status'}
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                updateInteractionStatus(lead.id, e.target.value);
-                              }}
-                              onClick={(e) => e.stopPropagation()}
-                              className={cn(
-                                "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border-0 cursor-pointer outline-none transition-all appearance-none text-center",
-                                interactionStatusOptions.find(o => o.value === (lead.interaction_status || 'Sem Status'))?.color || 'bg-slate-100 text-slate-500'
-                              )}
-                            >
-                              {interactionStatusOptions.map(opt => (
-                                <option key={opt.value} value={opt.value} className="bg-white text-slate-900 uppercase font-bold text-[10px]">{opt.label}</option>
-                              ))}
-                            </select>
-                          </div>
+                      <div className="flex flex-col gap-1 py-1">
+                        <p className="font-bold text-slate-900 truncate max-w-[180px] leading-tight">{lead.name}</p>
+                        
+                        {/* Interaction Status Tag - Logo Abaixo do Nome */}
+                        <div className="relative group/status shrink-0 w-fit">
+                          <select 
+                            value={lead.interaction_status || 'Sem Status'}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              updateInteractionStatus(lead.id, e.target.value);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className={cn(
+                              "text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border-0 cursor-pointer outline-none transition-all appearance-none text-center",
+                              interactionStatusOptions.find(o => o.value === (lead.interaction_status || 'Sem Status'))?.color || 'bg-slate-100 text-slate-500'
+                            )}
+                          >
+                            {interactionStatusOptions.map(opt => (
+                              <option key={opt.value} value={opt.value} className="bg-white text-slate-900 uppercase font-bold text-[10px]">{opt.label}</option>
+                            ))}
+                          </select>
                         </div>
-                        <p className="text-xs text-slate-500 truncate max-w-[150px]">{lead.email}</p>
+                        
+                        <p className="text-[10px] text-slate-400 truncate max-w-[150px] leading-tight">{lead.email}</p>
                       </div>
                       {lead.birthday && (
                         <div className="ml-2 flex gap-1">
