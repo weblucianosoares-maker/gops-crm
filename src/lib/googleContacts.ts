@@ -67,6 +67,11 @@ async function fetchAndInportContacts(accessToken: string, onSuccess: (count: nu
       const email = person.emailAddresses?.[0]?.value || '';
       const phone = (person.phoneNumbers?.[0]?.value || '').replace(/\D/g, '');
       
+      // Validação: Só importar se houver telefone (conforme solicitado pelo usuário)
+      if (!phone || phone.length < 8) {
+        return;
+      }
+      
       // Determinar origem baseada em Labels do Google
       let source = 'Google Contacts';
       if (person.memberships) {
