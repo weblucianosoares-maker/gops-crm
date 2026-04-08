@@ -109,7 +109,8 @@ export function useAlerts() {
       beneficiariesRes.data?.forEach(dep => {
         if (isEventToday(dep.birth_date)) {
           const lead = (leadsRes.data as any[])?.find((l: any)=>l.id===dep.lead_id);
-          newAlerts.push({
+          if (lead) {
+            newAlerts.push({
             id: `bday-dep-${dep.id}`,
             type: 'birthday',
             title: `Aniversário: ${dep.name}`,
@@ -122,6 +123,7 @@ export function useAlerts() {
             typeLabel: 'Aniversário',
             statusLabel: 'Hoje'
           });
+          }
         }
       });
 
@@ -131,7 +133,7 @@ export function useAlerts() {
         remDate.setHours(0,0,0,0);
         const diffDays = Math.ceil((remDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         
-        if (diffDays <= 7 && diffDays >= -15) { 
+        if (diffDays <= 7 && diffDays >= -15 && rem.leads) { 
           newAlerts.push({
             id: `rem-${rem.id}`,
             type: 'reminder',

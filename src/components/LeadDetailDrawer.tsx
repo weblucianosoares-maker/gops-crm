@@ -455,7 +455,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
 
   const handleDelete = async () => { if (window.confirm(`Excluir permanentemente "${lead.name}"?`)) { await supabase.from('leads').delete().eq('id', lead.id); onUpdate(); onClose(); } };
 
-  if (!isOpen) return null;
+  if (!isOpen || !lead) return null;
 
   return (
     <div className="fixed inset-0 z-[200] overflow-hidden">
