@@ -189,21 +189,29 @@ export default function Funnel() {
             columns.map((col) => (
               <div key={col.name} className="flex flex-col min-w-[320px] max-w-[320px] h-full max-h-[80vh]">
                  {/* Column Header */}
-                 <div className="flex items-center justify-between mb-4 px-2 shrink-0">
-                    <div className="flex items-center gap-2">
-                       <div className={cn("w-2 h-2 rounded-full", col.color)}></div>
-                       <h3 className="font-black text-xs uppercase tracking-widest text-slate-500">{col.label}</h3>
+                 <div className="flex flex-col mb-4 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm shrink-0">
+                    <div className={cn("h-1 w-full", col.color)}></div>
+                    <div className="flex items-center justify-between p-3">
+                       <div className="flex items-center gap-2">
+                          <div className={cn("w-2.5 h-2.5 rounded-full shadow-sm", col.color)}></div>
+                          <h3 className="font-black text-[10px] uppercase tracking-[0.1em] text-slate-700">{col.label}</h3>
+                       </div>
+                       <span className="text-[10px] font-black text-slate-500 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">
+                         {col.count}
+                       </span>
                     </div>
-                    <span className="text-[10px] font-black text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">{col.count}</span>
                  </div>
 
                  {/* Column Content with Independent Scroll */}
                  <Droppable droppableId={col.name}>
-                   {(provided) => (
+                   {(provided, snapshot) => (
                      <div 
                        {...provided.droppableProps}
                        ref={provided.innerRef}
-                       className="flex-1 flex flex-col gap-4 overflow-y-auto p-1 custom-scrollbar min-h-[50px] pb-10"
+                       className={cn(
+                         "flex-1 flex flex-col gap-4 overflow-y-auto p-2 rounded-xl custom-scrollbar min-h-[50px] pb-10 transition-colors duration-300",
+                         snapshot.isDraggingOver ? "bg-slate-200/50 shadow-inner" : cn(col.color.replace('bg-', 'bg-') + "/5")
+                       )}
                      >
                        {leads
                          .filter(l => l.status === col.name)
@@ -234,7 +242,7 @@ export default function Funnel() {
                                    onClick={() => setSelectedLead(lead)}
                                    className={cn(
                                      "bg-white rounded-xl p-5 shadow-sm border group cursor-pointer transition-all",
-                                     draggableSnapshot.isDragging ? "shadow-2xl border-blue-600 ring-4 ring-blue-500/10 rotate-1 scale-105" : "border-slate-100 hover:shadow-md hover:border-blue-200/50 shadow-sm",
+                                     draggableSnapshot.isDragging ? "shadow-2xl border-blue-600 ring-4 ring-blue-500/10 rotate-1 scale-105" : "border-slate-100 hover:shadow-md shadow-sm", col.color.replace('bg-', 'hover:border-') + "/30",
                                      !draggableSnapshot.isDragging && "hover:-translate-y-1"
                                    )}
                                  >
