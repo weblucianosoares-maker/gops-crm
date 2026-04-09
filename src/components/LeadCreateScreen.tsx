@@ -515,7 +515,7 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
                               <InputField label="Qtde Vidas" type="number" value={newLead.current_lives} onChange={(v:any) => setNewLead({...newLead, current_lives: Number(v)})} />
                               <InputField 
                                 label="Valor Pago Atual" 
-                                value={newLead.current_value ? (newLead.current_value * 100).toString() : ""} 
+                                value={newLead.current_value ? Math.round(newLead.current_value * 100).toString() : ""} 
                                 mask={formatCurrencyValue}
                                 onChange={(v:any) => setNewLead({...newLead, current_value: parseCurrencyValue(v)})} 
                                 placeholder="R$ 0,00"
@@ -613,7 +613,7 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
                         <InputField label="Qtde Vidas" type="number" value={newLead.interested_lives} onChange={(v:any) => setNewLead({...newLead, interested_lives: Number(v)})} />
                         <InputField 
                           label="Valor Proposta" 
-                          value={newLead.deal_value ? (newLead.deal_value * 100).toString() : ""} 
+                          value={newLead.deal_value ? Math.round(newLead.deal_value * 100).toString() : ""} 
                           mask={formatCurrencyValue}
                           onChange={(v:any) => setNewLead({...newLead, deal_value: parseCurrencyValue(v)})} 
                           placeholder="R$ 0,00"
@@ -663,7 +663,12 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
                      <div className="flex items-center justify-between">
                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Valor Proposta</span>
                        <span className="text-sm font-bold text-blue-600">
-                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(newLead.deal_value)}
+                         {new Intl.NumberFormat("pt-BR", {
+                           style: "currency",
+                           currency: "BRL",
+                           minimumFractionDigits: 2,
+                           maximumFractionDigits: 2,
+                         }).format(Math.round(newLead.deal_value))}
                        </span>
                      </div>
                    </div>

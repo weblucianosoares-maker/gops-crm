@@ -624,7 +624,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                                   <DetailField label="Vidas" type="number" value={lead.current_lives} onChange={(v:any) => setLead({...lead, current_lives: Number(v)})} />
                                   <DetailField 
                                     label="Valor Atual" 
-                                    value={lead.current_value ? (lead.current_value * 100).toString() : ""} 
+                                    value={lead.current_value ? Math.round(lead.current_value * 100).toString() : ""} 
                                     mask={formatCurrencyValue}
                                     onChange={(v:any) => setLead({...lead, current_value: parseCurrencyValue(v)})} 
                                     placeholder="R$ 0,00"
@@ -661,7 +661,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                              <DetailField label="Interesse (Vidas)" type="number" value={lead.interested_lives} onChange={(v:any) => setLead({...lead, interested_lives: Number(v)})} />
                              <DetailField 
                                label="Valor Proposta" 
-                               value={lead.deal_value ? (lead.deal_value * 100).toString() : ""} 
+                               value={lead.deal_value ? Math.round(lead.deal_value * 100).toString() : ""} 
                                mask={formatCurrencyValue}
                                onChange={(v:any) => setLead({...lead, deal_value: parseCurrencyValue(v)})} 
                                placeholder="R$ 0,00"
