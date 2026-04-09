@@ -6,7 +6,7 @@ dotenv.config();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export const extractNetworkData = async (fileBuffer: Buffer, mimeType: string, carrierName: string) => {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
   const prompt = `
     Você é um especialista em processamento de documentos de seguros de saúde.
