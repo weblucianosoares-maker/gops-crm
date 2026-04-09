@@ -387,42 +387,42 @@ export default function Leads() {
       </AnimatePresence>
 
       {/* Hero Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-end gap-6">
-        <div>
-          <span className="text-[0.6875rem] uppercase tracking-[0.1em] text-blue-600 font-bold mb-2 block">CRM & Prospecção</span>
-          <h1 className="text-5xl font-extrabold tracking-tight text-slate-900 leading-none">
-            {filteredLeads.length} <span className="text-2xl font-light text-slate-400">Leads Filtrados</span>
+      <div className="flex flex-row justify-between items-start gap-4 mb-6">
+        <div className="pt-1">
+          <span className="text-[10px] uppercase tracking-widest text-blue-600 font-bold mb-1 block">CRM & Prospecção</span>
+          <h1 className="text-2xl font-black tracking-tight text-slate-900 leading-none">
+            {filteredLeads.length} <span className="text-sm font-medium text-slate-400">Leads Filtrados</span>
           </h1>
           {searchTerm && (
-            <p className="text-xs text-slate-400 mt-2">Total na base: {leads.length} leads</p>
+            <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-tight font-semibold">Total: {leads.length}</p>
           )}
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-start gap-2 h-fit">
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="bg-blue-600 text-white px-6 py-3.5 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-700 transition-colors shadow-sm h-fit"
+            className="bg-blue-600 text-white px-4 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-blue-700 transition-colors shadow-sm h-fit text-xs"
           >
-            <Icons.Plus className="w-5 h-5" />
+            <Icons.Plus className="w-4 h-4" />
             Novo Lead
           </button>
 
           <button 
             onClick={handleGoogleSync}
             disabled={isSyncingGoogle}
-            className="bg-white text-slate-700 border border-slate-200 px-6 py-3.5 rounded-xl font-bold flex items-center gap-3 hover:bg-slate-50 transition-all shadow-sm h-fit disabled:opacity-50 group"
+            className="bg-white text-slate-700 border border-slate-200 px-4 py-2 rounded-lg font-bold flex items-center gap-2.5 hover:bg-slate-50 transition-all shadow-sm h-fit disabled:opacity-50 group"
           >
             {isSyncingGoogle ? (
-              <Icons.Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+              <Icons.Loader2 className="w-4 h-4 animate-spin text-blue-600" />
             ) : (
-              <Icons.Google className="w-5 h-5 text-blue-600 group-hover:scale-110 transition-transform" />
+              <Icons.Google className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
             )}
             <div className="text-left">
-              <p className="text-[10px] uppercase tracking-widest text-slate-400 leading-none mb-1">Direto do</p>
-              <p className="text-sm">Google Contacts</p>
+              <p className="text-[9px] uppercase tracking-tighter text-slate-400 leading-none mb-0.5">Direto do</p>
+              <p className="text-xs">Google Contacts</p>
             </div>
           </button>
           <div 
-            className={cn("bg-slate-50 p-6 rounded-xl flex items-center space-x-6 min-w-[240px] border border-slate-100 cursor-pointer hover:border-blue-300 transition-colors", isUploading && "opacity-50 pointer-events-none")}
+            className={cn("bg-slate-50 p-2.5 rounded-lg flex items-center space-x-3 border border-slate-100 cursor-pointer hover:border-blue-300 transition-colors h-fit", isUploading && "opacity-50 pointer-events-none")}
             onClick={() => fileInputRef.current?.click()}
           >
             <input 
@@ -432,30 +432,26 @@ export default function Leads() {
               ref={fileInputRef}
               onChange={handleFileUpload}
             />
-            <div className="p-3 bg-white rounded-lg shadow-sm">
-              <Icons.Upload className={cn("w-8 h-8 text-blue-600", isUploading && "animate-bounce")} />
+            <div className="p-1.5 bg-white rounded shadow-sm">
+              <Icons.Upload className={cn("w-5 h-5 text-blue-600", isUploading && "animate-bounce")} />
             </div>
             <div>
-              <p className="text-[0.6875rem] uppercase tracking-wider text-slate-400 mb-1">Processamento</p>
-              <p className="font-bold text-slate-900">{isUploading ? "Importando..." : "Importar Planilha"}</p>
-              <div className="w-32 h-1 bg-slate-200 rounded-full mt-2 overflow-hidden">
-                <div className="w-3/4 h-full bg-blue-600"></div>
-              </div>
-              <p className="text-[10px] text-blue-600 mt-1 font-medium">{leads.length} leads processados</p>
+              <p className="text-[8px] uppercase tracking-tight text-slate-400 mb-0.5 font-bold">Importar</p>
+              <p className="text-xs font-bold text-slate-900">{isUploading ? "Importando..." : "CSV"}</p>
             </div>
           </div>
           
           <button 
             onClick={() => setShowFilters(!showFilters)}
             className={cn(
-              "p-4 rounded-xl font-bold flex items-center justify-center transition-all border shadow-sm",
+              "p-2.5 rounded-lg font-bold flex items-center justify-center transition-all border shadow-sm",
               showFilters 
                 ? "bg-blue-50 text-blue-600 border-blue-200" 
                 : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
             )}
             title={showFilters ? "Esconder Filtros" : "Mostrar Filtros"}
           >
-            <Icons.Filter className={cn("w-6 h-6", !showFilters && "animate-pulse")} />
+            <Icons.Filter className={cn("w-5 h-5", !showFilters && "animate-pulse")} />
           </button>
         </div>
       </div>
