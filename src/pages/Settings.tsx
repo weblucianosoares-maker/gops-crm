@@ -817,9 +817,9 @@ function ContactTypesSettingsSection({ isOpen, onToggle }: { isOpen: boolean, on
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Tem certeza que deseja apagar este tipo?")) return;
-    const { error } = await supabase.from('contact_types').delete().eq('id', id);
-    if (!error) fetchContactTypes();
-    else alert("Erro ao apagar tipo. Verifique se está em uso.");
+    const { error: err } = await supabase.from('contact_types').delete().eq('id', id);
+    if (!err) fetchContactTypes();
+    else error("Erro ao apagar tipo. Verifique se está em uso.");
   };
 
   const toggleActive = async (id: string, currentActive: boolean) => {
@@ -1625,13 +1625,15 @@ export default function Settings() {
   const handleDelete = async (id: string) => {
     if (!window.confirm("Tem certeza que deseja apagar esta etapa? Leads nesta etapa podem ficar invisíveis no funil.")) return;
     
-    const { error } = await supabase
+    const { error: err } = await supabase
       .from('pipeline_stages')
       .delete()
       .eq('id', id);
 
-    if (!error) {
+    if (!err) {
       await fetchStages();
+    } else {
+      error("Erro ao apagar etapa. Verifique se há leads vinculados.");
     }
   };
 
