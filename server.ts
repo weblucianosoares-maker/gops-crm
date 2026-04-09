@@ -101,9 +101,18 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  // Only start the server if we're not running as a Vercel serverless function
+  if (!process.env.VERCEL) {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  }
+
+  return app;
 }
 
-startServer();
+// Start the server initialization and export the app
+// This promise-based structure works for both local dev and serverless entry
+const appPromise = startServer();
+export default appPromise.then(app => app);
+export { startServer };
