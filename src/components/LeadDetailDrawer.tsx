@@ -323,19 +323,44 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
         const now = new Date();
         const formattedDate = `${now.getDate()} ${now.toLocaleString('pt-BR', { month: 'short' }).replace('.', '')}, ${now.getFullYear()}`;
         
-        // Update messages
-        await supabase.from('whatsapp_messages').upsert({ lead_id: lead.id, message_id: res.key.id, sender_number: lead.phone.replace(/\D/g, ''), message_body: txt, is_from_me: true, is_read: true, created_at: now.toISOString() }, { onConflict: 'message_id' });
+        // Update messages table
+        const { error: upsertError } = await supabase.from('whatsapp_messages').upsert({ 
+          lead_id: lead.id, 
+          message_id: res.key.id, 
+          sender_number: lead.phone.replace(/\D/g, ''), 
+          message_body: txt, 
+          is_from_me: true, 
+          is_read: true, 
+          created_at: now.toISOString() 
+        }, { onConflict: 'message_id' });
+
+        if (upsertError) console.error('Erro ao registrar mensagem no Supabase:', upsertError);
         
         // Update lead contact info
-        await supabase.from('leads').update({ 
+        const { error: updateError } = await supabase.from('leads').update({ 
           last_app_message_at: now.toISOString(),
           lastcontact: formattedDate 
         }).eq('id', lead.id);
 
+        if (updateError) {
+          console.error('Erro ao atualizar lead no Supabase:', updateError);
+        } else {
+          // Update local state for immediate feedback
+          setLead(prev => ({ ...prev, last_app_message_at: now.toISOString(), lastcontact: formattedDate }));
+        }
+
         setMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: res.key.id, status: 'sent' } : m));
-        onUpdate(); // Trigger refresh in parent
+        
+        // Notify parent without awaiting it (don't block the UI)
+        setTimeout(() => { if (onUpdate) onUpdate(); }, 100);
+      } else {
+        throw new Error("Resposta da API sem ID de mensagem");
       }
-    } catch (e) { setMessages(prev => prev.filter(m => m.id !== tempId)); alert("Falha ao enviar mensagem."); }
+    } catch (e: any) { 
+      console.error('Falha crítica no envio:', e);
+      setMessages(prev => prev.filter(m => m.id !== tempId)); 
+      error("Falha ao enviar mensagem: " + (e.message || "Erro de conexão")); 
+    }
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -351,20 +376,46 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
         if (res && res.key?.id) {
           const now = new Date();
           const formattedDate = `${now.getDate()} ${now.toLocaleString('pt-BR', { month: 'short' }).replace('.', '')}, ${now.getFullYear()}`;
-          
-          // Update messages
-          await supabase.from('whatsapp_messages').upsert({ lead_id: lead.id, message_id: res.key.id, sender_number: lead.phone.replace(/\D/g, ''), message_body: file.name, is_from_me: true, is_read: true, created_at: now.toISOString(), media_type: type, mimetype: file.type, file_name: file.name }, { onConflict: 'message_id' });
-          
+
+          // Update messages table
+          const { error: upsertError } = await supabase.from('whatsapp_messages').upsert({ 
+            lead_id: lead.id, 
+            message_id: res.key.id, 
+            sender_number: lead.phone.replace(/\D/g, ''),
+            message_body: `[Arquivo: ${file.name}]`, 
+            is_from_me: true, 
+            is_read: true, 
+            created_at: now.toISOString(),
+            media_type: type,
+            mimetype: file.type,
+            file_name: file.name
+          }, { onConflict: 'message_id' });
+
+          if (upsertError) console.error('Erro ao registrar mídia no Supabase:', upsertError);
+
           // Update lead contact info
-          await supabase.from('leads').update({ 
+          const { error: updateError } = await supabase.from('leads').update({ 
             last_app_message_at: now.toISOString(),
             lastcontact: formattedDate 
           }).eq('id', lead.id);
 
+          if (updateError) {
+            console.error('Erro ao atualizar lead após mídia:', updateError);
+          } else {
+            // Update local state
+            setLead(prev => ({ ...prev, last_app_message_at: now.toISOString(), lastcontact: formattedDate }));
+          }
+
           setMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: res.key.id, status: 'sent' } : m));
-          onUpdate(); // Trigger refresh in parent
+          
+          success("Arquivo enviado!");
+          setTimeout(() => { if (onUpdate) onUpdate(); }, 100);
         }
-      } catch (e: any) { setMessages(prev => prev.filter(m => m.id !== tempId)); console.error("Erro ao enviar mídia:", e); alert(`Erro ao anexar arquivo: ${e.message}`); }
+      } catch (e: any) {
+        console.error('Erro no envio de mídia:', e);
+        setMessages(prev => prev.filter(m => m.id !== tempId));
+        error("Falha ao enviar arquivo: " + (e.message || "Erro de conexão"));
+      }
     };
     reader.readAsDataURL(file);
   };
