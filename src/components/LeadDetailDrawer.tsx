@@ -240,7 +240,13 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
         .eq('lead_id', lead.id)
         .order('created_at', { ascending: true });
 
-      let rawApi = Array.isArray(apiRes) ? apiRes : (apiRes as any)?.messages || [];
+      let rawApi = [];
+      if (Array.isArray(apiRes)) {
+        rawApi = apiRes;
+      } else if (apiRes && typeof apiRes === 'object' && 'messages' in apiRes && Array.isArray((apiRes as any).messages)) {
+        rawApi = (apiRes as any).messages;
+      }
+
       const normalizedApi = rawApi.map((m: any) => {
         const msg = m.message || {};
         let text = msg.conversation || msg.extendedTextMessage?.text || "";
@@ -258,7 +264,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
           id: m.key?.id || `api-${Math.random()}`,
           fromMe: !!m.key?.fromMe,
           text,
-          timestamp: m.messageTimestamp ? m.messageTimestamp * 1000 : Date.now(),
+          timestamp: m.messageTimestamp ? (typeof m.messageTimestamp === 'number' ? m.messageTimestamp * 1000 : m.messageTimestamp) : Date.now(),
           media_type: mediaType,
           mimetype,
           file_name: fileName,
@@ -359,7 +365,16 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
     } catch (e: any) { 
       console.error('Falha crítica no envio:', e);
       setMessages(prev => prev.filter(m => m.id !== tempId)); 
-      error("Falha ao enviar mensagem: " + (e.message || "Erro de conexão")); 
+      
+      let userMsg = "Falha ao enviar mensagem. Verifique a conexão.";
+      const errorStr = JSON.stringify(e);
+      if (errorStr.includes('"exists":false')) {
+        userMsg = "Este número não possui WhatsApp ou é inválido.";
+      } else if (e.message) {
+        userMsg = "Erro: " + e.message;
+      }
+      
+      showError(userMsg); 
     }
   };
 
@@ -414,7 +429,16 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       } catch (e: any) {
         console.error('Erro no envio de mídia:', e);
         setMessages(prev => prev.filter(m => m.id !== tempId));
-        error("Falha ao enviar arquivo: " + (e.message || "Erro de conexão"));
+        
+        let userMsg = "Falha ao enviar arquivo.";
+        const errorStr = JSON.stringify(e);
+        if (errorStr.includes('"exists":false')) {
+          userMsg = "Este número não possui WhatsApp ou é inválido.";
+        } else if (e.message) {
+          userMsg = "Erro: " + e.message;
+        }
+        
+        showError(userMsg);
       }
     };
     reader.readAsDataURL(file);
