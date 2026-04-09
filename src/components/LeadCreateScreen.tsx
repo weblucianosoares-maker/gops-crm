@@ -36,7 +36,14 @@ const InputField = ({ label, value, onChange, placeholder, type = "text", requir
 );
 
 export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScreenProps) {
-   const { stages, jobTitles, contactTypes, carriers, products } = useLeads();
+   const { 
+     stages, 
+     jobTitles, 
+     contactTypes, 
+     carriers, 
+     products,
+     interactionStatuses 
+   } = useLeads();
    const { success, error, toast: showToast } = useToast();
    const [isSaving, setIsSaving] = useState(false);
    const [showSelection, setShowSelection] = useState(true);
@@ -582,13 +589,16 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
 
                         <div>
                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Status de Interação</label>
-                          <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" value={newLead.interaction_status} onChange={e => setNewLead({...newLead, interaction_status: e.target.value})}>
-                            <option value="Sem Status">Sem Status</option>
-                            <option value="Aguardando Retorno">Aguardando Retorno</option>
-                            <option value="Não Responde">Não Responde</option>
-                            <option value="Analisando Cotação">Analisando Cotação</option>
-                            <option value="Realizei Contato">Realizei Contato</option>
-                          </select>
+                          <select 
+                             className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700 transition-all hover:bg-slate-100/50" 
+                             value={newLead.interaction_status} 
+                             onChange={e => setNewLead({...newLead, interaction_status: e.target.value})}
+                           >
+                             <option value="">Selecione o Status</option>
+                             {interactionStatuses.filter(s => s.active).map(status => (
+                               <option key={status.id} value={status.name}>{status.name}</option>
+                             ))}
+                           </select>
                         </div>
                         
                         <div>

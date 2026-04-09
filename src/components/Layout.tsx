@@ -15,6 +15,7 @@ const menuItems = [
   { icon: Icons.Funnel, label: "Funil de Vendas", path: "/funnel" },
   { icon: Icons.Contracts, label: "Contratos", path: "/contracts" },
   { icon: Icons.Carriers, label: "Operadoras", path: "/carriers" },
+  { icon: Icons.MapPin, label: "Rede Médica", path: "/network" },
   { icon: Icons.Settings, label: "Configurações", path: "/settings" },
 ];
 

@@ -7,13 +7,17 @@ import { useLeads } from "../lib/leadsContext";
 import { evolutionService } from "../lib/evolution";
 import { useToast } from "./Toasts";
 
-const interactionStatusOptions = [
-  { label: 'Sem Status', value: 'Sem Status', color: 'bg-slate-100 text-slate-500' },
-  { label: 'Aguardando Retorno', value: 'Aguardando Retorno', color: 'bg-amber-100 text-amber-700' },
-  { label: 'Não Responde', value: 'Não Responde', color: 'bg-red-100 text-red-700' },
-  { label: 'Analisando Cotação', value: 'Analisando Cotação', color: 'bg-indigo-100 text-indigo-700' },
-  { label: 'Realizei Contato', value: 'Realizei Contato', color: 'bg-emerald-100 text-emerald-700' },
-];
+// Cores para os status de interação
+const getStatusColor = (name: string) => {
+  switch (name) {
+    case 'Sem Status': return 'bg-slate-100 text-slate-500';
+    case 'Aguardando Retorno': return 'bg-amber-100 text-amber-700';
+    case 'Não Responde': return 'bg-red-100 text-red-700';
+    case 'Analisando Cotação': return 'bg-indigo-100 text-indigo-700';
+    case 'Realizei Contato': return 'bg-emerald-100 text-emerald-700';
+    default: return 'bg-blue-100 text-blue-700';
+  }
+};
 
 // Componente para renderizar mensagens com mídia
 const MediaMessage = ({ msg }: { msg: any }) => {
@@ -147,10 +151,21 @@ const SectionHeader = ({ icon: Icon, title, colorClass }: { icon: any, title: st
   </div>
 );
 
-const DetailField = ({ label, value, onChange, placeholder, type = "text", mask, selectOptions }: any) => (
+const DetailField = ({ label, value, onChange, placeholder, type = "text", mask, selectOptions, lead, setLead, interactionStatuses }: any) => (
   <div className="space-y-1">
     <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">{label}</label>
-    {selectOptions ? (
+    {label === "Status de Interação" ? (
+      <select 
+        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700 transition-all hover:bg-slate-100/50" 
+        value={lead.interaction_status} 
+        onChange={e => setLead({...lead, interaction_status: e.target.value})}
+      >
+        <option value="">Selecione o Status</option>
+        {interactionStatuses?.filter((s: any) => s.active).map((status: any) => (
+          <option key={status.id} value={status.name}>{status.name}</option>
+        ))}
+      </select>
+    ) : selectOptions ? (
       <select 
         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" 
         value={value || ""} 
@@ -180,7 +195,15 @@ interface LeadDetailDrawerProps {
 }
 
 export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate, onRefreshAlerts }: LeadDetailDrawerProps) {
-  const { stages, jobTitles, contactTypes, carriers, products } = useLeads();
+  const { 
+    stages, 
+    fetchLeads, 
+    fetchStages, 
+    contactTypes, 
+    interactionStatuses,
+    carriers, 
+    products 
+  } = useLeads();
   const { success, error: showError } = useToast();
   const [lead, setLead] = useState(initialLead);
   const [history, setHistory] = useState<any[]>([]);
@@ -488,12 +511,12 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                       onChange={(e) => setLead({ ...lead, interaction_status: e.target.value })}
                       className={cn(
                         "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border-0 cursor-pointer outline-none transition-all appearance-none text-center",
-                        interactionStatusOptions.find(o => o.value === (lead.interaction_status || 'Sem Status'))?.color || 'bg-slate-100 text-slate-500'
+                        getStatusColor(lead.interaction_status || 'Sem Status')
                       )}
                     >
-                      {interactionStatusOptions.map(opt => (
-                        <option key={opt.value} value={opt.value} className="bg-white text-slate-900 uppercase font-bold text-[10px]">{opt.label}</option>
-                      ) )}
+                      {interactionStatuses.filter((s: any) => s.active).map((opt: any) => (
+                        <option key={opt.id} value={opt.name} className="bg-white text-slate-900 uppercase font-bold text-[10px]">{opt.name}</option>
+                      ))}
                     </select>
                   </div>
               </div>

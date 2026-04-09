@@ -7,6 +7,7 @@ import Funnel from "./pages/Funnel";
 import Contracts from "./pages/Contracts";
 import Carriers from "./pages/Carriers";
 import Settings from "./pages/Settings";
+import NetworkSearch from "./pages/NetworkSearch";
 
 import { LeadsProvider } from "./lib/leadsContext";
 import { BrokerProvider } from "./lib/brokerContext";
@@ -25,6 +26,7 @@ function AppContent() {
       case "/contracts": return "Gestão de Contratos";
       case "/carriers": return "Catálogo de Operadoras";
       case "/settings": return "Configurações do Sistema";
+      case "/network": return "Mapeamento de Rede Médica";
       default: return "Efraim";
     }
   };
@@ -43,6 +45,7 @@ function AppContent() {
             <Route path="/contracts" element={<Contracts />} />
             <Route path="/carriers" element={<Carriers />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/network" element={<NetworkSearch />} />
           </Routes>
         </main>
       </div>

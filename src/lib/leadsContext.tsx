@@ -13,6 +13,9 @@ interface LeadsContextType {
   filterCounts: Record<string, number>;
   loadingStages: boolean;
   loadingContactTypes: boolean;
+  interactionStatuses: any[];
+  loadingInteractionStatuses: boolean;
+  fetchInteractionStatuses: () => Promise<void>;
   jobTitles: any[];
   loadingJobTitles: boolean;
   fetchJobTitles: () => Promise<void>;
@@ -35,6 +38,8 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
   const [filter, setFilter] = useState("Todos");
   const [loadingStages, setLoadingStages] = useState(true);
   const [loadingContactTypes, setLoadingContactTypes] = useState(true);
+  const [interactionStatuses, setInteractionStatuses] = useState<any[]>([]);
+  const [loadingInteractionStatuses, setLoadingInteractionStatuses] = useState(true);
   const [jobTitles, setJobTitles] = useState<any[]>([]);
   const [loadingJobTitles, setLoadingJobTitles] = useState(true);
   const [unreadLeads, setUnreadLeads] = useState<string[]>([]);
@@ -68,6 +73,19 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
       setContactTypes(data);
     }
     setLoadingContactTypes(false);
+  };
+  
+  const fetchInteractionStatuses = async () => {
+    setLoadingInteractionStatuses(true);
+    const { data, error } = await supabase
+      .from('interaction_statuses')
+      .select('*')
+      .order('name', { ascending: true });
+    
+    if (!error && data) {
+      setInteractionStatuses(data);
+    }
+    setLoadingInteractionStatuses(false);
   };
   
   const fetchJobTitles = async () => {
@@ -166,6 +184,7 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
     fetchLeads();
     fetchStages();
     fetchContactTypes();
+    fetchInteractionStatuses();
     fetchJobTitles();
     fetchCarriers();
     fetchProducts();
@@ -203,6 +222,9 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
       filterCounts, 
       loadingStages,
       loadingContactTypes,
+      interactionStatuses,
+      loadingInteractionStatuses,
+      fetchInteractionStatuses,
       jobTitles,
       loadingJobTitles,
       fetchJobTitles,

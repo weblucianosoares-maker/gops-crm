@@ -1185,6 +1185,364 @@ function JobTitlesSettingsSection({ isOpen, onToggle }: { isOpen: boolean, onTog
   );
 }
 
+// ─── Network Management Section ────────────────────────
+function NetworkManagementSection({ isOpen, onToggle }: { isOpen: boolean, onToggle: () => void }) {
+  const { carriers, products: allProducts } = useLeads();
+  const { success, error, toast: showToast } = useToast();
+  const [providers, setProviders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
+  const [newForm, setNewForm] = useState({ name: "", type: "Hospital", uf: "RJ", city: "", neighborhood: "", address: "" });
+  
+  const [coverageEditingId, setCoverageEditingId] = useState<string | null>(null);
+  const [newCoverage, setNewCoverage] = useState({ carrier_id: "", product_id: "", details: "" });
+
+  const fetchProviders = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('medical_providers')
+      .select(`
+        *,
+        coverage:network_coverage(
+          id,
+          carrier_id,
+          product_id,
+          coverage_details,
+          carrier:carriers(name),
+          product:products(name)
+        )
+      `)
+      .order('name');
+    setProviders(data || []);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (isOpen) fetchProviders();
+  }, [isOpen]);
+
+  const handleAddProvider = async () => {
+    if (!newForm.name.trim() || !newForm.city.trim()) return;
+    const { error: err } = await supabase.from('medical_providers').insert([newForm]);
+    if (!err) { success("Estabelecimento cadastrado!"); setIsAdding(false); setNewForm({ name: "", type: "Hospital", uf: "RJ", city: "", neighborhood: "", address: "" }); fetchProviders(); }
+    else error("Erro ao cadastrar.");
+  };
+
+  const handleDeleteProvider = async (id: string) => {
+    if (!window.confirm("Excluir este estabelecimento?")) return;
+    const { error: err } = await supabase.from('medical_providers').delete().eq('id', id);
+    if (!err) { success("Removido!"); fetchProviders(); }
+    else error("Erro ao remover.");
+  };
+
+  const handleAddCoverage = async (providerId: string) => {
+    if (!newCoverage.carrier_id || !newCoverage.product_id) return;
+    const { error: err } = await supabase.from('network_coverage').insert([{
+      provider_id: providerId,
+      carrier_id: newCoverage.carrier_id,
+      product_id: newCoverage.product_id,
+      coverage_details: newCoverage.details
+    }]);
+    if (!err) { success("Vínculo adicionado!"); setNewCoverage({ carrier_id: "", product_id: "", details: "" }); fetchProviders(); }
+    else error("Erro ao vincular. Verifique se já não existe este vínculo.");
+  };
+
+  const handleDeleteCoverage = async (id: string) => {
+    const { error: err } = await supabase.from('network_coverage').delete().eq('id', id);
+    if (!err) { success("Vínculo removido."); fetchProviders(); }
+  };
+
+  return (
+    <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <button onClick={onToggle} className="w-full text-left p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50 hover:bg-slate-100/50 transition-colors">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-200">
+            <Icons.MapPin className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="font-bold text-slate-900">Gestão de Rede Médica</h2>
+            <p className="text-xs text-slate-500">Cadastre hospitais e vincule-os aos planos</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <button onClick={(e) => { e.stopPropagation(); if (!isOpen) onToggle(); setIsAdding(true); }} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-xs font-black uppercase tracking-wider rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-100">
+            <Icons.Plus className="w-3.5 h-3.5" /> Novo Local
+          </button>
+          <Icons.ChevronDown className={cn("w-5 h-5 text-slate-400 transition-transform duration-300", isOpen ? "rotate-180" : "")} />
+        </div>
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="p-6">
+            {loading ? (
+              <div className="py-12 flex justify-center"><div className="w-8 h-8 border-4 border-emerald-600/20 border-t-emerald-600 rounded-full animate-spin"></div></div>
+            ) : (
+              <div className="space-y-6">
+                {providers.map((provider) => (
+                  <div key={provider.id} className="p-6 bg-slate-50 rounded-2xl border border-slate-100 group">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={cn(
+                            "text-[8px] font-black uppercase px-2 py-0.5 rounded-full border",
+                            provider.type === 'Hospital' ? "bg-red-50 text-red-600 border-red-200" :
+                            provider.type === 'Clínica' ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-emerald-50 text-emerald-600 border-emerald-200"
+                          )}>{provider.type}</span>
+                          <span className="text-[10px] font-bold text-slate-400">{provider.city} - {provider.uf}</span>
+                        </div>
+                        <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">{provider.name}</h3>
+                      </div>
+                      <button onClick={() => handleDeleteProvider(provider.id)} className="p-2 text-slate-300 hover:text-red-600 transition-colors"><Icons.Trash className="w-4 h-4"/></button>
+                    </div>
+
+                    {/* Subseção de Cobertura */}
+                    <div className="mt-4 pt-4 border-t border-slate-200">
+                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Planos Credenciados</p>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                         {provider.coverage?.map((cov: any) => (
+                           <div key={cov.id} className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
+                              <div>
+                                <p className="text-[10px] font-black text-blue-900 uppercase leading-none">{cov.carrier?.name}</p>
+                                <p className="text-[9px] font-bold text-slate-500 uppercase mt-1">{cov.product?.name}</p>
+                              </div>
+                              <button onClick={() => handleDeleteCoverage(cov.id)} className="text-slate-300 hover:text-red-500"><Icons.X className="w-4 h-4"/></button>
+                           </div>
+                         ))}
+                       </div>
+
+                       {/* Botão para abrir form de novo vínculo no card */}
+                       <div className="p-4 bg-white/50 rounded-xl border-2 border-dashed border-slate-200">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                             <select className="bg-white border rounded-lg px-3 py-1.5 text-xs font-bold" value={newCoverage.carrier_id} onChange={(e) => setNewCoverage({...newCoverage, carrier_id: e.target.value, product_id: ""})}>
+                               <option value="">Operadora</option>
+                               {carriers.map((c:any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                             </select>
+                             <select className="bg-white border rounded-lg px-3 py-1.5 text-xs font-bold" value={newCoverage.product_id} onChange={(e) => setNewCoverage({...newCoverage, product_id: e.target.value})}>
+                               <option value="">Produto / Plano</option>
+                               {allProducts.filter((p:any) => p.carrier_id === newCoverage.carrier_id).map((p:any) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                             </select>
+                             <button onClick={() => handleAddCoverage(provider.id)} className="bg-slate-800 text-white text-[10px] font-black uppercase rounded-lg px-2 py-1.5">Vincular Plano</button>
+                          </div>
+                       </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {isAdding && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6 p-6 bg-slate-50 rounded-2xl border-2 border-dashed border-emerald-200">
+                <div className="grid md:grid-cols-2 gap-4">
+                   <div className="space-y-1.5 md:col-span-2">
+                     <label className="text-[10px] font-black text-slate-400 uppercase">Nome do Estabelecimento</label>
+                     <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold" value={newForm.name} onChange={e => setNewForm({...newForm, name: e.target.value})} placeholder="Ex: Hospital Samaritano" />
+                   </div>
+                   <div className="space-y-1.5">
+                     <label className="text-[10px] font-black text-slate-400 uppercase">Tipo</label>
+                     <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold" value={newForm.type} onChange={e => setNewForm({...newForm, type: e.target.value})}>
+                        <option value="Hospital">Hospital</option>
+                        <option value="Clínica">Clínica</option>
+                        <option value="Laboratório">Laboratório</option>
+                     </select>
+                   </div>
+                   <div className="space-y-1.5">
+                     <label className="text-[10px] font-black text-slate-400 uppercase">Cidade</label>
+                     <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold" value={newForm.city} onChange={e => setNewForm({...newForm, city: e.target.value})} placeholder="Ex: Niterói" />
+                   </div>
+                </div>
+                <div className="flex justify-end gap-3 mt-6">
+                  <button onClick={() => setIsAdding(false)} className="px-6 py-2 text-slate-600 text-[10px] font-black uppercase">Cancelar</button>
+                  <button onClick={handleAddProvider} className="px-6 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-xl shadow-lg shadow-emerald-200">Cadastrar</button>
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
+  );
+}
+
+// ─── Interaction Statuses Section ──────────────────────
+function InteractionStatusesSettingsSection({ isOpen, onToggle }: { isOpen: boolean, onToggle: () => void }) {
+  const { interactionStatuses, fetchInteractionStatuses, loadingInteractionStatuses } = useLeads();
+  const { success, error, toast: showToast } = useToast();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", active: true });
+  const [isAdding, setIsAdding] = useState(false);
+  const [newForm, setNewForm] = useState({ name: "", active: true });
+
+  const handleEdit = (status: any) => {
+    setEditingId(status.id);
+    setEditForm({ name: status.name || "", active: status.active ?? true });
+  };
+
+  const handleSave = async (id: string) => {
+    if (!editForm.name.trim()) { showToast("Nome do status é obrigatório.", "warning"); return; }
+    const { error: supabaseError } = await supabase
+      .from('interaction_statuses')
+      .update({ name: editForm.name, active: editForm.active })
+      .eq('id', id);
+    if (!supabaseError) { success("Status salvo!"); setEditingId(null); fetchInteractionStatuses(); }
+    else error("Erro ao salvar status.");
+  };
+
+  const handleAdd = async () => {
+    if (!newForm.name.trim()) { showToast("Nome do status é obrigatório.", "warning"); return; }
+    const isDuplicate = interactionStatuses.some((s: any) => s.name.toLowerCase() === newForm.name.trim().toLowerCase());
+    if (isDuplicate) { showToast("Já existe um status com este nome.", "warning"); return; }
+    const { error: supabaseError } = await supabase
+      .from('interaction_statuses')
+      .insert([{ name: newForm.name.trim(), active: newForm.active }]);
+    
+    if (!supabaseError) {
+      setIsAdding(false);
+      setNewForm({ name: "", active: true });
+      fetchInteractionStatuses();
+      success("Status cadastrado!");
+    } else error("Erro ao adicionar status.");
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Tem certeza que deseja apagar este status?")) return;
+    const { error: supabaseError } = await supabase.from('interaction_statuses').delete().eq('id', id);
+    if (!supabaseError) { success("Status removido."); fetchInteractionStatuses(); }
+    else error("Erro ao apagar status.");
+  };
+
+  return (
+    <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <button 
+        onClick={onToggle}
+        className="w-full text-left p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50 hover:bg-slate-100/50 transition-colors group"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center text-white shadow-lg shadow-blue-200">
+            <Icons.CheckCircle className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="font-bold text-slate-900">Status de Interação</h2>
+            <p className="text-xs text-slate-500">Gerencie os status de contato (ex: Aguardando Retorno)</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isOpen) onToggle();
+              setIsAdding(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white text-xs font-black uppercase tracking-wider rounded-lg hover:bg-blue-600 transition-all shadow-md shadow-blue-100"
+          >
+            <Icons.Plus className="w-3.5 h-3.5" /> Novo Status
+          </button>
+          <Icons.ChevronDown className={cn(
+            "w-5 h-5 text-slate-400 transition-transform duration-300",
+            isOpen ? "rotate-180" : ""
+          )} />
+        </div>
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            <div className="p-6">
+        {loadingInteractionStatuses ? (
+          <div className="py-12 flex justify-center">
+            <div className="w-8 h-8 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {interactionStatuses.map((status: any) => (
+              <motion.div
+                layout
+                key={status.id}
+                className={cn(
+                  "p-4 rounded-xl border transition-all flex items-center justify-between",
+                  editingId === status.id ? "border-blue-500 bg-blue-50/30 ring-2 ring-blue-500/10" : "border-slate-100 hover:border-slate-200"
+                )}
+              >
+                {editingId === status.id ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <input
+                      className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold outline-none focus:border-blue-500"
+                      value={editForm.name}
+                      onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => setEditForm({ ...editForm, active: !editForm.active })}
+                      className={cn(
+                        "px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap",
+                        editForm.active ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"
+                      )}
+                    >
+                      {editForm.active ? "Ativo" : "Inativo"}
+                    </button>
+                    <button onClick={() => handleSave(status.id)} className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg"><Icons.Check className="w-4 h-4" /></button>
+                    <button onClick={() => setEditingId(null)} className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg"><Icons.X className="w-4 h-4" /></button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <div className={cn("w-2 h-2 rounded-full", status.active ? "bg-green-500" : "bg-slate-300")}></div>
+                      <span className="text-sm font-bold text-slate-700">{status.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => handleEdit(status)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"><Icons.Edit className="w-4 h-4" /></button>
+                      <button onClick={() => handleDelete(status.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Icons.Trash className="w-4 h-4" /></button>
+                    </div>
+                  </>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        )}
+
+        {isAdding && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 p-6 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200"
+          >
+            <div className="flex items-center gap-4">
+              <input
+                placeholder="Ex: Novo Contato, Aguardando Proposta..."
+                className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-blue-500"
+                value={newForm.name}
+                onChange={e => setNewForm({ ...newForm, name: e.target.value })}
+              />
+              <button
+                onClick={() => setNewForm({ ...newForm, active: !newForm.active })}
+                className={cn(
+                  "px-4 py-2.5 rounded-xl text-sm font-bold transition-all border",
+                  newForm.active ? "bg-green-50 text-green-700 border-green-200" : "bg-slate-50 text-slate-500 border-slate-200"
+                )}
+              >
+                {newForm.active ? "● Ativo" : "○ Inativo"}
+              </button>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button onClick={() => setIsAdding(false)} className="px-6 py-2.5 text-slate-600 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-slate-200 transition-all">Cancelar</button>
+              <button onClick={handleAdd} disabled={!newForm.name.trim()} className="px-6 py-2.5 bg-blue-500 text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-blue-600 transition-all shadow-lg shadow-blue-200 disabled:opacity-50">Adicionar Status</button>
+            </div>
+          </motion.div>
+        )}
+      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
+  );
+}
+
 // ─── Main Settings Page ─────────────────────────────
 export default function Settings() {
   const { stages, fetchStages, loadingStages } = useLeads();
@@ -1544,6 +1902,18 @@ export default function Settings() {
       <JobTitlesSettingsSection 
         isOpen={activeSection === "job_titles"} 
         onToggle={() => toggleSection("job_titles")} 
+      />
+
+      {/* ── Section 6: Status de Interação ── */}
+      <InteractionStatusesSettingsSection 
+        isOpen={activeSection === "interaction_statuses"} 
+        onToggle={() => toggleSection("interaction_statuses")} 
+      />
+
+      {/* ── Section 7: Rede Médica ── */}
+      <NetworkManagementSection 
+        isOpen={activeSection === "network"} 
+        onToggle={() => toggleSection("network")} 
       />
     </div>
   );
