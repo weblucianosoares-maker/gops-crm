@@ -145,13 +145,12 @@ export default function Leads() {
             return;
           }
 
-          const chunkSize = 50;
           for (let i = 0; i < parsedData.length; i += chunkSize) {
             const chunk = parsedData.slice(i, i + chunkSize);
-            const { error } = await supabase.from('leads').insert(chunk);
-            if (error) {
-              console.error(`Erro inserindo lote ${i}:`, error);
-              throw error;
+            const { error: supabaseError } = await supabase.from('leads').insert(chunk);
+            if (supabaseError) {
+              console.error(`Erro inserindo lote ${i}:`, supabaseError);
+              throw supabaseError;
             }
           }
           
