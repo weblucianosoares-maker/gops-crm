@@ -298,7 +298,7 @@ export default function Leads() {
   }, [isModalOpen, selectedLead]);
 
   return (
-    <div className="h-screen flex flex-col px-4 pb-2 pt-2 space-y-3 overflow-hidden">
+    <div className="h-full flex flex-col px-4 pb-2 pt-2 gap-3 overflow-hidden">
       {/* Popup de Resultado da Importação */}
       <AnimatePresence mode="wait">
         {importResult && (
@@ -518,8 +518,8 @@ export default function Leads() {
 
       {/* Main Content Grid */}
       <div className="flex-1 bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden flex flex-col min-h-0">
-        <div className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
-          <table className="min-w-[1100px] w-full text-left border-separate border-spacing-y-2">
+        <div className="flex-1 overflow-x-auto overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
+          <table className="min-w-[1400px] w-full text-left border-separate border-spacing-y-2">
             <thead className="sticky top-0 z-20 bg-white">
               <tr className="text-[0.6875rem] uppercase tracking-[0.1em] text-slate-400">
                 <th onClick={() => handleSort("name")} className="px-4 py-2 font-semibold cursor-pointer select-none group hover:text-blue-600 transition-colors">
