@@ -254,7 +254,7 @@ export function TopBar({ title, onMenuClick }: { title: string; onMenuClick?: ()
     <header className="flex flex-col w-full sticky top-0 z-[100]">
       {!isOpen && <GlobalAlertBar />}
       {!isOpen && (
-        <div className="flex justify-between items-center px-4 md:px-8 py-4 bg-white/80 backdrop-blur-md border-b border-slate-100 shadow-sm">
+        <div className="flex justify-between items-center px-4 md:px-8 py-2 bg-white/80 backdrop-blur-md border-b border-slate-100 shadow-sm">
           <div className="flex items-center gap-4">
             <button className="md:hidden text-slate-500 hover:text-blue-700" onClick={onMenuClick}>
               <Icons.Menu className="w-5 h-5" />

@@ -298,7 +298,7 @@ export default function Leads() {
   }, [isModalOpen, selectedLead]);
 
   return (
-    <div className="h-full flex flex-col px-4 pb-2 pt-2 gap-3 overflow-hidden">
+    <div className="h-full flex flex-col px-4 pb-2 pt-1 gap-2 overflow-hidden">
       {/* Popup de Resultado da Importação */}
       <AnimatePresence mode="wait">
         {importResult && (
@@ -387,7 +387,7 @@ export default function Leads() {
       </AnimatePresence>
 
       {/* Hero Header Section */}
-      <div className="flex flex-row justify-between items-start gap-4 mb-6">
+      <div className="flex flex-row justify-between items-start gap-4 mb-2">
         <div className="pt-1">
           <span className="text-[10px] uppercase tracking-widest text-blue-600 font-bold mb-1 block">CRM & Prospecção</span>
           <h1 className="text-2xl font-black tracking-tight text-slate-900 leading-none">
