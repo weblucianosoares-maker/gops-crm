@@ -455,7 +455,7 @@ export default function Leads() {
             )}
             title={showFilters ? "Esconder Filtros" : "Mostrar Filtros"}
           >
-            <Icons.FilterIcon className={cn("w-6 h-6", !showFilters && "animate-pulse")} />
+            <Icons.Filter className={cn("w-6 h-6", !showFilters && "animate-pulse")} />
           </button>
         </div>
       </div>
