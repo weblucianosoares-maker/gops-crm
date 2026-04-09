@@ -276,6 +276,22 @@ export default function Leads() {
     setSortConfig({ key, direction });
   };
 
+  const duplicatedNames = React.useMemo(() => {
+    const nameCounts = new Map<string, number>();
+    leads.forEach(l => {
+      const name = (l.name || "").trim().toLowerCase();
+      if (name && name !== "sem nome") {
+        nameCounts.set(name, (nameCounts.get(name) || 0) + 1);
+      }
+    });
+    
+    const duplicates = new Set<string>();
+    nameCounts.forEach((count, name) => {
+      if (count > 1) duplicates.add(name);
+    });
+    return duplicates;
+  }, [leads]);
+
   const totalPages = Math.ceil(filteredLeads.length / perPage);
   const paginatedLeads = React.useMemo(() => {
     const start = (currentPage - 1) * perPage;
@@ -589,7 +605,15 @@ export default function Leads() {
                         {lead.initials}
                       </div>
                       <div className="flex flex-col gap-1 py-1">
-                        <p className="font-bold text-slate-900 truncate max-w-[300px] leading-tight" title={lead.name}>{lead.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-slate-900 truncate max-w-[300px] leading-tight" title={lead.name}>{lead.name}</p>
+                          {duplicatedNames.has((lead.name || "").trim().toLowerCase()) && (
+                            <div className="flex items-center gap-1 bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded border border-amber-100 animate-pulse shadow-sm" title="Possível Lead Duplicado">
+                              <Icons.AlertCircle className="w-3 h-3" />
+                              <span className="text-[8px] font-black uppercase tracking-tighter">Duplicado</span>
+                            </div>
+                          )}
+                        </div>
                         
                         {/* Interaction Status Tag - Logo Abaixo do Nome */}
                         <div className="relative group/status shrink-0 w-fit">
