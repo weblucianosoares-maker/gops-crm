@@ -320,8 +320,20 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
     try {
       const res = await evolutionService.sendMessage(lead.phone, txt);
       if (res && res.key?.id) {
-        await supabase.from('whatsapp_messages').upsert({ lead_id: lead.id, message_id: res.key.id, sender_number: lead.phone.replace(/\D/g, ''), message_body: txt, is_from_me: true, is_read: true, created_at: new Date().toISOString() }, { onConflict: 'message_id' });
+        const now = new Date();
+        const formattedDate = `${now.getDate()} ${now.toLocaleString('pt-BR', { month: 'short' }).replace('.', '')}, ${now.getFullYear()}`;
+        
+        // Update messages
+        await supabase.from('whatsapp_messages').upsert({ lead_id: lead.id, message_id: res.key.id, sender_number: lead.phone.replace(/\D/g, ''), message_body: txt, is_from_me: true, is_read: true, created_at: now.toISOString() }, { onConflict: 'message_id' });
+        
+        // Update lead contact info
+        await supabase.from('leads').update({ 
+          last_app_message_at: now.toISOString(),
+          lastcontact: formattedDate 
+        }).eq('id', lead.id);
+
         setMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: res.key.id, status: 'sent' } : m));
+        onUpdate(); // Trigger refresh in parent
       }
     } catch (e) { setMessages(prev => prev.filter(m => m.id !== tempId)); alert("Falha ao enviar mensagem."); }
   };
@@ -337,8 +349,20 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       try {
         const res = await evolutionService.sendMedia(lead.phone, b64, type, file.type, file.name);
         if (res && res.key?.id) {
-          await supabase.from('whatsapp_messages').upsert({ lead_id: lead.id, message_id: res.key.id, sender_number: lead.phone.replace(/\D/g, ''), message_body: file.name, is_from_me: true, is_read: true, created_at: new Date().toISOString(), media_type: type, mimetype: file.type, file_name: file.name }, { onConflict: 'message_id' });
+          const now = new Date();
+          const formattedDate = `${now.getDate()} ${now.toLocaleString('pt-BR', { month: 'short' }).replace('.', '')}, ${now.getFullYear()}`;
+          
+          // Update messages
+          await supabase.from('whatsapp_messages').upsert({ lead_id: lead.id, message_id: res.key.id, sender_number: lead.phone.replace(/\D/g, ''), message_body: file.name, is_from_me: true, is_read: true, created_at: now.toISOString(), media_type: type, mimetype: file.type, file_name: file.name }, { onConflict: 'message_id' });
+          
+          // Update lead contact info
+          await supabase.from('leads').update({ 
+            last_app_message_at: now.toISOString(),
+            lastcontact: formattedDate 
+          }).eq('id', lead.id);
+
           setMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: res.key.id, status: 'sent' } : m));
+          onUpdate(); // Trigger refresh in parent
         }
       } catch (e: any) { setMessages(prev => prev.filter(m => m.id !== tempId)); console.error("Erro ao enviar mídia:", e); alert(`Erro ao anexar arquivo: ${e.message}`); }
     };
