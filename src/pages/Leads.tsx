@@ -496,8 +496,8 @@ export default function Leads() {
 
       {/* Main Content Grid */}
       <div className="bg-white rounded-xl p-2 border border-slate-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-separate border-spacing-y-2">
+        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+          <table className="min-w-[1100px] w-full text-left border-separate border-spacing-y-2">
             <thead>
               <tr className="text-[0.6875rem] uppercase tracking-[0.1em] text-slate-400">
                 <th onClick={() => handleSort("name")} className="px-6 py-4 font-semibold cursor-pointer select-none group hover:text-blue-600 transition-colors">
@@ -567,7 +567,7 @@ export default function Leads() {
                         {lead.initials}
                       </div>
                       <div className="flex flex-col gap-1 py-1">
-                        <p className="font-bold text-slate-900 truncate max-w-[200px] leading-tight" title={lead.name}>{lead.name}</p>
+                        <p className="font-bold text-slate-900 truncate max-w-[300px] leading-tight" title={lead.name}>{lead.name}</p>
                         
                         {/* Interaction Status Tag - Logo Abaixo do Nome */}
                         <div className="relative group/status shrink-0 w-fit">
