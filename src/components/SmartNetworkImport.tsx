@@ -56,7 +56,10 @@ export default function SmartNetworkImport({ isOpen, onClose, onRefresh }: { isO
         body: formData,
       });
 
-      if (!response.ok) throw new Error("Erro ao processar arquivo com IA.");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Erro ao processar arquivo com IA.");
+      }
 
       const result = await response.json();
       
