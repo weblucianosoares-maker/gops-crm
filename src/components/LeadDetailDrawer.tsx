@@ -367,11 +367,11 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       setMessages(prev => prev.filter(m => m.id !== tempId)); 
       
       let userMsg = "Falha ao enviar mensagem. Verifique a conexão.";
-      const errorStr = JSON.stringify(e);
-      if (errorStr.includes('"exists":false')) {
+      const errorMessage = e.message || "";
+      if (errorMessage.includes('"exists":false')) {
         userMsg = "Este número não possui WhatsApp ou é inválido.";
-      } else if (e.message) {
-        userMsg = "Erro: " + e.message;
+      } else if (errorMessage) {
+        userMsg = errorMessage;
       }
       
       showError(userMsg); 
@@ -431,11 +431,11 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
         setMessages(prev => prev.filter(m => m.id !== tempId));
         
         let userMsg = "Falha ao enviar arquivo.";
-        const errorStr = JSON.stringify(e);
-        if (errorStr.includes('"exists":false')) {
+        const errorMessage = e.message || "";
+        if (errorMessage.includes('"exists":false')) {
           userMsg = "Este número não possui WhatsApp ou é inválido.";
-        } else if (e.message) {
-          userMsg = "Erro: " + e.message;
+        } else if (errorMessage) {
+          userMsg = errorMessage;
         }
         
         showError(userMsg);
