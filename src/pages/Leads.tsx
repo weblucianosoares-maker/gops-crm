@@ -23,7 +23,7 @@ export default function Leads() {
   const { leads, filter, fetchLeads, stages, contactTypes, jobTitles } = useLeads();
   const { success, error, toast: showToast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
   const [ufFilter, setUfFilter] = useState("Todos");
   const [statusFilter, setStatusFilter] = useState("Todos");
   const [importResult, setImportResult] = useState<{imported: number, duplicated: number} | null>(null);
@@ -298,7 +298,7 @@ export default function Leads() {
   }, [isModalOpen, selectedLead]);
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar px-8 pb-8 pt-2 space-y-8">
+    <div className="h-screen flex flex-col px-4 pb-2 pt-2 space-y-3 overflow-hidden">
       {/* Popup de Resultado da Importação */}
       <AnimatePresence mode="wait">
         {importResult && (
@@ -517,12 +517,12 @@ export default function Leads() {
       </AnimatePresence>
 
       {/* Main Content Grid */}
-      <div className="bg-white rounded-xl p-2 border border-slate-100 shadow-sm overflow-hidden flex flex-col">
-        <div className="overflow-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent max-h-[calc(100vh-380px)]">
+      <div className="flex-1 bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden flex flex-col min-h-0">
+        <div className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
           <table className="min-w-[1100px] w-full text-left border-separate border-spacing-y-2">
             <thead className="sticky top-0 z-20 bg-white">
               <tr className="text-[0.6875rem] uppercase tracking-[0.1em] text-slate-400">
-                <th onClick={() => handleSort("name")} className="px-6 py-4 font-semibold cursor-pointer select-none group hover:text-blue-600 transition-colors">
+                <th onClick={() => handleSort("name")} className="px-4 py-2 font-semibold cursor-pointer select-none group hover:text-blue-600 transition-colors">
                   <div className="flex items-center gap-1">
                     Nome do Lead
                     {sortConfig?.key === "name" ? (
@@ -530,7 +530,7 @@ export default function Leads() {
                     ) : <Icons.ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-50" />}
                   </div>
                 </th>
-                <th onClick={() => handleSort("contact_type")} className="px-6 py-4 font-semibold cursor-pointer select-none group hover:text-blue-600 transition-colors">
+                <th onClick={() => handleSort("contact_type")} className="px-4 py-2 font-semibold cursor-pointer select-none group hover:text-blue-600 transition-colors">
                   <div className="flex items-center gap-1">
                     Tipo
                     {sortConfig?.key === "contact_type" ? (
@@ -538,7 +538,7 @@ export default function Leads() {
                     ) : <Icons.ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-50" />}
                   </div>
                 </th>
-                <th onClick={() => handleSort("source")} className="px-6 py-4 font-semibold cursor-pointer select-none group hover:text-blue-600 transition-colors">
+                <th onClick={() => handleSort("source")} className="px-4 py-2 font-semibold cursor-pointer select-none group hover:text-blue-600 transition-colors">
                   <div className="flex items-center gap-1">
                     Origem
                     {sortConfig?.key === "source" ? (
@@ -546,7 +546,7 @@ export default function Leads() {
                     ) : <Icons.ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-50" />}
                   </div>
                 </th>
-                <th onClick={() => handleSort("lastcontact")} className="px-6 py-4 font-semibold text-center cursor-pointer select-none group hover:text-blue-600 transition-colors">
+                <th onClick={() => handleSort("lastcontact")} className="px-4 py-2 font-semibold text-center cursor-pointer select-none group hover:text-blue-600 transition-colors">
                   <div className="flex items-center justify-center gap-1">
                     Último Contato
                     {sortConfig?.key === "lastcontact" ? (
@@ -554,7 +554,7 @@ export default function Leads() {
                     ) : <Icons.ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-50" />}
                   </div>
                 </th>
-                <th onClick={() => handleSort("status")} className="px-6 py-4 font-semibold text-center cursor-pointer select-none group hover:text-blue-600 transition-colors">
+                <th onClick={() => handleSort("status")} className="px-4 py-2 font-semibold text-center cursor-pointer select-none group hover:text-blue-600 transition-colors">
                   <div className="flex items-center justify-center gap-1">
                     Funil
                     {sortConfig?.key === "status" ? (
@@ -562,7 +562,7 @@ export default function Leads() {
                     ) : <Icons.ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-50" />}
                   </div>
                 </th>
-                <th onClick={() => handleSort("last_app_message_at")} className="px-6 py-4 font-semibold text-center cursor-pointer select-none group hover:text-blue-600 transition-colors">
+                <th onClick={() => handleSort("last_app_message_at")} className="px-4 py-2 font-semibold text-center cursor-pointer select-none group hover:text-blue-600 transition-colors">
                   <div className="flex items-center justify-center gap-1">
                     Chat App
                     {sortConfig?.key === "last_app_message_at" ? (
@@ -570,7 +570,7 @@ export default function Leads() {
                     ) : <Icons.ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-50" />}
                   </div>
                 </th>
-                <th className="px-6 py-4 font-semibold text-right">Ações</th>
+                <th className="px-4 py-2 font-semibold text-right">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -583,7 +583,7 @@ export default function Leads() {
                   onClick={() => setSelectedLead(lead)}
                   className="bg-slate-50 hover:bg-white hover:shadow-md hover:scale-[1.005] transition-all group cursor-pointer"
                 >
-                  <td className="px-6 py-5 rounded-l-lg border-l-2 border-transparent group-hover:border-blue-600">
+                  <td className="px-4 py-2 rounded-l-lg border-l-2 border-transparent group-hover:border-blue-600">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold shrink-0">
                         {lead.initials}
@@ -622,7 +622,7 @@ export default function Leads() {
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-5">
+                  <td className="px-4 py-2">
                     {lead.contact_type ? (
                       <span className="inline-flex items-center text-[10px] font-bold text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm border border-orange-200">
                         {lead.contact_type}
@@ -631,13 +631,13 @@ export default function Leads() {
                       <span className="text-[10px] text-slate-400 font-medium italic">Sem tipo</span>
                     )}
                   </td>
-                  <td className="px-6 py-5 whitespace-nowrap">
+                  <td className="px-4 py-2 whitespace-nowrap">
                     <span className="text-sm font-medium text-slate-600">{lead.source}</span>
                   </td>
-                  <td className="px-6 py-5 text-center">
+                  <td className="px-4 py-2 text-center">
                     <span className="text-sm text-slate-500">{lead.lastcontact || lead.lastContact || lead.last_contact}</span>
                   </td>
-                  <td className="px-6 py-5 text-center">
+                  <td className="px-4 py-2 text-center">
                     {(() => {
                       const currentStage = stages.find(s => s.name === lead.status);
                       if (currentStage) {
@@ -657,7 +657,7 @@ export default function Leads() {
                       );
                     })()}
                   </td>
-                  <td className="px-6 py-5 text-center">
+                  <td className="px-4 py-2 text-center">
                     {lead.last_app_message_at ? (
                       <div className="flex flex-col items-center gap-0.5">
                         <span className="text-[10px] font-black text-blue-600 uppercase tracking-tighter">Mensagem enviada em</span>
@@ -667,7 +667,7 @@ export default function Leads() {
                       <span className="text-[10px] text-slate-400 font-medium italic">Sem envio</span>
                     )}
                   </td>
-                  <td className="px-6 py-5 rounded-r-lg text-right">
+                  <td className="px-4 py-2 rounded-r-lg text-right">
                     <div className="flex items-center justify-end gap-2">
                        <button className="text-slate-400 hover:text-blue-600 transition-colors p-2 hover:bg-blue-50 rounded-lg">
                         <Icons.Mail className="w-5 h-5" />
@@ -692,8 +692,8 @@ export default function Leads() {
           </table>
         </div>
         
-        {/* Pagination */}
-        <div className="mt-4 flex flex-col sm:flex-row items-center justify-between px-6 py-4 gap-4">
+        {/* Pagination - Fixed at bottom of container */}
+        <div className="border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row items-center justify-between px-4 py-2 gap-4">
           <div className="flex items-center gap-4">
             <p className="text-xs text-slate-400">
               Mostrando {filteredLeads.length > 0 ? (currentPage - 1) * perPage + 1 : 0}-
