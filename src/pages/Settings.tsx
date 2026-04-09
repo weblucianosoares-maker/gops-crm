@@ -92,7 +92,7 @@ function BrokersSection({ isOpen, onToggle }: { isOpen: boolean, onToggle: () =>
     const { error: supabaseError } = await supabase
       .from('brokers')
       .insert([{ name: newForm.name, phone: newForm.phone, email: newForm.email, password: newForm.password, avatar_url: newForm.avatar_url || null, carrier_codes: newForm.carrier_codes }]);
-    if (!error) {
+    if (!supabaseError) {
       setIsAdding(false);
       setNewForm({ name: "", phone: "", email: "", password: "", avatar_url: "", carrier_codes: [] });
       success("Corretor cadastrado!");
@@ -543,7 +543,7 @@ function CarriersSettingsSection({ isOpen, onToggle }: { isOpen: boolean, onTogg
     const { error: supabaseError } = await supabase
       .from('carriers')
       .insert([{ name: newForm.name.trim(), active: newForm.active }]);
-    if (!error) {
+    if (!supabaseError) {
       setIsAdding(false);
       setNewForm({ name: "", active: true });
       success("Operadora cadastrada!");
@@ -804,13 +804,14 @@ function ContactTypesSettingsSection({ isOpen, onToggle }: { isOpen: boolean, on
       .from('contact_types')
       .insert([{ name: newForm.name.trim(), active: newForm.active }]);
     
-    if (!error) {
+    if (!supabaseError) {
       setIsAdding(false);
       setNewForm({ name: "", active: true });
       fetchContactTypes();
+      success("Tipo de contato cadastrado!");
     } else {
-      console.error('Erro ao adicionar tipo:', error);
-      alert("Erro ao adicionar tipo: " + (error.message || "Erro desconhecido"));
+      console.error('Erro ao adicionar tipo:', supabaseError);
+      error("Erro ao adicionar tipo: " + (supabaseError.message || "Erro desconhecido"));
     }
   };
 
