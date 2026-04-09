@@ -23,6 +23,7 @@ export default function Leads() {
   const { leads, filter, fetchLeads, stages, contactTypes, jobTitles } = useLeads();
   const { success, error, toast: showToast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
   const [ufFilter, setUfFilter] = useState("Todos");
   const [statusFilter, setStatusFilter] = useState("Todos");
   const [importResult, setImportResult] = useState<{imported: number, duplicated: number} | null>(null);
@@ -443,56 +444,81 @@ export default function Leads() {
               <p className="text-[10px] text-blue-600 mt-1 font-medium">{leads.length} leads processados</p>
             </div>
           </div>
+          
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className={cn(
+              "p-4 rounded-xl font-bold flex items-center justify-center transition-all border shadow-sm",
+              showFilters 
+                ? "bg-blue-50 text-blue-600 border-blue-200" 
+                : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+            )}
+            title={showFilters ? "Esconder Filtros" : "Mostrar Filtros"}
+          >
+            <Icons.FilterIcon className={cn("w-6 h-6", !showFilters && "animate-pulse")} />
+          </button>
         </div>
       </div>
 
       {/* Filters & Search Section */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-1.5 hover:border-blue-300 transition-colors">
-          <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5"><Icons.MapPin className="w-3 h-3 text-blue-600"/> Estado (UF)</label>
-          <select
-            value={ufFilter}
-            onChange={(e) => setUfFilter(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 transition-all text-sm font-bold text-slate-700 cursor-pointer"
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0, marginBottom: 0 }}
+            animate={{ height: "auto", opacity: 1, marginBottom: 16 }}
+            exit={{ height: 0, opacity: 0, marginBottom: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="overflow-hidden"
           >
-            <option value="Todos">Todos os Estados</option>
-            {availableUFs.map((uf: any) => (
-              <option key={uf} value={uf}>{uf}</option>
-            ))}
-          </select>
-        </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-1.5 hover:border-blue-300 transition-colors">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5"><Icons.MapPin className="w-3 h-3 text-blue-600"/> Estado (UF)</label>
+                <select
+                  value={ufFilter}
+                  onChange={(e) => setUfFilter(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 transition-all text-sm font-bold text-slate-700 cursor-pointer"
+                >
+                  <option value="Todos">Todos os Estados</option>
+                  {availableUFs.map((uf: any) => (
+                    <option key={uf} value={uf}>{uf}</option>
+                  ))}
+                </select>
+              </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-1.5 hover:border-blue-300 transition-colors">
-          <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5"><Icons.Target className="w-3 h-3 text-blue-600"/> Status no Funil</label>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 transition-all text-sm font-bold text-slate-700 cursor-pointer"
-          >
-            <option value="Todos">Todos os Status</option>
-            {stages.map((stage: any) => (
-              <option key={stage.id} value={stage.name}>{stage.label}</option>
-            ))}
-          </select>
-        </div>
+              <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-1.5 hover:border-blue-300 transition-colors">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5"><Icons.Target className="w-3 h-3 text-blue-600"/> Status no Funil</label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 transition-all text-sm font-bold text-slate-700 cursor-pointer"
+                >
+                  <option value="Todos">Todos os Status</option>
+                  {stages.map((stage: any) => (
+                    <option key={stage.id} value={stage.name}>{stage.label}</option>
+                  ))}
+                </select>
+              </div>
 
-        {/* Global Search Box */}
-        <div className="md:col-span-2 bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-1.5 hover:border-blue-300 transition-colors">
-          <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
-            <Icons.Search className="w-3 h-3 text-blue-600"/> Pesquisa Global (Nome, CPF, Empresa, etc)
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Pesquise qualquer informação do lead..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-700"
-            />
-            <Icons.Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          </div>
-        </div>
-      </div>
+              {/* Global Search Box */}
+              <div className="md:col-span-2 bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-1.5 hover:border-blue-300 transition-colors">
+                <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
+                  <Icons.Search className="w-3 h-3 text-blue-600"/> Pesquisa Global (Nome, CPF, Empresa, etc)
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Pesquise qualquer informação do lead..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm font-bold text-slate-700"
+                  />
+                  <Icons.Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Main Content Grid */}
       <div className="bg-white rounded-xl p-2 border border-slate-100 shadow-sm overflow-hidden flex flex-col">
