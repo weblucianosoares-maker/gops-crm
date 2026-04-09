@@ -567,7 +567,7 @@ export default function Leads() {
                         {lead.initials}
                       </div>
                       <div className="flex flex-col gap-1 py-1">
-                        <p className="font-bold text-slate-900 leading-tight whitespace-nowrap">{lead.name}</p>
+                        <p className="font-bold text-slate-900 truncate max-w-[200px] leading-tight" title={lead.name}>{lead.name}</p>
                         
                         {/* Interaction Status Tag - Logo Abaixo do Nome */}
                         <div className="relative group/status shrink-0 w-fit">
@@ -589,7 +589,7 @@ export default function Leads() {
                           </select>
                         </div>
                         
-                        <p className="text-[10px] text-slate-400 leading-tight whitespace-nowrap">{lead.email}</p>
+                        <p className="text-[10px] text-slate-400 truncate max-w-[150px] leading-tight" title={lead.email}>{lead.email}</p>
                       </div>
                       {lead.birthday && (
                         <div className="ml-2 flex gap-1">
