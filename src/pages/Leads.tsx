@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icons } from "../components/Icons";
-import { cn } from "../lib/utils";
+import { cn, formatDateTime } from "../lib/utils";
 
 import Papa from "papaparse";
 import { supabase } from "../lib/supabase";
@@ -534,8 +534,16 @@ export default function Leads() {
                 </th>
                 <th onClick={() => handleSort("status")} className="px-6 py-4 font-semibold text-center cursor-pointer select-none group hover:text-blue-600 transition-colors">
                   <div className="flex items-center justify-center gap-1">
-                    Status
+                    Funil
                     {sortConfig?.key === "status" ? (
+                      sortConfig.direction === 'asc' ? <Icons.ChevronUp className="w-3 h-3 text-blue-600" /> : <Icons.ChevronDown className="w-3 h-3 text-blue-600" />
+                    ) : <Icons.ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-50" />}
+                  </div>
+                </th>
+                <th onClick={() => handleSort("last_app_message_at")} className="px-6 py-4 font-semibold text-center cursor-pointer select-none group hover:text-blue-600 transition-colors">
+                  <div className="flex items-center justify-center gap-1">
+                    Chat App
+                    {sortConfig?.key === "last_app_message_at" ? (
                       sortConfig.direction === 'asc' ? <Icons.ChevronUp className="w-3 h-3 text-blue-600" /> : <Icons.ChevronDown className="w-3 h-3 text-blue-600" />
                     ) : <Icons.ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-50" />}
                   </div>
@@ -610,15 +618,32 @@ export default function Leads() {
                   <td className="px-6 py-5 text-center">
                     {(() => {
                       const currentStage = stages.find(s => s.name === lead.status);
+                      if (currentStage) {
+                        return (
+                          <span className={cn(
+                            "text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg whitespace-nowrap shadow-sm",
+                            currentStage.color
+                          )}>
+                            {currentStage.label}
+                          </span>
+                        );
+                      }
                       return (
-                        <span className={cn(
-                          "text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg whitespace-nowrap shadow-sm",
-                          currentStage ? currentStage.color : "bg-blue-50 text-blue-600"
-                        )}>
-                          {currentStage ? currentStage.label : (lead.status || "Novo")}
+                        <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg bg-slate-100 text-slate-400 whitespace-nowrap border border-slate-200">
+                          Não está no funil
                         </span>
                       );
                     })()}
+                  </td>
+                  <td className="px-6 py-5 text-center">
+                    {lead.last_app_message_at ? (
+                      <div className="flex flex-col items-center gap-0.5">
+                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-tighter">Mensagem enviada em</span>
+                        <span className="text-[11px] font-bold text-slate-700">{formatDateTime(lead.last_app_message_at)}</span>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-slate-300 font-medium italic">Sem envio</span>
+                    )}
                   </td>
                   <td className="px-6 py-5 rounded-r-lg text-right">
                     <div className="flex items-center justify-end gap-2">
