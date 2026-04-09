@@ -2,6 +2,9 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
+import multer from "multer";
+import "dotenv/config";
+import { extractNetworkData } from "./src/lib/geminiService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,6 +12,14 @@ const __dirname = path.dirname(__filename);
 async function startServer() {
   const app = express();
   const PORT = parseInt(process.env.PORT || "3000", 10);
+
+  // Multer config for file uploads
+  const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 20 * 1024 * 1024 } // 20MB
+  });
+
+  app.use(express.json({ limit: '50mb' }));
 
   // Mock Data
   const dashboardStats = {
@@ -54,6 +65,26 @@ async function startServer() {
   app.get("/api/dashboard/ranking", (req, res) => res.json(carrierRanking));
   app.get("/api/dashboard/proposals", (req, res) => res.json(recentProposals));
   app.get("/api/leads", (req, res) => res.json(leads));
+
+  // Intelligent Network Import
+  app.post("/api/network/import", upload.single("file"), async (req, res) => {
+    try {
+      const { carrierName } = req.body;
+      const file = req.file;
+
+      if (!file) return res.status(400).json({ error: "Nenhum arquivo enviado." });
+      if (!carrierName) return res.status(400).json({ error: "Nome da operadora é obrigatório." });
+
+      console.log(`[AI IMPORT] Processando arquivo para ${carrierName}...`);
+      
+      const extractedData = await extractNetworkData(file.buffer, file.mimetype, carrierName);
+      
+      res.json({ success: true, data: extractedData });
+    } catch (error: any) {
+      console.error("[AI IMPORT ERROR]", error);
+      res.status(500).json({ error: error.message || "Erro interno ao processar com IA." });
+    }
+  });
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {

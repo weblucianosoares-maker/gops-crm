@@ -5,6 +5,7 @@ import { useLeads } from "../lib/leadsContext";
 import { supabase } from "../lib/supabase";
 import { cn } from "../lib/utils";
 import { useToast } from "../components/Toasts";
+import SmartNetworkImport from "../components/SmartNetworkImport";
 
 const COLOR_OPTIONS = [
   "bg-blue-600", "bg-blue-400", "bg-indigo-600", "bg-purple-600",
@@ -1193,6 +1194,7 @@ function NetworkManagementSection({ isOpen, onToggle }: { isOpen: boolean, onTog
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [isSmartImportOpen, setIsSmartImportOpen] = useState(false);
   const [newForm, setNewForm] = useState({ name: "", type: "Hospital", uf: "RJ", city: "", neighborhood: "", address: "" });
   
   const [coverageEditingId, setCoverageEditingId] = useState<string | null>(null);
@@ -1266,6 +1268,9 @@ function NetworkManagementSection({ isOpen, onToggle }: { isOpen: boolean, onTog
           </div>
         </div>
         <div className="flex items-center gap-4">
+          <button onClick={(e) => { e.stopPropagation(); if (!isOpen) onToggle(); setIsSmartImportOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-xs font-black uppercase tracking-wider rounded-lg hover:bg-slate-800 transition-all shadow-md">
+            <Icons.Rocket className="w-3.5 h-3.5 text-indigo-400" /> IA Import
+          </button>
           <button onClick={(e) => { e.stopPropagation(); if (!isOpen) onToggle(); setIsAdding(true); }} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-xs font-black uppercase tracking-wider rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-100">
             <Icons.Plus className="w-3.5 h-3.5" /> Novo Local
           </button>
@@ -1358,6 +1363,12 @@ function NetworkManagementSection({ isOpen, onToggle }: { isOpen: boolean, onTog
                 </div>
               </motion.div>
             )}
+
+            <SmartNetworkImport 
+               isOpen={isSmartImportOpen} 
+               onClose={() => setIsSmartImportOpen(false)} 
+               onRefresh={fetchProviders} 
+            />
           </motion.div>
         )}
       </AnimatePresence>
