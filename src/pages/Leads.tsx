@@ -495,10 +495,10 @@ export default function Leads() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="bg-white rounded-xl p-2 border border-slate-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+      <div className="bg-white rounded-xl p-2 border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+        <div className="overflow-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent max-h-[calc(100vh-380px)]">
           <table className="min-w-[1100px] w-full text-left border-separate border-spacing-y-2">
-            <thead>
+            <thead className="sticky top-0 z-20 bg-white">
               <tr className="text-[0.6875rem] uppercase tracking-[0.1em] text-slate-400">
                 <th onClick={() => handleSort("name")} className="px-6 py-4 font-semibold cursor-pointer select-none group hover:text-blue-600 transition-colors">
                   <div className="flex items-center gap-1">
