@@ -37,6 +37,23 @@ export default function SmartNetworkImport({ isOpen, onClose, onRefresh }: { isO
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Reset state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setStep('upload');
+      setSelectedCarrier("");
+      setFile(null);
+      setExtractedData([]);
+      setIsSaving(false);
+      setImportStats({
+        newProviders: 0,
+        linkedPlans: 0,
+        newProducts: 0,
+        duplicatesHandled: 0
+      });
+    }
+  }, [isOpen]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) setFile(e.target.files[0]);
   };
