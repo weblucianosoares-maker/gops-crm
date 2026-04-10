@@ -20,7 +20,7 @@ interface ExtractedProvider {
 }
 
 export default function SmartNetworkImport({ isOpen, onClose, onRefresh }: { isOpen: boolean, onClose: () => void, onRefresh: () => void }) {
-  const { carriers, products: allProducts } = useLeads();
+  const { carriers, products: allProducts, fetchProducts } = useLeads();
   const { success, error: showError } = useToast();
   
   const [step, setStep] = useState<'upload' | 'processing' | 'review' | 'summary'>('upload');
@@ -31,6 +31,7 @@ export default function SmartNetworkImport({ isOpen, onClose, onRefresh }: { isO
   const [importStats, setImportStats] = useState({
     newProviders: 0,
     linkedPlans: 0,
+    newProducts: 0,
     duplicatesHandled: 0
   });
   
@@ -89,7 +90,7 @@ export default function SmartNetworkImport({ isOpen, onClose, onRefresh }: { isO
 
   const handleSaveImport = async () => {
     setIsSaving(true);
-    let stats = { newProviders: 0, linkedPlans: 0, duplicatesHandled: 0 };
+    let stats = { newProviders: 0, linkedPlans: 0, newProducts: 0, duplicatesHandled: 0 };
     try {
       const toImport = extractedData.filter(d => d.selected);
       
@@ -122,10 +123,30 @@ export default function SmartNetworkImport({ isOpen, onClose, onRefresh }: { isO
         if (item.products && item.products.length > 0) {
           for (const productName of item.products) {
             // Tentar achar o produto pelo nome correspondente na operadora
-            const productMatch = allProducts.find(p => 
+            let productMatch = allProducts.find(p => 
               p.carrier_id === selectedCarrier && 
               p.name.toLowerCase().includes(productName.toLowerCase())
             );
+
+            // Criar produto se não existir
+            if (!productMatch) {
+               const { data: newProd, error: prodErr } = await supabase
+                .from('products')
+                .insert([{
+                  carrier_id: selectedCarrier,
+                  name: productName,
+                  status: 'Ativo'
+                }])
+                .select()
+                .single();
+              
+              if (!prodErr && newProd) {
+                productMatch = newProd;
+                stats.newProducts++;
+                // Adicionamos ao allProducts local temporariamente para evitar recriação no mesmo loop
+                allProducts.push(newProd);
+              }
+            }
 
             if (productMatch) {
               const { error: upsertErr } = await supabase.from('network_coverage').upsert({
@@ -141,6 +162,7 @@ export default function SmartNetworkImport({ isOpen, onClose, onRefresh }: { isO
         }
       }
 
+      await fetchProducts();
       setImportStats(stats);
       setStep('summary');
       onRefresh();
