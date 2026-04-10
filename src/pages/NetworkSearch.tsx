@@ -51,8 +51,8 @@ export default function NetworkSearch() {
           carrier_id,
           product_id,
           coverage_details,
-          carrier:carriers(name),
-          product:products(name)
+          carrier:carriers(id, name),
+          product:products(id, name, modality)
         )
       `)
       .order('name');
@@ -214,28 +214,46 @@ export default function NetworkSearch() {
                     {/* Lista de Cobertura */}
                     {(() => {
                       const uniqueCarriers = (provider.coverage || []).reduce((acc: any[], current: any) => {
-                        if (!acc.find(item => item.carrier?.id === current.carrier?.id)) {
+                        const carrierId = current.carrier?.id || current.carrier?.name;
+                        if (carrierId && !acc.find(item => (item.carrier?.id || item.carrier?.name) === carrierId)) {
                           acc.push(current);
                         }
                         return acc;
                       }, []);
                       const carrierCount = uniqueCarriers.length;
+                      const productCount = provider.coverage?.length || 0;
 
                       return (
                         <div className="p-3.5 space-y-2 flex-1">
                           <div className="flex items-center justify-between pointer-events-none">
-                            <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Operadoras Aceitas</span>
-                            <span className="text-[9px] font-black text-blue-600 px-2 py-0.5 bg-blue-50 rounded-full">{carrierCount} {carrierCount === 1 ? 'Opção' : 'Opções'}</span>
+                            <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-2">
+                               Operadoras Aceitas
+                               <span className="w-1 h-1 rounded-full bg-slate-300" />
+                               <span className="text-blue-600/50 italic capitalize">{productCount} planos</span>
+                             </span>
+                             <span className="text-[9px] font-black text-blue-600 px-2 py-0.5 bg-blue-50 rounded-full">
+                               {carrierCount} {carrierCount === 1 ? 'Operadora' : 'Operadoras'}
+                             </span>
                           </div>
 
                           <div className="space-y-1">
-                            {uniqueCarriers.length > 0 ? (
-                              uniqueCarriers.slice(0, 3).map((cov: any) => (
-                                <div key={cov.carrier?.id} className="p-2 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between group/item hover:bg-white hover:border-blue-100 transition-all pointer-events-none">
-                                  <div className="truncate pr-2">
-                                    <p className="text-[11px] font-black text-blue-900 uppercase tracking-tight truncate">{cov.carrier?.name}</p>
-                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-0 truncate">Multi-produtos disponíveis</p>
+                            {provider.coverage && provider.coverage.length > 0 ? (
+                              provider.coverage.slice(0, 3).map((cov: any, idx: number) => (
+                                <div key={cov.id || idx} className="p-2 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between group/item hover:bg-white hover:border-blue-100 transition-all pointer-events-none">
+                                  <div className="flex-1 truncate pr-2">
+                                    <p className="text-[11px] font-black text-blue-900 uppercase tracking-tight truncate">
+                                      {cov.carrier?.name} • <span className="text-slate-500">{cov.product?.name}</span>
+                                    </p>
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-0 truncate">Cobertura Completa Atendida</p>
                                   </div>
+                                  {cov.product?.modality && (
+                                    <span className={cn(
+                                      "text-[7px] font-black px-1.5 py-0.5 rounded border shrink-0",
+                                      cov.product.modality === 'Adesão' ? "bg-amber-50 text-amber-600 border-amber-100" : "bg-indigo-50 text-indigo-600 border-indigo-100"
+                                    )}>
+                                      {cov.product.modality}
+                                    </span>
+                                  )}
                                 </div>
                               ))
                             ) : (
@@ -294,6 +312,7 @@ export default function NetworkSearch() {
         isOpen={isDrawerOpen} 
         onClose={() => setIsDrawerOpen(false)} 
         provider={selectedProvider} 
+        onUpdate={fetchProviders}
       />
     </div>
   );

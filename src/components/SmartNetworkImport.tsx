@@ -13,7 +13,8 @@ interface ExtractedProvider {
   city: string;
   neighborhood: string;
   address: string;
-  products: string[];
+  products: { name: string, modality: string }[];
+  coverage_details?: string;
   status?: 'new' | 'duplicate' | 'error';
   matchedId?: string;
   selected?: boolean;
@@ -138,7 +139,10 @@ export default function SmartNetworkImport({ isOpen, onClose, onRefresh }: { isO
 
         // Vincular produtos
         if (item.products && item.products.length > 0) {
-          for (const productName of item.products) {
+          for (const productData of item.products) {
+            const productName = productData.name;
+            const productModality = productData.modality || 'PME';
+
             // Tentar achar o produto pelo nome correspondente na operadora
             let productMatch = allProducts.find(p => 
               p.carrier_id === selectedCarrier && 
@@ -152,6 +156,7 @@ export default function SmartNetworkImport({ isOpen, onClose, onRefresh }: { isO
                 .insert([{
                   carrier_id: selectedCarrier,
                   name: productName,
+                  modality: productModality,
                   status: 'Ativo'
                 }])
                 .select()
@@ -167,10 +172,9 @@ export default function SmartNetworkImport({ isOpen, onClose, onRefresh }: { isO
 
             if (productMatch) {
               const { error: upsertErr } = await supabase.from('network_coverage').upsert({
-                provider_id: providerId,
                 carrier_id: selectedCarrier,
                 product_id: productMatch.id,
-                coverage_details: "Importado via IA"
+                coverage_details: item.coverage_details || "*NE"
               }, { onConflict: 'provider_id, product_id' });
               
               if (!upsertErr) stats.linkedPlans++;
@@ -353,8 +357,14 @@ export default function SmartNetworkImport({ isOpen, onClose, onRefresh }: { isO
                                </td>
                                <td className="px-6 py-4">
                                   <div className="flex flex-wrap gap-1">
-                                     {item.products.map(p => (
-                                       <span key={p} className="text-[8px] font-black uppercase px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded border border-indigo-100">{p}</span>
+                                     {item.products.map((p, pIdx) => (
+                                       <span key={pIdx} className={cn(
+                                         "text-[8px] font-black uppercase px-2 py-1 rounded border flex flex-col items-center",
+                                         p.modality === 'Adesão' ? "bg-amber-50 text-amber-600 border-amber-100" : "bg-indigo-50 text-indigo-600 border-indigo-100"
+                                       )}>
+                                         <span>{p.name}</span>
+                                         <span className="opacity-50 text-[6px] tracking-tighter mt-0.5">{p.modality}</span>
+                                       </span>
                                      ))}
                                   </div>
                                </td>

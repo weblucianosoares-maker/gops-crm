@@ -9,18 +9,19 @@ export const extractNetworkData = async (fileBuffer: Buffer, mimeType: string, c
   const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
   const prompt = `
-    Você é um especialista em processamento de documentos de seguros de saúde.
-    Sua tarefa é extrair uma lista estruturada de estabelecimentos de saúde (Hospitais, Clínicas e Laboratórios) deste documento da operadora ${carrierName}.
+    Você é um especialista em processamento de documentos de seguros de saúde brasileiros.
+    Sua tarefa é extrair uma lista estruturada de estabelecimentos de saúde deste documento da operadora ${carrierName}.
 
     REGRAS DE EXTRAÇÃO:
-    1. Identifique o Nome Completo do estabelecimento.
-    2. Identifique o TIPO: Deve ser obrigatoriamente um destes: 'Hospital', 'Clínica' ou 'Laboratório'.
-    3. Identifique a CIDADE e UF.
-    4. Se houver informações de bairro ou endereço, extraia também.
-    5. Identifique quais PRODUTOS/PLANOS são mencionados (ex: "Amil S380", "Amil S450", "Top Nacional").
+    1. Nome: Identifique o Nome Completo do estabelecimento.
+    2. Tipo: Deve ser 'Hospital', 'Clínica' ou 'Laboratório'.
+    3. Cidade/UF: Extraia a cidade e o estado.
+    4. Endereço: BUSQUE ATIVAMENTE o endereço completo (Rua, Número, Bairro). Se não houver no papel mas for um hospital famoso na cidade citada, pode usar seu conhecimento para preencher.
+    5. Cobertura (Siglas): Identifique as siglas de especialidade atendidas para cada plano (ex: "H", "M", "PSA", "PSI", "HE"). Elas costumam estar ao lado do nome do hospital ou em colunas específicas.
+    6. Produtos: Liste os nomes dos planos/produtos que aceitam o local.
     
     SAÍDA:
-    Retorne APENAS um JSON puro no seguinte formato, sem explicações:
+    Retorne APENAS um JSON puro no seguinte formato:
     [
       {
         "name": "Nome do Estabelecimento",
@@ -29,11 +30,16 @@ export const extractNetworkData = async (fileBuffer: Buffer, mimeType: string, c
         "city": "Niterói",
         "neighborhood": "Icaraí",
         "address": "Rua Exemplo, 123",
-        "products": ["Plano A", "Plano B"]
+        "products": [
+          {"name": "Plano A", "modality": "PME"},
+          {"name": "Plano B", "modality": "Adesão"}
+        ],
+        "coverage_details": "H/ M/ PSA/ PSI" 
       }
     ]
 
-    Se não encontrar produtos específicos, deixe a lista de produtos vazia.
+    Se não houver siglas de cobertura, deixe "coverage_details" como "*NE" (Atendimento Não Especificado).
+    Se não conseguir determinar a modalidade, use "PME" como padrão.
   `;
 
   const result = await model.generateContent([
