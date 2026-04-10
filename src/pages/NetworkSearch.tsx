@@ -269,34 +269,6 @@ export default function NetworkSearch() {
         </div>
       </div>
 
-      {/* Floating Suggestion for Broker */}
-      <AnimatePresence>
-        {filteredProviders.length > 0 && (
-          <motion.div 
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30"
-          >
-            <div className="bg-slate-900 border border-white/10 text-white px-8 py-4 rounded-3xl shadow-2xl flex items-center gap-6 backdrop-blur-xl">
-               <div className="flex items-center gap-3 pr-6 border-r border-white/10">
-                  <div className="w-10 h-10 rounded-2xl bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/20 text-white">
-                    <Icons.Rocket className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em]">Dica de Venda</p>
-                    <p className="text-xs font-bold text-slate-200 whitespace-nowrap">Planos de entrada com rede premium</p>
-                  </div>
-               </div>
-               <p className="text-[11px] font-medium text-slate-400 italic max-w-sm hidden lg:block">
-                 "Destaque para a Unimed e Amil que oferecem cobertura completa nestas clínicas da região com carência zero."
-               </p>
-               <button className="bg-white text-slate-900 px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all">
-                 Saiba Mais
-               </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
