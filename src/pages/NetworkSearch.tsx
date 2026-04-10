@@ -4,6 +4,7 @@ import { Icons } from "../components/Icons";
 import { supabase } from "../lib/supabase";
 import { cn } from "../lib/utils";
 import { useLeads } from "../lib/leadsContext";
+import ProviderDetailDrawer from "../components/ProviderDetailDrawer";
 
 interface Provider {
   id: string;
@@ -21,6 +22,8 @@ export default function NetworkSearch() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedProvider, setSelectedProvider] = useState<any>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [filters, setFilters] = useState({
     uf: "",
     city: "",
@@ -241,7 +244,13 @@ export default function NetworkSearch() {
                             </div>
                           )}
                        </div>
-                       <button className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1 hover:gap-2 transition-all">
+                       <button 
+                         onClick={() => {
+                           setSelectedProvider(provider);
+                           setIsDrawerOpen(true);
+                         }}
+                         className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1 hover:gap-2 transition-all"
+                       >
                          Ver Detalhes <Icons.ChevronRight className="w-3 h-3" />
                        </button>
                     </div>
@@ -269,6 +278,11 @@ export default function NetworkSearch() {
         </div>
       </div>
 
+      <ProviderDetailDrawer 
+        isOpen={isDrawerOpen} 
+        onClose={() => setIsDrawerOpen(false)} 
+        provider={selectedProvider} 
+      />
     </div>
   );
 }
