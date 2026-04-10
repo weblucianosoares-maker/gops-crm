@@ -10,7 +10,16 @@ interface ProviderDetailDrawerProps {
 }
 
 export default function ProviderDetailDrawer({ isOpen, onClose, provider }: ProviderDetailDrawerProps) {
+  const [expandedCarriers, setExpandedCarriers] = React.useState<Record<string, boolean>>({});
+
   if (!provider) return null;
+
+  const toggleCarrier = (carrier: string) => {
+    setExpandedCarriers(prev => ({
+      ...prev,
+      [carrier]: !prev[carrier]
+    }));
+  };
 
   // Group coverage by carrier
   const groupedCoverage = (provider.coverage || []).reduce((acc: any, cov: any) => {
@@ -102,31 +111,72 @@ export default function ProviderDetailDrawer({ isOpen, onClose, provider }: Prov
                   </span>
                 </div>
 
-                <div className="space-y-8">
+                <div className="space-y-4">
                   {Object.keys(groupedCoverage).length > 0 ? (
-                    Object.entries(groupedCoverage).map(([carrier, coverages]: [string, any]) => (
-                      <div key={carrier} className="space-y-3">
-                        <div className="flex items-center gap-3 px-2">
-                          <Icons.ShieldCheck className="w-4 h-4 text-emerald-500" />
-                          <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{carrier}</h4>
-                        </div>
-                        <div className="grid grid-cols-1 gap-2">
-                          {coverages.map((cov: any) => (
-                            <div key={cov.id} className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-blue-400 hover:shadow-md transition-all group flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 rounded-full bg-blue-600 group-hover:scale-125 transition-transform" />
-                                <p className="text-xs font-black text-slate-700 uppercase tracking-tight">{cov.product?.name}</p>
+                    Object.entries(groupedCoverage).map(([carrier, coverages]: [string, any]) => {
+                      const isExpanded = !!expandedCarriers[carrier];
+                      return (
+                        <div key={carrier} className="border border-slate-100 rounded-[2rem] overflow-hidden bg-slate-50/30 transition-all">
+                          {/* Header de Drill Down */}
+                          <button 
+                            onClick={() => toggleCarrier(carrier)}
+                            className="w-full flex items-center justify-between p-5 hover:bg-slate-50 transition-colors group"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className={cn(
+                                "w-10 h-10 rounded-2xl flex items-center justify-center transition-all shadow-sm",
+                                isExpanded ? "bg-emerald-500 text-white shadow-emerald-200" : "bg-white text-emerald-500"
+                              )}>
+                                <Icons.ShieldCheck className="w-5 h-5" />
                               </div>
-                              {cov.coverage_details && (
-                                <span className="text-[8px] font-black uppercase px-2 py-1 bg-slate-50 border border-slate-100 rounded-lg text-slate-400">
-                                  {cov.coverage_details}
-                                </span>
-                              )}
+                              <div className="text-left">
+                                <h4 className={cn(
+                                  "text-sm font-black uppercase tracking-tight transition-colors",
+                                  isExpanded ? "text-slate-900" : "text-slate-600"
+                                )}>
+                                  {carrier}
+                                </h4>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{coverages.length} Planos Atendidos</p>
+                              </div>
                             </div>
-                          ))}
+                            <motion.div
+                              animate={{ rotate: isExpanded ? 180 : 0 }}
+                              className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 shadow-sm transition-all group-hover:text-blue-600"
+                            >
+                              <Icons.ChevronDown className="w-5 h-5" />
+                            </motion.div>
+                          </button>
+
+                          {/* Lista Expandível */}
+                          <AnimatePresence>
+                            {isExpanded && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                              >
+                                <div className="p-5 pt-0 grid grid-cols-1 gap-2.5">
+                                  {coverages.map((cov: any) => (
+                                    <div key={cov.id} className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-blue-400 hover:shadow-md transition-all group/item flex items-center justify-between">
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-2.5 h-2.5 rounded-full bg-blue-600 group-hover/item:scale-125 transition-transform" />
+                                        <p className="text-xs font-black text-slate-700 uppercase tracking-tight">{cov.product?.name}</p>
+                                      </div>
+                                      {cov.coverage_details && (
+                                        <span className="text-[9px] font-black uppercase px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-400">
+                                          {cov.coverage_details}
+                                        </span>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="py-20 text-center bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200">
                       <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-slate-200 mx-auto mb-4 shadow-sm">

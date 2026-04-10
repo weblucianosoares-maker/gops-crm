@@ -28,25 +28,25 @@ export interface CarrierCommission {
 // Percentuais totais por operadora em cada Grade (PME/Empresarial)
 const CARRIER_RE_RULES: Record<TierName, Record<string, number>> = {
   Interno: {
-    'Amil': 200, 'Bradesco': 240, 'Assim': 200, 'Hapvida': 200, 'SulAmérica': 200, 'Porto': 200, 'Klini': 180, 'Unimed': 100, 'Cemeru': 100, 'Hsmed': 140, 'Integral': 180, 'Leve': 150, 'MédSênior': 125, 'Nova': 180
+    'Amil': 200, 'Bradesco': 240, 'Assim': 200, 'Hapvida': 200, 'SulAmérica': 200, 'Porto Saúde': 200, 'Klini': 180, 'Unimed': 100, 'Cemeru': 100, 'Hsmed': 140, 'Integral': 180, 'Leve': 150, 'MédSênior': 125, 'Nova': 180
   },
   Ouro: {
-    'Amil': 210, 'Bradesco': 250, 'Assim': 210, 'Hapvida': 210, 'SulAmérica': 210, 'Porto': 210, 'Klini': 180, 'Unimed': 100, 'Cemeru': 100, 'Hsmed': 140, 'Integral': 180, 'Leve': 150, 'MédSênior': 125, 'Nova': 180
+    'Amil': 210, 'Bradesco': 250, 'Assim': 210, 'Hapvida': 210, 'SulAmérica': 210, 'Porto Saúde': 210, 'Klini': 180, 'Unimed': 100, 'Cemeru': 100, 'Hsmed': 140, 'Integral': 180, 'Leve': 150, 'MédSênior': 125, 'Nova': 180
   },
   Safira: {
-    'Amil': 220, 'Bradesco': 260, 'Assim': 220, 'Hapvida': 220, 'SulAmérica': 220, 'Porto': 220, 'Klini': 180, 'Unimed': 100, 'Cemeru': 100, 'Hsmed': 140, 'Integral': 180, 'Leve': 150, 'MédSênior': 125, 'Nova': 180
+    'Amil': 220, 'Bradesco': 260, 'Assim': 220, 'Hapvida': 220, 'SulAmérica': 220, 'Porto Saúde': 220, 'Klini': 180, 'Unimed': 100, 'Cemeru': 100, 'Hsmed': 140, 'Integral': 180, 'Leve': 150, 'MédSênior': 125, 'Nova': 180
   },
   Esmeralda: {
-    'Amil': 230, 'Bradesco': 270, 'Assim': 230, 'Hapvida': 230, 'SulAmérica': 230, 'Porto': 230, 'Klini': 180, 'Unimed': 100, 'Cemeru': 100, 'Hsmed': 140, 'Integral': 180, 'Leve': 150, 'MédSênior': 125, 'Nova': 180
+    'Amil': 230, 'Bradesco': 270, 'Assim': 230, 'Hapvida': 230, 'SulAmérica': 230, 'Porto Saúde': 230, 'Klini': 180, 'Unimed': 100, 'Cemeru': 100, 'Hsmed': 140, 'Integral': 180, 'Leve': 150, 'MédSênior': 125, 'Nova': 180
   },
   Diamante: {
-    'Amil': 240, 'Bradesco': 280, 'Assim': 240, 'Hapvida': 240, 'SulAmérica': 240, 'Porto': 240, 'Klini': 180, 'Unimed': 100, 'Cemeru': 100, 'Hsmed': 140, 'Integral': 220, 'Leve': 150, 'MédSênior': 125, 'Nova': 180
+    'Amil': 240, 'Bradesco': 280, 'Assim': 240, 'Hapvida': 240, 'SulAmérica': 240, 'Porto Saúde': 240, 'Klini': 180, 'Unimed': 100, 'Cemeru': 100, 'Hsmed': 140, 'Integral': 220, 'Leve': 150, 'MédSênior': 125, 'Nova': 180
   },
   Brilhante: {
-    'Amil': 250, 'Bradesco': 290, 'Assim': 250, 'Hapvida': 250, 'SulAmérica': 250, 'Porto': 250, 'Klini': 180, 'Unimed': 100, 'Cemeru': 100, 'Hsmed': 140, 'Integral': 220, 'Leve': 150, 'MédSênior': 125, 'Nova': 180
+    'Amil': 250, 'Bradesco': 290, 'Assim': 250, 'Hapvida': 250, 'SulAmérica': 250, 'Porto Saúde': 250, 'Klini': 180, 'Unimed': 100, 'Cemeru': 100, 'Hsmed': 140, 'Integral': 220, 'Leve': 150, 'MédSênior': 125, 'Nova': 180
   },
   Rubi: {
-    'Amil': 260, 'Bradesco': 300, 'Assim': 260, 'Hapvida': 260, 'SulAmérica': 260, 'Porto': 260, 'Klini': 180, 'Unimed': 120, 'Cemeru': 100, 'Hsmed': 140, 'Integral': 240, 'Leve': 180, 'MédSênior': 125, 'Nova': 240
+    'Amil': 260, 'Bradesco': 300, 'Assim': 260, 'Hapvida': 260, 'SulAmérica': 260, 'Porto Saúde': 260, 'Klini': 180, 'Unimed': 120, 'Cemeru': 100, 'Hsmed': 140, 'Integral': 240, 'Leve': 180, 'MédSênior': 125, 'Nova': 240
   }
 };
 

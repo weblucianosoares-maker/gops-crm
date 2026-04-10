@@ -3,6 +3,8 @@ import React, { createContext, useContext, useState } from 'react';
 interface DrawerContextType {
   selectedLead: any | null;
   isOpen: boolean;
+  isExternalDrawerOpen: boolean;
+  setExternalDrawerOpen: (isOpen: boolean) => void;
   openDrawer: (lead: any, tab?: 'details' | 'chat') => void;
   closeDrawer: () => void;
   initialTab: 'details' | 'chat';
@@ -13,6 +15,7 @@ const DrawerContext = createContext<DrawerContextType | undefined>(undefined);
 export function DrawerProvider({ children }: { children: React.ReactNode }) {
   const [selectedLead, setSelectedLead] = useState<any | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [isExternalDrawerOpen, setExternalDrawerOpen] = useState(false);
   const [initialTab, setInitialTab] = useState<'details' | 'chat'>('details');
 
   const openDrawer = (lead: any, tab: 'details' | 'chat' = 'details') => {
@@ -27,7 +30,15 @@ export function DrawerProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <DrawerContext.Provider value={{ selectedLead, isOpen, openDrawer, closeDrawer, initialTab }}>
+    <DrawerContext.Provider value={{ 
+      selectedLead, 
+      isOpen, 
+      isExternalDrawerOpen, 
+      setExternalDrawerOpen, 
+      openDrawer, 
+      closeDrawer, 
+      initialTab 
+    }}>
       {children}
     </DrawerContext.Provider>
   );

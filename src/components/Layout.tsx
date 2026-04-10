@@ -248,18 +248,20 @@ function BrokerProfileBadge() {
 export function TopBar({ title, onMenuClick }: { title: string; onMenuClick?: () => void }) {
   const { alerts, refresh } = useAlerts();
   const [showNotifications, setShowNotifications] = React.useState(false);
-  const { selectedLead, isOpen, closeDrawer, openDrawer } = useDrawer();
+  const { selectedLead, isOpen, isExternalDrawerOpen, closeDrawer, openDrawer } = useDrawer();
   const { fetchLeads } = useLeads();
   const location = useLocation();
   const isNetworkPage = location.pathname === '/network';
 
+  const isAnyDrawerOpen = isOpen || isExternalDrawerOpen;
+
   return (
     <header className="flex flex-col w-full sticky top-0 z-[100]">
-      {!isOpen && !isNetworkPage && <GlobalAlertBar />}
-      {!isOpen && (
+      {!isAnyDrawerOpen && !isNetworkPage && <GlobalAlertBar />}
+      {!isAnyDrawerOpen && (
         <div className={cn(
           "flex justify-between items-center px-4 md:px-8 py-2 bg-white/80 backdrop-blur-md border-b border-slate-100 shadow-sm",
-          isNetworkPage && "hidden md:flex" // Optional: Hide white bar too? No, usually just the alert.
+          isNetworkPage && "hidden md:flex"
         )}>
           <div className="flex items-center gap-4">
             <button className="md:hidden text-slate-500 hover:text-blue-700" onClick={onMenuClick}>

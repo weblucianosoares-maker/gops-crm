@@ -4,6 +4,7 @@ import { Icons } from "../components/Icons";
 import { supabase } from "../lib/supabase";
 import { cn } from "../lib/utils";
 import { useLeads } from "../lib/leadsContext";
+import { useDrawer } from "../lib/drawerContext";
 import ProviderDetailDrawer from "../components/ProviderDetailDrawer";
 
 interface Provider {
@@ -19,11 +20,18 @@ interface Provider {
 
 export default function NetworkSearch() {
   const { carriers, products } = useLeads();
+  const { setExternalDrawerOpen } = useDrawer();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProvider, setSelectedProvider] = useState<any>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  
+  // Sincroniza estado do drawer local com o global para esconder a TopBar
+  useEffect(() => {
+    setExternalDrawerOpen(isDrawerOpen);
+    return () => setExternalDrawerOpen(false);
+  }, [isDrawerOpen, setExternalDrawerOpen]);
   const [filters, setFilters] = useState({
     uf: "",
     city: "",
