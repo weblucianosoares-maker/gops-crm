@@ -181,61 +181,61 @@ export default function NetworkSearch() {
                     className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-blue-300 transition-all overflow-hidden group flex flex-col cursor-pointer"
                   >
                     {/* Header do Card */}
-                    <div className="p-4 border-b border-slate-100 bg-slate-50/30 group-hover:bg-white transition-colors">
-                      <div className="flex justify-between items-start mb-3">
-                        <div className={cn("p-2.5 rounded-xl shadow-sm", style.bg, style.text)}>
+                    <div className="p-3.5 border-b border-slate-100 bg-slate-50/30 group-hover:bg-white transition-colors">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className={cn("p-2 rounded-xl shadow-sm", style.bg, style.text)}>
                           <style.icon className="w-5 h-5" />
                         </div>
                         <span className={cn(
-                          "text-[8px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-full border",
+                          "text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-full border",
                           style.text, style.bg, "border-current opacity-70"
                         )}>
                           {provider.type}
                         </span>
                       </div>
                       
-                      <h3 className="text-base font-black text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">
+                      <h3 className="text-lg font-black text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">
                         {provider.name}
                       </h3>
-                      <div className="flex items-center gap-1.5 mt-1.5 text-slate-400">
+                      <div className="flex items-center gap-1.5 mt-1 text-slate-400">
                         <Icons.MapPin className="w-3 h-3" />
                         <p className="text-[10px] font-bold uppercase tracking-wider truncate">{provider.neighborhood ? `${provider.neighborhood}, ` : ""}{provider.city}</p>
                       </div>
                     </div>
 
                     {/* Lista de Cobertura */}
-                    <div className="p-4 space-y-3 flex-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Planos Atendidos</span>
-                        <span className="text-[9px] font-bold text-blue-600 px-2 py-0.5 bg-blue-50 rounded-full">{provider.coverage?.length || 0} Opções</span>
+                    <div className="p-3.5 space-y-2 flex-1">
+                      <div className="flex items-center justify-between pointer-events-none">
+                        <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Planos Atendidos</span>
+                        <span className="text-[9px] font-black text-blue-600 px-2 py-0.5 bg-blue-50 rounded-full">{provider.coverage?.length || 0} Opções</span>
                       </div>
 
-                      <div className="space-y-1.5">
+                      <div className="space-y-1">
                         {provider.coverage && provider.coverage.length > 0 ? (
                           provider.coverage.slice(0, 3).map((cov: any) => (
-                            <div key={cov.id} className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between group/item hover:bg-white hover:border-blue-100 transition-all">
+                            <div key={cov.id} className="p-2 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between group/item hover:bg-white hover:border-blue-100 transition-all pointer-events-none">
                               <div className="truncate pr-2">
-                                <p className="text-[10px] font-black text-blue-900 uppercase tracking-tight truncate">{cov.carrier?.name}</p>
-                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter mt-0.5 truncate">{cov.product?.name}</p>
+                                <p className="text-[11px] font-black text-blue-900 uppercase tracking-tight truncate">{cov.carrier?.name}</p>
+                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter mt-0 truncate">{cov.product?.name}</p>
                               </div>
                             </div>
                           ))
                         ) : (
-                          <div className="py-4 text-center bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                          <div className="py-2 text-center bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
                              <p className="text-[9px] font-bold text-slate-400 uppercase">Nenhum plano mapeado</p>
                           </div>
                         )}
                         {(provider.coverage?.length || 0) > 3 && (
-                          <div className="text-center pt-1">
-                            <span className="text-[9px] font-black text-slate-300 uppercase italic">+{provider.coverage.length - 3} outros itens no detalhe</span>
+                          <div className="text-center pt-1 animate-pulse">
+                            <span className="text-[9px] font-black text-blue-400 uppercase italic">+{provider.coverage.length - 3} outros itens </span>
                           </div>
                         )}
                       </div>
                     </div>
 
                     {/* Footer - Agora apenas indicativo */}
-                    <div className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                       <div className="flex -space-x-1.5">
+                    <div className="px-3.5 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                       <div className="flex -space-x-1">
                           {Array.from(new Set((provider.coverage || []).map((c:any) => c.carrier?.name))).slice(0, 3).map((n:any) => (
                             <div key={n} className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[7px] font-black text-blue-600 shadow-sm uppercase overflow-hidden" title={n}>
                               {n.substring(0,2)}
@@ -243,7 +243,7 @@ export default function NetworkSearch() {
                           ))}
                        </div>
                        <span className="text-[9px] font-black text-blue-600 uppercase tracking-[0.1em] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                         Ver Detalhes <Icons.ChevronRight className="w-2.5 h-2.5" />
+                         Clique para Ver <Icons.ChevronRight className="w-2.5 h-2.5" />
                        </span>
                     </div>
                   </motion.div>
