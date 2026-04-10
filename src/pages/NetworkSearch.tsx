@@ -47,15 +47,19 @@ export default function NetworkSearch() {
       .order('name');
 
     if (filters.uf) query = query.eq('uf', filters.uf);
-    if (filters.city) query = query.eq('city', filters.city);
     if (filters.type) query = query.eq('type', filters.type);
 
     const { data, error } = await query;
 
-    if (!error && data) {
+    if (error) {
+      console.error("Erro ao buscar rede médica:", error);
+      return;
+    }
+
+    if (data) {
       setProviders(data as any);
       
-      // Update available cities based on search
+      // Update available cities based on current results (filtered by UF/Type but NOT by search/city)
       const cities = Array.from(new Set(data.map((p: any) => p.city))).filter(Boolean) as string[];
       setAvailableCities(cities.sort());
     }
@@ -66,10 +70,15 @@ export default function NetworkSearch() {
     fetchProviders();
   }, [filters]);
 
-  const filteredProviders = providers.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.city.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProviders = providers.filter(p => {
+    const matchesSearch = !searchTerm || 
+      (p.name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (p.city?.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+    const matchesCity = !filters.city || p.city === filters.city;
+    
+    return matchesSearch && matchesCity;
+  });
 
   const getTypeStyle = (type: string) => {
     switch (type) {
@@ -114,7 +123,20 @@ export default function NetworkSearch() {
               <option value="RJ">RJ</option>
               <option value="SP">SP</option>
               <option value="MG">MG</option>
+              <option value="ES">ES</option>
               {/* Adicionar outros conforme necessário */}
+            </select>
+
+            <select 
+              value={filters.city}
+              onChange={e => setFilters({...filters, city: e.target.value})}
+              className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:bg-white focus:border-blue-500 transition-all disabled:opacity-50"
+              disabled={!filters.uf}
+            >
+              <option value="">Cidade (Todas)</option>
+              {availableCities.map(city => (
+                <option key={city} value={city}>{city}</option>
+              ))}
             </select>
 
             <select 
