@@ -55,7 +55,8 @@ import {
   Play,
   File,
   Save,
-  Rocket
+  Rocket,
+  ShieldCheck
 } from "lucide-react";
 
 export const Icons = {
@@ -121,6 +122,7 @@ export const Icons = {
   Save: Save,
   ExternalLink: ExternalLink,
   Rocket: Rocket,
+  ShieldCheck: ShieldCheck,
   Google: (props: any) => (
     <svg viewBox="0 0 24 24" {...props}>
       <path
