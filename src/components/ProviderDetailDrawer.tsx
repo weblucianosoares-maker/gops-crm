@@ -190,15 +190,7 @@ export default function ProviderDetailDrawer({ isOpen, onClose, provider }: Prov
               </section>
             </div>
 
-            {/* Footer */}
-            <div className="p-8 border-t border-slate-100 bg-slate-50/30">
-              <button
-                onClick={onClose}
-                className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-800 transition-all shadow-xl shadow-slate-200"
-              >
-                Fechar Detalhes
-              </button>
-            </div>
+            {/* Footer removido para ganhar espaço */}
           </motion.div>
         </>
       )}
