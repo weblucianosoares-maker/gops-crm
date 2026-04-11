@@ -156,7 +156,7 @@ export default function ProviderDetailDrawer({ isOpen, onClose, provider, onUpda
                     onClick={() => setIsEditing(true)}
                     className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all"
                   >
-                    <Icons.FileEdit className="w-3.5 h-3.5" />
+                    <Icons.Edit className="w-4 h-4" />
                     Editar
                   </button>
                 ) : (

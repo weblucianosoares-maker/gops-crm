@@ -237,23 +237,15 @@ export default function NetworkSearch() {
                           </div>
 
                           <div className="space-y-1">
-                            {provider.coverage && provider.coverage.length > 0 ? (
-                              provider.coverage.slice(0, 3).map((cov: any, idx: number) => (
-                                <div key={cov.id || idx} className="p-2 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between group/item hover:bg-white hover:border-blue-100 transition-all pointer-events-none">
+                            {uniqueCarriers.length > 0 ? (
+                              uniqueCarriers.slice(0, 3).map((cov: any, idx: number) => (
+                                <div key={cov.carrier?.id || idx} className="p-2 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between group/item hover:bg-white hover:border-blue-100 transition-all pointer-events-none">
                                   <div className="flex-1 truncate pr-2">
                                     <p className="text-[11px] font-black text-blue-900 uppercase tracking-tight truncate">
-                                      {cov.carrier?.name} • <span className="text-slate-500">{cov.product?.name}</span>
+                                      {cov.carrier?.name}
                                     </p>
-                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-0 truncate">Cobertura Completa Atendida</p>
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-0 truncate">Multi-produtos disponíveis</p>
                                   </div>
-                                  {cov.product?.modality && (
-                                    <span className={cn(
-                                      "text-[7px] font-black px-1.5 py-0.5 rounded border shrink-0",
-                                      cov.product.modality === 'Adesão' ? "bg-amber-50 text-amber-600 border-amber-100" : "bg-indigo-50 text-indigo-600 border-indigo-100"
-                                    )}>
-                                      {cov.product.modality}
-                                    </span>
-                                  )}
                                 </div>
                               ))
                             ) : (
