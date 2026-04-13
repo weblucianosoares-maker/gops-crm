@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icons } from "../components/Icons";
-import { cn, formatDateTime } from "../lib/utils";
+import { cn, formatDateTime, formatPhone } from "../lib/utils";
 
 import Papa from "papaparse";
 import { supabase } from "../lib/supabase";
