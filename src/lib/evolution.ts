@@ -1,3 +1,5 @@
+import { supabase } from './supabase';
+
 const BASE_URL = 'https://evolution-evolution-api.ugbnxp.easypanel.host';
 const API_KEY = '309913DF676D-4933-9F1B-06A2DD349842';
 const INSTANCE = 'Luciano Soares - 0247';
@@ -137,6 +139,125 @@ export const evolutionService = {
     } catch (error) {
       console.error('Erro ao buscar mídia:', error);
       return null;
+    }
+  },
+
+  // Verificar se o número possui WhatsApp
+  async checkWhatsApp(number: string) {
+    try {
+      const cleanNumber = number.replace(/\D/g, '');
+      const formattedNumber = cleanNumber.startsWith('55') ? cleanNumber : `55${cleanNumber}`;
+      
+      const response = await fetch(`${BASE_URL}/chat/whatsappNumbers/${encodeURIComponent(INSTANCE)}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          numbers: [formattedNumber]
+        })
+      });
+
+      if (!response.ok) {
+        console.error('Erro ao verificar WhatsApp:', await response.text());
+        return null;
+      }
+
+      const data = await response.json();
+      // Retorno esperado: [{ exists: true, jid: '...', number: '...' }]
+      if (Array.isArray(data) && data.length > 0) {
+        return data[0].exists;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Erro ao verificar WhatsApp:', error);
+      return null;
+    }
+  },
+
+  // Verificar múltiplos números
+  async checkWhatsAppBatch(numbers: string[]) {
+    try {
+      const formattedNumbers = numbers.map(n => {
+        const clean = n.replace(/\D/g, '');
+        return clean.startsWith('55') ? clean : `55${clean}`;
+      });
+      
+      const response = await fetch(`${BASE_URL}/chat/whatsappNumbers/${encodeURIComponent(INSTANCE)}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          numbers: formattedNumbers
+        })
+      });
+
+      if (!response.ok) return [];
+      return await response.json();
+    } catch (error) {
+      console.error('Erro ao verificar batch WhatsApp:', error);
+      return [];
+    }
+  }
+};
+
+// Helper para validar e atualizar um lead no banco
+export const validateLeadWhatsApp = async (leadId: string, phone: string) => {
+  if (!phone) return null;
+  
+  const hasWhatsApp = await evolutionService.checkWhatsApp(phone);
+  
+  if (hasWhatsApp !== null) {
+    const { error } = await supabase
+      .from('leads')
+      .update({ whatsapp_exists: hasWhatsApp })
+      .eq('id', leadId);
+      
+    if (error) {
+      console.error(`Erro ao atualizar lead ${leadId}:`, error);
+    }
+    return hasWhatsApp;
+  }
+  
+  return null;
+};
+
+// Helper para validar múltiplos leads
+export const batchValidateLeadsWhatsApp = async (leads: {id: string, phone: string}[]) => {
+  if (leads.length === 0) return;
+  
+  // Limite de 50 por vez para segurança
+  const chunkSize = 50;
+  for (let i = 0; i < leads.length; i += chunkSize) {
+    const chunk = leads.slice(i, i + chunkSize);
+    const numbers = chunk.map(l => l.phone).filter(Boolean);
+    
+    if (numbers.length === 0) continue;
+    
+    const results = await evolutionService.checkWhatsAppBatch(numbers);
+    
+    // Atualizar cada lead com o resultado
+    for (const res of results) {
+      // O Evolution API retorna o número formatado no resultado. 
+      // Precisamos encontrar o ID do lead correspondente.
+      // O número retornado pode ter ou não o 9º dígito dependendo de como o WhatsApp o registra.
+      // Vamos tentar um match aproximado ou exato.
+      const resNum = res.number.replace(/\D/g, '');
+      const lead = chunk.find(l => {
+        const lNum = l.phone.replace(/\D/g, '');
+        const lNumFull = lNum.startsWith('55') ? lNum : `55${lNum}`;
+        return lNumFull === resNum || lNumFull.replace('55', '559') === resNum || resNum.replace('55', '559') === lNumFull;
+      });
+      
+      if (lead) {
+        await supabase
+          .from('leads')
+          .update({ whatsapp_exists: res.exists })
+          .eq('id', lead.id);
+      }
+    }
+    
+    // Pequeno delay para evitar sobrecarga
+    if (i + chunkSize < leads.length) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
 };

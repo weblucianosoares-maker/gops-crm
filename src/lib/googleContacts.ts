@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { batchValidateLeadsWhatsApp } from './evolution';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "643139667607-0hj6tkuuk4tprhm6su71sggj2kd6ngj4.apps.googleusercontent.com";
 
@@ -153,8 +154,12 @@ async function fetchAndInportContacts(accessToken: string, onSuccess: (count: nu
     });
 
     if (newLeads.length > 0) {
-      const { error } = await supabase.from('leads').insert(newLeads);
+      const { data: insertedData, error } = await supabase.from('leads').insert(newLeads).select();
       if (error) throw error;
+      
+      if (insertedData) {
+        batchValidateLeadsWhatsApp(insertedData.map(l => ({ id: l.id, phone: l.phone })));
+      }
     }
 
     onSuccess(newLeads.length, duplicatedCount);

@@ -10,6 +10,7 @@ import { LeadDetailDrawer } from "../components/LeadDetailDrawer";
 import { LeadCreateScreen } from "../components/LeadCreateScreen";
 import { useToast } from "../components/Toasts";
 import { syncGoogleContacts } from "../lib/googleContacts";
+import { batchValidateLeadsWhatsApp } from "../lib/evolution";
 
 const interactionStatusOptions = [
   { label: 'Sem Status', value: 'Sem Status', color: 'bg-slate-100 text-slate-500' },
@@ -36,6 +37,8 @@ export default function Leads() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [isSyncingGoogle, setIsSyncingGoogle] = useState(false);
+  const [whatsappFilter, setWhatsappFilter] = useState("Todos");
+  const [isValidatingAll, setIsValidatingAll] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -147,10 +150,14 @@ export default function Leads() {
 
           for (let i = 0; i < parsedData.length; i += chunkSize) {
             const chunk = parsedData.slice(i, i + chunkSize);
-            const { error: supabaseError } = await supabase.from('leads').insert(chunk);
+            const { data: insertedData, error: supabaseError } = await supabase.from('leads').insert(chunk).select();
             if (supabaseError) {
               console.error(`Erro inserindo lote ${i}:`, supabaseError);
               throw supabaseError;
+            }
+            
+            if (insertedData) {
+              batchValidateLeadsWhatsApp(insertedData.map(l => ({ id: l.id, phone: l.phone })));
             }
           }
           
@@ -230,6 +237,12 @@ export default function Leads() {
     
     if (statusFilter !== "Todos") {
       result = result.filter((l: any) => l.status === statusFilter);
+    }
+    
+    if (whatsappFilter !== "Todos") {
+      if (whatsappFilter === "Válido") result = result.filter((l: any) => l.whatsapp_exists === true);
+      else if (whatsappFilter === "Inválido") result = result.filter((l: any) => l.whatsapp_exists === false);
+      else if (whatsappFilter === "Não Verificado") result = result.filter((l: any) => l.whatsapp_exists === null);
     }
 
     if (searchTerm.trim()) {
@@ -526,6 +539,20 @@ export default function Leads() {
                   <Icons.Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 </div>
               </div>
+
+              <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-1.5 hover:border-blue-300 transition-colors">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5"><Icons.WhatsApp className="w-3 h-3 text-emerald-600"/> Status WhatsApp</label>
+                <select
+                  value={whatsappFilter}
+                  onChange={(e) => setWhatsappFilter(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 transition-all text-sm font-bold text-slate-700 cursor-pointer"
+                >
+                  <option value="Todos">Todos</option>
+                  <option value="Válido">Válido</option>
+                  <option value="Inválido">Inválido</option>
+                  <option value="Não Verificado">Não Verificado</option>
+                </select>
+              </div>
             </div>
           </motion.div>
         )}
@@ -635,6 +662,21 @@ export default function Leads() {
                         </div>
                         
                         <p className="text-[10px] text-slate-400 truncate max-w-[150px] leading-tight" title={lead.email}>{lead.email}</p>
+                        
+                        {lead.phone && (
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[10px] font-bold text-slate-500">{formatPhone(lead.phone)}</span>
+                            {lead.whatsapp_exists === true && (
+                              <Icons.WhatsApp className="w-3.5 h-3.5 text-emerald-500" title="WhatsApp Válido" />
+                            )}
+                            {lead.whatsapp_exists === false && (
+                              <Icons.WhatsApp className="w-3.5 h-3.5 text-red-500" title="WhatsApp Inválido" />
+                            )}
+                            {lead.whatsapp_exists === null && (
+                              <Icons.WhatsApp className="w-3.5 h-3.5 text-slate-300 opacity-50" title="Não Verificado" />
+                            )}
+                          </div>
+                        )}
                       </div>
                       {lead.birthday && (
                         <div className="ml-2 flex gap-1">

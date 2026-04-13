@@ -5,6 +5,7 @@ import { cn, formatCPF, formatPhone, formatCNPJ, formatCEP, formatCurrencyValue,
 import { supabase } from "../lib/supabase";
 import { useLeads } from "../lib/leadsContext";
 import { useToast } from "./Toasts";
+import { validateLeadWhatsApp } from "../lib/evolution";
 
 interface LeadCreateScreenProps {
   isOpen: boolean;
@@ -166,7 +167,7 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
       initials = newLead.name.substring(0, 2).toUpperCase();
     }
 
-    const { error: supabaseError } = await supabase.from('leads').insert([{
+    const { data, error: supabaseError } = await supabase.from('leads').insert([{
       name: newLead.name,
       email: newLead.email,
       phone: normalizedPhone,
@@ -233,18 +234,25 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
       resp_con_email: newLead.resp_con_email,
       temperature: newLead.temperature,
       interaction_status: newLead.interaction_status || 'Sem Status'
-    }]);
-
-    setIsSaving(false);
+    }]).select();
+      
     if (supabaseError) {
       error("Erro ao salvar lead: " + supabaseError.message);
     } else {
       success("Lead cadastrado com sucesso!");
+      
+      // Validação automática de WhatsApp após o cadastro
+      if (data && data[0] && data[0].phone) {
+        validateLeadWhatsApp(data[0].id, data[0].phone).then(() => {
+          onSuccess(); // Refresh leads again to show the status
+        });
+      }
+
       onSuccess();
       onClose();
     }
+    setIsSaving(false);
   };
-
 
   if (!isOpen) return null;
 
