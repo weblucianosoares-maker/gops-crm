@@ -38,6 +38,7 @@ export default function Leads() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isSyncingGoogle, setIsSyncingGoogle] = useState(false);
   const [whatsappFilter, setWhatsappFilter] = useState("Todos");
+  const [contactFilter, setContactFilter] = useState("Todos");
   const [isValidatingAll, setIsValidatingAll] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -272,6 +273,14 @@ export default function Leads() {
       else if (whatsappFilter === "Não Verificado") result = result.filter((l: any) => l.whatsapp_exists === null);
     }
 
+    if (contactFilter !== "Todos") {
+      if (contactFilter === "Sem Contato") {
+        result = result.filter((l: any) => !l.lastcontact && !l.lastContact && !l.last_contact && !l.last_app_message_at);
+      } else if (contactFilter === "Com Contato") {
+        result = result.filter((l: any) => l.lastcontact || l.lastContact || l.last_contact || l.last_app_message_at);
+      }
+    }
+
     if (searchTerm.trim()) {
       const words = searchTerm.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().split(/\s+/);
       result = result.filter((l: any) => {
@@ -305,7 +314,7 @@ export default function Leads() {
     }
     
     return result;
-  }, [leads, filter, ufFilter, statusFilter, sortConfig, searchTerm, whatsappFilter]);
+  }, [leads, filter, ufFilter, statusFilter, sortConfig, searchTerm, whatsappFilter, contactFilter]);
 
   const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
@@ -578,6 +587,19 @@ export default function Leads() {
                   <option value="Válido">Válido</option>
                   <option value="Inválido">Inválido</option>
                   <option value="Não Verificado">Não Verificado</option>
+                </select>
+              </div>
+
+              <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-1.5 hover:border-blue-300 transition-colors">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5"><Icons.Mail className="w-3 h-3 text-blue-600"/> Histórico de Contato</label>
+                <select
+                  value={contactFilter}
+                  onChange={(e) => setContactFilter(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 transition-all text-sm font-bold text-slate-700 cursor-pointer"
+                >
+                  <option value="Todos">Todos</option>
+                  <option value="Com Contato">Com Contato</option>
+                  <option value="Sem Contato">Sem Contato</option>
                 </select>
               </div>
             </div>
