@@ -42,6 +42,15 @@ export function formatPhone(value: string | undefined) {
     .substring(0, 15);
 }
 
+export function normalizePhone(value: string | undefined) {
+  if (!value) return "";
+  let digits = value.replace(/\D/g, "");
+  if (digits.length >= 12 && digits.startsWith("55")) {
+    digits = digits.substring(2);
+  }
+  return digits;
+}
+
 export function formatCNPJ(value: string | undefined) {
   if (!value) return "";
   const digits = value.replace(/\D/g, "");

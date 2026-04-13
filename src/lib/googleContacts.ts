@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { batchValidateLeadsWhatsApp } from './evolution';
+import { normalizePhone } from './utils';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "643139667607-0hj6tkuuk4tprhm6su71sggj2kd6ngj4.apps.googleusercontent.com";
 
@@ -96,7 +97,7 @@ async function fetchAndInportContacts(accessToken: string, onSuccess: (count: nu
       }
     }
 
-    const existingPhones = new Set(allExistingLeads.map(l => (l.phone || '').replace(/\D/g, '')).filter(Boolean));
+    const existingPhones = new Set(allExistingLeads.map(l => normalizePhone(l.phone)).filter(Boolean));
     const existingEmails = new Set(allExistingLeads.map(l => l.email?.toLowerCase().trim()).filter(Boolean));
     const existingNames = new Set(allExistingLeads.map(l => l.name?.toLowerCase().trim()).filter(Boolean));
 
@@ -105,9 +106,9 @@ async function fetchAndInportContacts(accessToken: string, onSuccess: (count: nu
     const newLeads: any[] = [];
 
     connections.forEach((person: any) => {
-      const name = person.names?.[0]?.displayName || 'Sem Nome';
-      const email = person.emailAddresses?.[0]?.value || '';
-      const phone = (person.phoneNumbers?.[0]?.value || '').replace(/\D/g, '');
+      const name = (person.names?.[0]?.displayName || 'Sem Nome').trim();
+      const email = (person.emailAddresses?.[0]?.value || '').toLowerCase().trim();
+      const phone = normalizePhone(person.phoneNumbers?.[0]?.value || '');
       
       // Validação: Só importar se houver telefone (conforme solicitado pelo usuário)
       if (!phone || phone.length < 8) {

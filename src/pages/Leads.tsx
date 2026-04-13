@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icons } from "../components/Icons";
-import { cn, formatDateTime, formatPhone } from "../lib/utils";
+import { cn, formatDateTime, formatPhone, normalizePhone } from "../lib/utils";
 
 import Papa from "papaparse";
 import { supabase } from "../lib/supabase";
@@ -58,24 +58,51 @@ export default function Leads() {
             s = s.replace(/(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '$1'); 
             return s;
           };
-          const existingPhones = new Set(leads.map((l: any) => l.phone).filter(Boolean).map((p: string) => p.replace(/\D/g, '')));
-          const existingEmails = new Set(leads.map((l: any) => l.email?.toLowerCase().trim()).filter(Boolean));
-          const existingNames = new Set(leads.map((l: any) => l.name?.toLowerCase().trim()).filter(Boolean));
+          // Fetch fresh list from DB for robust duplicate check
+          let allExistingLeads: any[] = [];
+          let from = 0;
+          let to = 999;
+          let hasMore = true;
+
+          while (hasMore) {
+            const { data, error: fetchError } = await supabase
+              .from('leads')
+              .select('name, email, phone')
+              .range(from, to);
+            
+            if (fetchError) {
+              console.error("Erro ao buscar leads para checar duplicidade:", fetchError);
+              break;
+            }
+            
+            if (data && data.length > 0) {
+              allExistingLeads = [...allExistingLeads, ...data];
+              if (data.length < 1000) hasMore = false;
+              else { from += 1000; to += 1000; }
+            } else {
+              hasMore = false;
+            }
+          }
+
+          const existingPhones = new Set(allExistingLeads.map((l: any) => normalizePhone(l.phone)).filter(Boolean));
+          const existingEmails = new Set(allExistingLeads.map((l: any) => l.email?.toLowerCase().trim()).filter(Boolean));
+          const existingNames = new Set(allExistingLeads.map((l: any) => l.name?.toLowerCase().trim()).filter(Boolean));
           let duplicateCount = 0;
 
           const parsedData = results.data
             .filter((row: any) => {
-               const hasName = row['First Name'] || row.Name || row.Nome || row['Given Name'] || row.name || row['Organization Name'];
-               const hasEmail = row['E-mail 1 - Value'] || row.Email || row.email;
-               const hasPhone = row['Phone 1 - Value'] || row['Phone 1 - Formatted'] || row.Phone || row.Telefone || row.Celular;
+               const hasName = row['First Name'] || row.Name || row.Nome || row['Given Name'] || row.name || row['Organization Name'] || row.nome;
+               const hasEmail = row['E-mail 1 - Value'] || row.Email || row.email || row.Email1;
+               const hasPhone = row['Phone 1 - Value'] || row['Phone 1 - Formatted'] || row.Phone || row.Telefone || row.Celular || row.Phone1;
                return Object.keys(row).length > 1 && (hasName || hasEmail || hasPhone);
             })
             .map((row: any) => {
-              let rawName = row.name || row.Nome || row.Name || '';
+              let rawName = row.Nome || row.nome || row.name || row.Name || '';
               if (!rawName) {
-                const parts = [row['First Name'], row['Middle Name'], row['Last Name']].filter(Boolean);
+                const parts = [row['First Name'], row['Middle Name'], row['Last Name'], row['Given Name']].filter(Boolean);
                 rawName = parts.join(' ');
               }
+              if (!rawName) rawName = row['Organization Name'] || '';
               
               rawName = rawName.replace(/NÃƒO/gi, 'NÃO').replace(/Ã‚/gi, 'Â').replace(/Ãµ/gi, 'õ').replace(/Ã©/gi, 'é').replace(/Ã£/gi, 'ã');
               rawName = rawName.replace(/^[*#,]/g, '').trim();
@@ -89,9 +116,9 @@ export default function Leads() {
               rawName = rawName.replace(/^\[.*?\]\s*/, '').trim(); 
               if (!rawName) rawName = 'Sem Nome';
 
-              const email = row.email || row.Email || row['E-mail 1 - Value'] || '';
+              const email = (row.email || row.Email || row.Email1 || row['E-mail 1 - Value'] || '').toLowerCase().trim();
 
-              let source = row.source || row.Origem || 'Google Contacts';
+              let source = row.source || row.Origem || 'CSV Import';
               if (row.Labels) {
                 const labels = row.Labels.split(':::').map((l: string) => l.trim().replace('* ', ''));
                 const validLabels = labels.filter((l: string) => l !== 'myContacts' && l !== 'Other' && l !== 'starred');
@@ -109,8 +136,8 @@ export default function Leads() {
                   initials = 'SN';
                 }
               }
-              const phoneRaw = row['Phone 1 - Value'] || row['Phone 1 - Formatted'] || row.Phone || row.Telefone || row.Celular || '';
-              const normalizedPhone = cleanString(phoneRaw).replace(/\D/g, '');
+              const phoneRaw = row['Phone 1 - Value'] || row['Phone 1 - Formatted'] || row.Phone || row.Telefone || row.Celular || row.Phone1 || '';
+              const normalizedPhone = normalizePhone(cleanString(phoneRaw));
 
               return {
                 name: cleanString(rawName),
@@ -126,7 +153,7 @@ export default function Leads() {
             .filter((lead: any) => {
               let isDuplicate = false;
               if (lead.phone && existingPhones.has(lead.phone)) isDuplicate = true;
-              else if (!lead.phone && lead.email && existingEmails.has(lead.email.toLowerCase().trim())) isDuplicate = true;
+              else if (lead.email && existingEmails.has(lead.email)) isDuplicate = true;
               else if (!lead.phone && !lead.email && lead.name && existingNames.has(lead.name.toLowerCase().trim())) isDuplicate = true;
 
               if (isDuplicate) {
@@ -135,7 +162,7 @@ export default function Leads() {
               }
 
               if (lead.phone) existingPhones.add(lead.phone);
-              if (lead.email) existingEmails.add(lead.email.toLowerCase().trim());
+              if (lead.email) existingEmails.add(lead.email);
               if (lead.name) existingNames.add(lead.name.toLowerCase().trim());
               
               return true;
@@ -278,7 +305,7 @@ export default function Leads() {
     }
     
     return result;
-  }, [leads, filter, ufFilter, statusFilter, sortConfig, searchTerm]);
+  }, [leads, filter, ufFilter, statusFilter, sortConfig, searchTerm, whatsappFilter]);
 
   const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
