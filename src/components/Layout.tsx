@@ -43,7 +43,7 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (
             </div>
             <div>
               <h1 className="text-2xl font-black tracking-tight text-blue-900 leading-none">Efraim</h1>
-              <p className="text-[0.6875rem] tracking-wider uppercase text-slate-500 mt-1 font-semibold">Gestão de Seguros</p>
+              <p className="text-[0.6875rem] tracking-wider uppercase text-slate-500 mt-1 font-semibold">Gestão de Leads de Saúde</p>
             </div>
           </div>
           <button className="md:hidden text-slate-500 hover:text-slate-700" onClick={() => setIsOpen && setIsOpen(false)}>
