@@ -450,11 +450,11 @@ export default function Dashboard() {
       </section>
 
       {/* Main Grid: Funnel & Alerts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
         {/* Left Column: Funnel and Events */}
-        <div className="lg:col-span-2 space-y-10">
+        <div className="lg:col-span-2 space-y-6 md:space-y-10">
           {/* Sales Funnel Chart */}
-          <section className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm">
+          <section className="bg-white p-4 md:p-8 rounded-2xl border border-slate-100 shadow-sm">
             <div className="flex items-center justify-between mb-10">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
@@ -489,7 +489,7 @@ export default function Dashboard() {
           </section>
 
           {/* NEW: Upcoming Events Panel */}
-          <section className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm">
+          <section className="bg-white p-4 md:p-8 rounded-2xl border border-slate-100 shadow-sm">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
@@ -551,9 +551,9 @@ export default function Dashboard() {
         </div>
 
         {/* Right Column: Carriers and Recent Proposals */}
-        <div className="space-y-10">
+        <div className="space-y-6 md:space-y-10">
           {/* Top Carriers Chart */}
-          <section className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm h-fit">
+          <section className="bg-white p-4 md:p-8 rounded-2xl border border-slate-100 shadow-sm h-fit">
             <div className="flex items-center gap-3 mb-8">
               <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
                 <Icons.TrendingUp className="w-5 h-5 text-emerald-600" />

@@ -451,20 +451,20 @@ export default function Leads() {
       </AnimatePresence>
 
       {/* Hero Header Section */}
-      <div className="flex flex-row justify-between items-start gap-4 mb-2">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-2">
         <div className="pt-1">
           <span className="text-[10px] uppercase tracking-widest text-blue-600 font-bold mb-1 block">CRM & Prospecção</span>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900 leading-none">
+          <h1 className="text-xl md:text-2xl font-black tracking-tight text-slate-900 leading-none">
             {filteredLeads.length} <span className="text-sm font-medium text-slate-400">Leads Filtrados</span>
           </h1>
           {searchTerm && (
             <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-tight font-semibold">Total: {leads.length}</p>
           )}
         </div>
-        <div className="flex items-start gap-2 h-fit">
+        <div className="flex items-center gap-2 h-fit w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 no-scrollbar">
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="bg-blue-600 text-white px-4 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-blue-700 transition-colors shadow-sm h-fit text-xs"
+            className="bg-blue-600 text-white px-3 md:px-4 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-blue-700 transition-colors shadow-sm h-fit text-[10px] md:text-xs shrink-0"
           >
             <Icons.Plus className="w-4 h-4" />
             Novo Lead
@@ -473,7 +473,7 @@ export default function Leads() {
           <button 
             onClick={handleGoogleSync}
             disabled={isSyncingGoogle}
-            className="bg-white text-slate-700 border border-slate-200 px-4 py-2 rounded-lg font-bold flex items-center gap-2.5 hover:bg-slate-50 transition-all shadow-sm h-fit disabled:opacity-50 group"
+            className="bg-white text-slate-700 border border-slate-200 px-3 md:px-4 py-2 rounded-lg font-bold flex items-center gap-2.5 hover:bg-slate-50 transition-all shadow-sm h-fit disabled:opacity-50 group shrink-0"
           >
             {isSyncingGoogle ? (
               <Icons.Loader2 className="w-4 h-4 animate-spin text-blue-600" />
@@ -481,12 +481,13 @@ export default function Leads() {
               <Icons.Google className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
             )}
             <div className="text-left">
-              <p className="text-[9px] uppercase tracking-tighter text-slate-400 leading-none mb-0.5">Direto do</p>
-              <p className="text-xs">Google Contacts</p>
+              <p className="text-[8px] uppercase tracking-tighter text-slate-400 leading-none mb-0.5">Direto do</p>
+              <p className="text-[10px] md:text-xs">Contacts</p>
             </div>
           </button>
+          
           <div 
-            className={cn("bg-slate-50 p-2.5 rounded-lg flex items-center space-x-3 border border-slate-100 cursor-pointer hover:border-blue-300 transition-colors h-fit", isUploading && "opacity-50 pointer-events-none")}
+            className={cn("bg-slate-50 p-2 md:p-2.5 rounded-lg flex items-center space-x-2 md:space-x-3 border border-slate-100 cursor-pointer hover:border-blue-300 transition-colors h-fit shrink-0", isUploading && "opacity-50 pointer-events-none")}
             onClick={() => fileInputRef.current?.click()}
           >
             <input 
@@ -496,26 +497,26 @@ export default function Leads() {
               ref={fileInputRef}
               onChange={handleFileUpload}
             />
-            <div className="p-1.5 bg-white rounded shadow-sm">
-              <Icons.Upload className={cn("w-5 h-5 text-blue-600", isUploading && "animate-bounce")} />
+            <div className="p-1 md:p-1.5 bg-white rounded shadow-sm">
+              <Icons.Upload className={cn("w-4 h-4 md:w-5 md:h-5 text-blue-600", isUploading && "animate-bounce")} />
             </div>
             <div>
-              <p className="text-[8px] uppercase tracking-tight text-slate-400 mb-0.5 font-bold">Importar</p>
-              <p className="text-xs font-bold text-slate-900">{isUploading ? "Importando..." : "CSV"}</p>
+              <p className="text-[7px] md:text-[8px] uppercase tracking-tight text-slate-400 mb-0.5 font-bold">Importar</p>
+              <p className="text-[10px] md:text-xs font-bold text-slate-900">{isUploading ? "..." : "CSV"}</p>
             </div>
           </div>
           
           <button 
             onClick={() => setShowFilters(!showFilters)}
             className={cn(
-              "p-2.5 rounded-lg font-bold flex items-center justify-center transition-all border shadow-sm",
+              "p-2.5 rounded-lg font-bold flex items-center justify-center transition-all border shadow-sm shrink-0",
               showFilters 
                 ? "bg-blue-50 text-blue-600 border-blue-200" 
                 : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
             )}
             title={showFilters ? "Esconder Filtros" : "Mostrar Filtros"}
           >
-            <Icons.Filter className={cn("w-5 h-5", !showFilters && "animate-pulse")} />
+            <Icons.Filter className={cn("w-4 h-4 md:w-5 md:h-5", !showFilters && "animate-pulse")} />
           </button>
         </div>
       </div>
@@ -608,7 +609,12 @@ export default function Leads() {
       </AnimatePresence>
 
       {/* Main Content Grid */}
-      <div className="flex-1 bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden flex flex-col min-h-0">
+      <div className="flex-1 bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden flex flex-col min-h-0 relative">
+        <div className="md:hidden absolute top-2 right-4 z-30 pointer-events-none">
+          <div className="bg-blue-600/90 text-white text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-full shadow-lg flex items-center gap-1 animate-pulse">
+            <Icons.ChevronRight className="w-2 h-2" /> Deslize
+          </div>
+        </div>
         <div className="flex-1 overflow-x-auto overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
           <table className="min-w-[1400px] w-full text-left border-separate border-spacing-y-2">
             <thead className="sticky top-0 z-20 bg-white">
@@ -807,43 +813,42 @@ export default function Leads() {
         </div>
         
         {/* Pagination - Fixed at bottom of container */}
-        <div className="border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row items-center justify-between px-4 py-2 gap-4">
-          <div className="flex items-center gap-4">
-            <p className="text-xs text-slate-400">
-              Mostrando {filteredLeads.length > 0 ? (currentPage - 1) * perPage + 1 : 0}-
-              {Math.min(currentPage * perPage, filteredLeads.length)} de <span className="font-bold text-slate-600">{filteredLeads.length} leads</span>
+        <div className="border-t border-slate-100 bg-slate-50 flex flex-col md:flex-row items-center justify-between px-4 py-3 gap-4">
+          <div className="flex items-center justify-between w-full md:w-auto gap-4">
+            <p className="text-[10px] md:text-xs text-slate-400">
+              <span className="font-bold text-slate-600">{filteredLeads.length}</span> leads
             </p>
             <select 
               value={perPage} 
               onChange={(e) => setPerPage(Number(e.target.value))}
-              className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 outline-none text-slate-600 font-medium cursor-pointer"
+              className="text-[10px] md:text-xs bg-white border border-slate-200 rounded-lg px-2 py-1 outline-none text-slate-600 font-medium cursor-pointer shadow-sm"
             >
-              <option value={10}>10 por página</option>
-              <option value={30}>30 por página</option>
-              <option value={50}>50 por página</option>
-              <option value={100}>100 por página</option>
+              <option value={10}>10</option>
+              <option value={30}>30</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
             </select>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <button 
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="p-2 border border-slate-200 text-slate-500 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2 border border-slate-200 bg-white text-slate-500 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             >
-              <Icons.ChevronLeft className="w-5 h-5" />
+              <Icons.ChevronLeft className="w-4 h-4" />
             </button>
             
-            <div className="px-4 py-2 bg-slate-50 text-slate-600 text-xs font-bold rounded-lg border border-slate-200 flex items-center shadow-sm">
-              Página {currentPage} de {totalPages || 1}
+            <div className="px-3 py-1.5 bg-white text-slate-600 text-[10px] md:text-xs font-bold rounded-lg border border-slate-200 flex items-center shadow-sm">
+              {currentPage} / {totalPages || 1}
             </div>
-
+ 
             <button 
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages || totalPages === 0}
-              className="p-2 border border-slate-200 text-slate-500 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2 border border-slate-200 bg-white text-slate-500 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             >
-              <Icons.ChevronRight className="w-5 h-5" />
+              <Icons.ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>

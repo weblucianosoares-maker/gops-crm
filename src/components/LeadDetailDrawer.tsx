@@ -564,7 +564,8 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       resp_con_phone: lead.resp_con_phone?.replace(/\D/g, '') || null,
       resp_con_email: lead.resp_con_email,
       temperature: lead.temperature || 'Morno',
-      interaction_status: lead.interaction_status || 'Sem Status'
+      interaction_status: lead.interaction_status || 'Sem Status',
+      status_updated_at: lead.status !== initialLead.status ? new Date().toISOString() : lead.status_updated_at
     };
 
     let result;
@@ -604,7 +605,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
               <div className="flex items-center gap-2 mt-1">
                  <span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded text-[9px] font-black uppercase tracking-tighter">{lead.lead_type || 'PF'}</span>
                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{stages.find(s => s.name === lead.status)?.label || lead.status}</span>
-                 <div className="relative">
+                  <div className="relative">
                     <select 
                       value={lead.interaction_status || 'Sem Status'}
                       onChange={(e) => setLead({ ...lead, interaction_status: e.target.value })}
@@ -618,6 +619,15 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                       ))}
                     </select>
                   </div>
+                  {lead.created_at && (
+                    <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-full text-[9px] font-black uppercase tracking-tighter">
+                      <Icons.Calendar className="w-2.5 h-2.5" />
+                      {(() => {
+                        const days = Math.floor((new Date().getTime() - new Date(lead.created_at).getTime()) / (1000 * 60 * 60 * 24));
+                        return `No Funil há ${days === 0 ? 'menos de 1' : days} ${days === 1 ? 'dia' : 'dias'}`;
+                      })()}
+                    </div>
+                  )}
               </div>
             </div>
           </div>

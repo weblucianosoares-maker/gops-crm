@@ -14,21 +14,21 @@ interface LeadCreateScreenProps {
 }
 
 const SectionHeader = ({ icon: Icon, title, colorClass }: { icon: any, title: string, colorClass: string }) => (
-  <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
-    <div className={cn("p-2 rounded-lg", colorClass)}>
-      <Icon className="w-5 h-5" />
+  <div className="flex items-center gap-3 border-b border-slate-100 pb-3 mb-4 md:pb-4 md:mb-6">
+    <div className={cn("p-1.5 md:p-2 rounded-lg", colorClass)}>
+      <Icon className="w-4 h-4 md:w-5 md:h-5" />
     </div>
-    <h4 className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-400">{title}</h4>
+    <h4 className="text-[9px] md:text-[11px] font-black uppercase tracking-[0.15em] text-slate-400">{title}</h4>
   </div>
 );
 
 const InputField = ({ label, value, onChange, placeholder, type = "text", required = false, mask }: any) => (
-  <div>
-    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">{label}</label>
+  <div className="space-y-1">
+    <label className="block text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">{label}</label>
     <input 
       type={type}
       required={required}
-      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
+      className="w-full bg-slate-50 border border-slate-200 rounded-xl md:rounded-2xl px-4 py-3 md:px-6 md:py-4 outline-none focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
       placeholder={placeholder}
       value={mask ? mask(value) : value}
       onChange={e => onChange(e.target.value)}
@@ -233,7 +233,8 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
       resp_con_phone: newLead.resp_con_phone.replace(/\D/g, ''),
       resp_con_email: newLead.resp_con_email,
       temperature: newLead.temperature,
-      interaction_status: newLead.interaction_status || 'Sem Status'
+      interaction_status: newLead.interaction_status || 'Sem Status',
+      status_updated_at: new Date().toISOString()
     }]).select();
       
     if (supabaseError) {

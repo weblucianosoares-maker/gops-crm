@@ -92,7 +92,15 @@ export default function Funnel() {
     if (!destination) return;
     if (destination.droppableId === source.droppableId && destination.index === source.index) return;
 
-    const { error: supabaseError } = await supabase.from('leads').update({ status: destination.droppableId }).eq('id', draggableId);
+    const now = new Date().toISOString();
+    const { error: supabaseError } = await supabase
+      .from('leads')
+      .update({ 
+        status: destination.droppableId,
+        status_updated_at: now
+      })
+      .eq('id', draggableId);
+
     if (supabaseError) {
       error("Erro ao mover lead: " + supabaseError.message);
     } else {
@@ -292,6 +300,19 @@ export default function Funnel() {
                                         )}
                                       </div>
                                       <div className="flex items-center gap-2">
+                                        {/* Contador de Dias na Etapa */}
+                                        {(() => {
+                                          const statusDate = lead.status_updated_at || lead.created_at;
+                                          if (!statusDate) return null;
+                                          const days = Math.floor((new Date().getTime() - new Date(statusDate).getTime()) / (1000 * 60 * 60 * 24));
+                                          return (
+                                            <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-100 text-[8px] font-black uppercase text-slate-400 group-hover:bg-blue-50 group-hover:border-blue-100 group-hover:text-blue-500 transition-colors">
+                                              <Icons.Clock className="w-2.5 h-2.5" />
+                                              {days === 0 ? 'Hoje' : `${days} ${days === 1 ? 'dia' : 'dias'}`}
+                                            </div>
+                                          );
+                                        })()}
+
                                         <button onClick={(e) => handleDeleteLead(e, lead.id, lead.name)} className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100" title="Apagar Oportunidade"><Icons.Trash className="w-3.5 h-3.5" /></button>
                                       <div className={cn(
                                         "px-2 py-0.5 rounded-full text-[8px] font-black uppercase ring-2 ring-white shadow-sm shrink-0 transition-transform group-hover:scale-110",

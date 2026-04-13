@@ -185,16 +185,16 @@ function GlobalAlertBar() {
                  </span>
                </div>
 
-               <div className="flex items-center gap-3">
-                 <div className="flex items-center gap-3 pr-4 border-r border-white/10">
+               <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+                 <div className="flex items-center gap-2 md:gap-3 pr-2 md:pr-4 border-r border-white/10 shrink-0">
                     <div className="flex flex-col items-start">
-                       <p className="text-[11px] font-black tracking-widest group-hover:text-amber-400 transition-colors uppercase whitespace-nowrap">{current.title}</p>
-                       <p className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter">
+                       <p className="text-[9px] md:text-[11px] font-black tracking-widest group-hover:text-amber-400 transition-colors uppercase whitespace-nowrap">{current.title}</p>
+                       <p className="text-[7px] md:text-[8px] font-bold text-slate-500 uppercase tracking-tighter">
                          Data: {new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(current.date)}
                        </p>
                     </div>
                  </div>
-                 <p className="text-[10px] font-bold text-slate-400 group-hover:text-slate-100 transition-colors truncate max-w-lg hidden sm:block italic tracking-tight">{current.description}</p>
+                 <p className="text-[10px] font-bold text-slate-400 group-hover:text-slate-100 transition-colors truncate max-w-lg hidden md:block italic tracking-tight">{current.description}</p>
                </div>
 
                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -267,9 +267,9 @@ export function TopBar({ title, onMenuClick }: { title: string; onMenuClick?: ()
             <button className="md:hidden text-slate-500 hover:text-blue-700" onClick={onMenuClick}>
               <Icons.Menu className="w-5 h-5" />
             </button>
-            <h2 className="text-xl font-bold text-blue-900">{title}</h2>
+            <h2 className="text-lg md:text-xl font-bold text-blue-900 truncate max-w-[150px] md:max-w-none">{title}</h2>
             {title === "Visão Geral" && (
-              <span className="text-xs font-medium text-slate-400 mt-1 ml-2">
+              <span className="text-[10px] md:text-xs font-medium text-slate-400 mt-1 ml-2 hidden md:block">
                 {new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date())}
               </span>
             )}
