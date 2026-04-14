@@ -682,8 +682,16 @@ export default function Leads() {
                 >
                   <td className="px-4 py-2 rounded-l-lg border-l-2 border-transparent group-hover:border-blue-600">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold shrink-0">
-                        {lead.initials}
+                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold shrink-0 overflow-hidden">
+                        {lead.profile_picture_url ? (
+                          <img 
+                            src={lead.profile_picture_url} 
+                            alt={lead.name} 
+                            className="w-full h-full object-cover" 
+                          />
+                        ) : (
+                          lead.initials
+                        )}
                       </div>
                       <div className="flex flex-col gap-1 py-1">
                         <div className="flex items-center gap-2">

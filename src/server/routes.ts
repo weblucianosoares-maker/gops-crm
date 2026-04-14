@@ -75,4 +75,26 @@ router.post("/network/import", upload.single("file"), async (req: any, res) => {
   }
 });
 
+// Proxy for images to bypass CORS
+router.get("/proxy-image", async (req, res) => {
+  const { url } = req.query;
+  if (!url || typeof url !== 'string') return res.status(400).json({ error: "URL inválida." });
+  
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Status: ${response.status}`);
+    
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    
+    res.set('Content-Type', response.headers.get('Content-Type') || 'image/jpeg');
+    res.set('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+    res.send(buffer);
+  } catch (error) {
+    console.error("[PROXY IMAGE ERROR]", error);
+    res.status(500).json({ error: "Erro ao buscar imagem." });
+  }
+});
+
 export default router;
+

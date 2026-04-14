@@ -226,8 +226,61 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       setLead(initialLead);
       fetchHistory(initialLead.id);
       setActiveTab('details');
+      
+      // Auto-sync profile picture if missing and has phone
+      if (initialLead.phone && !initialLead.profile_picture_url) {
+        syncProfilePicture(initialLead.id, initialLead.phone);
+      }
     }
   }, [initialLead]);
+
+  const syncProfilePicture = async (leadId: string, phone: string) => {
+    if (!phone || !leadId) return;
+    
+    try {
+      const ppUrl = await evolutionService.getProfilePictureUrl(phone);
+      if (!ppUrl) return;
+
+      // Use our local proxy to download the image and bypass CORS
+      const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(ppUrl)}`;
+      const response = await fetch(proxyUrl);
+      if (!response.ok) throw new Error('Falha ao baixar imagem via proxy');
+      
+      const blob = await response.blob();
+      const fileExt = blob.type.split('/')[1] || 'jpg';
+      const fileName = `${leadId}_${Date.now()}.${fileExt}`;
+      const filePath = `leads/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, blob, { 
+          contentType: blob.type,
+          upsert: true 
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update lead record
+      const { error: updateError } = await supabase
+        .from('leads')
+        .update({ profile_picture_url: publicUrl })
+        .eq('id', leadId);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setLead(prev => prev?.id === leadId ? { ...prev, profile_picture_url: publicUrl } : prev);
+      console.log('Foto do perfil sincronizada:', publicUrl);
+    } catch (e) {
+      console.error('Erro ao sincronizar foto do perfil:', e);
+    }
+  };
 
   const loadMessages = async () => {
     if (!lead?.phone) return;
@@ -565,6 +618,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       resp_con_email: lead.resp_con_email,
       temperature: lead.temperature || 'Morno',
       interaction_status: lead.interaction_status || 'Sem Status',
+      profile_picture_url: lead.profile_picture_url,
       status_updated_at: lead.status !== initialLead.status ? new Date().toISOString() : lead.status_updated_at
     };
 
@@ -597,8 +651,21 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
         {/* Header Premium */}
         <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <div className="flex items-center gap-4">
-            <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center text-white text-xl font-black shadow-xl", lead.lead_type === 'PJ' ? "bg-indigo-600 shadow-indigo-100" : "bg-blue-600 shadow-blue-100")}>
-              {(lead.name || "?").substring(0,1).toUpperCase()}
+            <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center text-white text-xl font-black shadow-xl overflow-hidden", lead.lead_type === 'PJ' ? "bg-indigo-600 shadow-indigo-100" : "bg-blue-600 shadow-blue-100")}>
+              {lead.profile_picture_url ? (
+                <img 
+                  src={lead.profile_picture_url} 
+                  alt={lead.name} 
+                  className="w-full h-full object-cover" 
+                  onError={(e) => {
+                    // Fallback se a imagem falhar (ex: link quebrado)
+                    (e.target as HTMLImageElement).style.display = 'none';
+                    (e.target as HTMLElement).parentElement!.innerHTML = (lead.name || "?").substring(0,1).toUpperCase();
+                  }}
+                />
+              ) : (
+                (lead.name || "?").substring(0,1).toUpperCase()
+              )}
             </div>
             <div>
               <h2 className="text-xl font-black text-slate-900 leading-tight">{lead.id ? (lead.name || "Sem Nome") : "Nova Oportunidade"}</h2>

@@ -79,11 +79,15 @@ export default function Funnel() {
 
   const handleSelectExistingLead = async (lead: any) => {
     const initialStatus = stages[0]?.name || "Novo";
-    await supabase.from('leads').update({ status: initialStatus }).eq('id', lead.id);
+    const now = new Date().toISOString();
+    await supabase.from('leads').update({ 
+      status: initialStatus,
+      status_updated_at: now
+    }).eq('id', lead.id);
     await fetchLeads();
     setIsSearchModalOpen(false);
     setIsSelectionModalOpen(false);
-    const updatedLead = { ...lead, status: initialStatus };
+    const updatedLead = { ...lead, status: initialStatus, status_updated_at: now };
     setSelectedLead(updatedLead);
   };
 
@@ -304,11 +308,19 @@ export default function Funnel() {
                                         {(() => {
                                           const statusDate = lead.status_updated_at || lead.created_at;
                                           if (!statusDate) return null;
-                                          const days = Math.floor((new Date().getTime() - new Date(statusDate).getTime()) / (1000 * 60 * 60 * 24));
+                                          
+                                          const now = new Date();
+                                          const sDate = new Date(statusDate);
+                                          
+                                          // Cálculo baseado em dias do calendário (zera as horas para comparar apenas os dias)
+                                          const d1 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                                          const d2 = new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate());
+                                          const days = Math.round((d1.getTime() - d2.getTime()) / (1000 * 60 * 60 * 24));
+
                                           return (
                                             <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-100 text-[8px] font-black uppercase text-slate-400 group-hover:bg-blue-50 group-hover:border-blue-100 group-hover:text-blue-500 transition-colors">
                                               <Icons.Clock className="w-2.5 h-2.5" />
-                                              {days === 0 ? 'Hoje' : `${days} ${days === 1 ? 'dia' : 'dias'}`}
+                                              {days <= 0 ? 'Hoje' : `${days} ${days === 1 ? 'dia' : 'dias'}`}
                                             </div>
                                           );
                                         })()}

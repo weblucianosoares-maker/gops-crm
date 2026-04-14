@@ -196,6 +196,29 @@ export const evolutionService = {
       console.error('Erro ao verificar batch WhatsApp:', error);
       return [];
     }
+  },
+
+  // Buscar URL da foto de perfil
+  async getProfilePictureUrl(number: string) {
+    try {
+      const cleanNumber = number.replace(/\D/g, '');
+      const formattedNumber = cleanNumber.startsWith('55') ? cleanNumber : `55${cleanNumber}`;
+      
+      const response = await fetch(`${BASE_URL}/chat/fetchProfilePictureUrl/${encodeURIComponent(INSTANCE)}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          number: formattedNumber
+        })
+      });
+
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data.profilePictureUrl || null;
+    } catch (error) {
+      console.error('Erro ao buscar foto do perfil:', error);
+      return null;
+    }
   }
 };
 
