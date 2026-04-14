@@ -16,6 +16,7 @@ const menuItems = [
   { icon: Icons.Contracts, label: "Contratos", path: "/contracts" },
   { icon: Icons.Carriers, label: "Operadoras", path: "/carriers" },
   { icon: Icons.MapPin, label: "Rede Médica", path: "/network" },
+  { icon: Icons.Bell, label: "Avisos", path: "/alerts" },
   { icon: Icons.Settings, label: "Configurações", path: "/settings" },
 ];
 
@@ -70,6 +71,13 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (
               >
                 <item.icon className={cn("w-5 h-5 mr-3", "group-hover:text-blue-600")} />
                 <span className="text-[0.6875rem] tracking-wider uppercase">{item.label}</span>
+                
+                {item.path === '/alerts' && alerts.length > 0 && (
+                   <span className="ml-auto mr-4 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-sm animate-pulse">
+                     {alerts.length}
+                   </span>
+                )}
+
                 {isLeads && isActive && (
                   <Icons.ChevronDown className="w-4 h-4 ml-auto mr-4 text-blue-400" />
                 )}
