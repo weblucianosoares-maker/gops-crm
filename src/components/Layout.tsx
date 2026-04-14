@@ -22,6 +22,7 @@ const menuItems = [
 
 export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (val: boolean) => void }) {
   const location = useLocation();
+  const { alerts } = useAlerts();
   
   return (
     <>
