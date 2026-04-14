@@ -209,7 +209,8 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
   const [history, setHistory] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [activeTab, setActiveTab] = useState<'details' | 'chat' | 'history'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'chat' | 'history' | 'alerts'>('details');
+  const [reminders, setReminders] = useState<any[]>([]);
   const [loadingChat, setLoadingChat] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [noteContent, setNoteContent] = useState("");
@@ -231,6 +232,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       if (initialLead.phone && !initialLead.profile_picture_url) {
         syncProfilePicture(initialLead.id, initialLead.phone);
       }
+      fetchReminders(initialLead.id);
     }
   }, [initialLead]);
 
@@ -578,6 +580,37 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
     }
   };
 
+  const fetchReminders = async (id: string) => {
+    const { data } = await supabase
+      .from('reminders')
+      .select('*')
+      .eq('lead_id', id)
+      .order('due_date', { ascending: false });
+    setReminders(data || []);
+  };
+
+  const handleResolveReminder = async (remId: string) => {
+    const { error } = await supabase
+      .from('reminders')
+      .update({ status: 'concluido' })
+      .eq('id', remId);
+
+    if (!error) {
+       success("Aviso resolvido!");
+       fetchReminders(lead.id);
+       if (onRefreshAlerts) onRefreshAlerts();
+       
+       // Registrar no histórico
+       await supabase.from('lead_history').insert([{
+         lead_id: lead.id,
+         content: `[AVISO RESOLVIDO] ${reminders.find(r => r.id === remId)?.title || 'Lembrete'}`
+       }]);
+       fetchHistory(lead.id);
+    } else {
+       showError("Erro ao resolver aviso: " + error.message);
+    }
+  };
+
   const handleSave = async () => {
     if (!lead.name?.trim()) {
       showError("O nome é obrigatório para cadastrar ou atualizar.");
@@ -741,6 +774,14 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
           <button onClick={() => setActiveTab('details')} className={cn("px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2", activeTab === 'details' ? "border-blue-600 text-blue-600" : "border-transparent text-slate-400")}>Ficha Detalhada</button>
           <button onClick={() => setActiveTab('chat')} className={cn("px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2", activeTab === 'chat' ? "border-green-500 text-green-600" : "border-transparent text-slate-400")}>WhatsApp Chat</button>
           <button onClick={() => setActiveTab('history')} className={cn("px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2", activeTab === 'history' ? "border-amber-500 text-amber-600" : "border-transparent text-slate-400")}>Linha do Tempo</button>
+          <button onClick={() => setActiveTab('alerts')} className={cn("px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 relative", activeTab === 'alerts' ? "border-red-500 text-red-600" : "border-transparent text-slate-400")}>
+            Avisos
+            {reminders.filter(r => r.status === 'pendente').length > 0 && (
+              <span className="absolute top-3 right-2 w-4 h-4 bg-red-500 text-white text-[8px] font-black flex items-center justify-center rounded-full ring-2 ring-white animate-pulse">
+                {reminders.filter(r => r.status === 'pendente').length}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* Content Area */}
@@ -1036,6 +1077,68 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                     </div>
                   )}
                 </div>
+            </div>
+          ) : (
+            /* Tab de Avisos */
+            <div className="p-8 space-y-6">
+               <SectionHeader icon={Icons.Bell} title="Avisos e Lembretes" colorClass="bg-red-50 text-red-600" />
+               <div className="space-y-4">
+                  {reminders.length > 0 ? reminders.map(rem => {
+                    const isPending = rem.status === 'pendente';
+                    const isOverdue = isPending && new Date(rem.due_date) < new Date(new Date().setHours(0,0,0,0));
+
+                    return (
+                      <div key={rem.id} className={cn(
+                        "p-5 rounded-3xl border transition-all relative overflow-hidden group",
+                        isPending ? (isOverdue ? "bg-red-50/50 border-red-100 shadow-sm" : "bg-white border-slate-100 hover:shadow-md") : "bg-slate-50 border-slate-200 opacity-60"
+                      )}>
+                         <div className={cn(
+                           "absolute left-0 top-0 bottom-0 w-1",
+                           !isPending ? "bg-slate-300" : (isOverdue ? "bg-red-500" : "bg-blue-500")
+                         )} />
+                         
+                         <div className="flex justify-between items-start mb-2">
+                            <div className="flex items-center gap-2">
+                               <span className={cn(
+                                 "text-[8px] font-black uppercase px-1.5 py-0.5 rounded tracking-tighter",
+                                 !isPending ? "bg-slate-200 text-slate-500" : (isOverdue ? "bg-red-500 text-white animate-pulse" : "bg-blue-100 text-blue-600")
+                               )}>
+                                 {rem.status === 'concluido' ? 'Resolvido' : (isOverdue ? 'Atrasado' : 'Pendente')}
+                               </span>
+                               <p className="text-[10px] font-black text-slate-400 uppercase">Vencimento: {new Date(rem.due_date).toLocaleDateString('pt-BR')}</p>
+                            </div>
+                            
+                            {isPending && (
+                              <button 
+                                onClick={() => handleResolveReminder(rem.id)}
+                                className="text-[9px] font-black uppercase flex items-center gap-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white px-3 py-1.5 rounded-xl transition-all shadow-sm"
+                              >
+                                <Icons.Check className="w-3 h-3" />
+                                Resolver
+                              </button>
+                            )}
+                         </div>
+
+                         <div className="space-y-1">
+                            <h5 className={cn("text-sm font-black italic tracking-tight", isPending ? "text-slate-900" : "text-slate-500 line-through")}>{rem.title}</h5>
+                            {rem.description && <p className="text-xs text-slate-500 font-medium leading-relaxed italic">{rem.description}</p>}
+                         </div>
+
+                         {!isPending && (
+                            <div className="mt-3 pt-3 border-t border-slate-200/50 flex items-center gap-2">
+                               <Icons.CheckCircle className="w-3 h-3 text-emerald-500" />
+                               <span className="text-[9px] font-black text-slate-400 uppercase">Concluído</span>
+                            </div>
+                         )}
+                      </div>
+                    );
+                  }) : (
+                    <div className="py-20 text-center space-y-4">
+                       <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-200"><Icons.Bell className="w-8 h-8"/></div>
+                       <p className="text-sm text-slate-400 font-black uppercase tracking-widest italic text-center">Nenhum aviso para este lead</p>
+                    </div>
+                  )}
+               </div>
             </div>
           )}
         </div>
