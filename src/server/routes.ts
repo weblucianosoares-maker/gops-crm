@@ -55,46 +55,5 @@ router.get("/dashboard/ranking", (req, res) => res.json(carrierRanking));
 router.get("/dashboard/proposals", (req, res) => res.json(recentProposals));
 router.get("/leads", (req, res) => res.json(leads));
 
-// Intelligent Network Import
-router.post("/network/import", upload.single("file"), async (req: any, res) => {
-  try {
-    const { carrierName } = req.body;
-    const file = req.file;
-
-    if (!file) return res.status(400).json({ error: "Nenhum arquivo enviado." });
-    if (!carrierName) return res.status(400).json({ error: "Nome da operadora é obrigatório." });
-
-    console.log(`[AI IMPORT] Processando arquivo para ${carrierName}...`);
-    
-    const extractedData = await extractNetworkData(file.buffer, file.mimetype, carrierName);
-    
-    res.json({ success: true, data: extractedData });
-  } catch (error: any) {
-    console.error("[AI IMPORT ERROR]", error);
-    res.status(500).json({ error: error.message || "Erro interno ao processar com IA." });
-  }
-});
-
-// Proxy for images to bypass CORS
-router.get("/proxy-image", async (req, res) => {
-  const { url } = req.query;
-  if (!url || typeof url !== 'string') return res.status(400).json({ error: "URL inválida." });
-  
-  try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Status: ${response.status}`);
-    
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    
-    res.set('Content-Type', response.headers.get('Content-Type') || 'image/jpeg');
-    res.set('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
-    res.send(buffer);
-  } catch (error) {
-    console.error("[PROXY IMAGE ERROR]", error);
-    res.status(500).json({ error: "Erro ao buscar imagem." });
-  }
-});
-
 export default router;
 
