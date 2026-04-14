@@ -775,6 +775,11 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                       selectOptions={['Muito quente', 'Quente', 'Morno', 'Frio', 'Congelado']} 
                       onChange={(v:any) => setLead({...lead, temperature: v})} 
                     />
+                    <DetailField 
+                      label="Origem do Lead" 
+                      value={lead.source || 'Manual'} 
+                      onChange={(v:any) => setLead({...lead, source: v})} 
+                    />
                   </div>
                </section>
 

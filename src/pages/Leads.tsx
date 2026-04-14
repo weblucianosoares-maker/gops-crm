@@ -12,16 +12,20 @@ import { useToast } from "../components/Toasts";
 import { syncGoogleContacts } from "../lib/googleContacts";
 import { batchValidateLeadsWhatsApp } from "../lib/evolution";
 
-const interactionStatusOptions = [
-  { label: 'Sem Status', value: 'Sem Status', color: 'bg-slate-100 text-slate-500' },
-  { label: 'Aguardando Retorno', value: 'Aguardando Retorno', color: 'bg-amber-100 text-amber-700' },
-  { label: 'Não Responde', value: 'Não Responde', color: 'bg-red-100 text-red-700' },
-  { label: 'Analisando Cotação', value: 'Analisando Cotação', color: 'bg-indigo-100 text-indigo-700' },
-  { label: 'Realizei Contato', value: 'Realizei Contato', color: 'bg-emerald-100 text-emerald-700' },
-];
+const getStatusColor = (name: string) => {
+  const status = name?.toLowerCase().trim();
+  if (!status || status === 'sem status') return 'bg-slate-100 text-slate-500';
+  if (status.includes('venda') || status.includes('fech')) return 'bg-emerald-100 text-emerald-700 font-black';
+  if (status.includes('perd') || status.includes('perdi')) return 'bg-red-100 text-red-700';
+  if (status.includes('negocia')) return 'bg-blue-100 text-blue-700';
+  if (status.includes('cota') || status.includes('analis')) return 'bg-indigo-100 text-indigo-700';
+  if (status.includes('aguard') || status.includes('retorn')) return 'bg-amber-100 text-amber-700';
+  if (status.includes('contato')) return 'bg-teal-100 text-teal-700';
+  return 'bg-slate-100 text-slate-600';
+};
 
 export default function Leads() {
-  const { leads, filter, fetchLeads, stages, contactTypes, jobTitles } = useLeads();
+  const { leads, filter, fetchLeads, stages, contactTypes, jobTitles, interactionStatuses } = useLeads();
   const { success, error, toast: showToast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -715,11 +719,12 @@ export default function Leads() {
                             onClick={(e) => e.stopPropagation()}
                             className={cn(
                               "text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border-0 cursor-pointer outline-none transition-all appearance-none text-center",
-                              interactionStatusOptions.find(o => o.value === (lead.interaction_status || 'Sem Status'))?.color || 'bg-slate-100 text-slate-500'
+                              getStatusColor(lead.interaction_status || 'Sem Status')
                             )}
                           >
-                            {interactionStatusOptions.map(opt => (
-                              <option key={opt.value} value={opt.value} className="bg-white text-slate-900 uppercase font-bold text-[10px]">{opt.label}</option>
+                            <option value="Sem Status" className="bg-white text-slate-900 uppercase font-bold text-[10px]">Sem Status</option>
+                            {interactionStatuses.filter((s: any) => s.active && s.name !== 'Sem Status').map((opt: any) => (
+                              <option key={opt.id} value={opt.name} className="bg-white text-slate-900 uppercase font-bold text-[10px]">{opt.name}</option>
                             ))}
                           </select>
                         </div>
@@ -751,13 +756,16 @@ export default function Leads() {
                     </div>
                   </td>
                   <td className="px-4 py-2">
-                    {lead.contact_type ? (
-                      <span className="inline-flex items-center text-[10px] font-bold text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm border border-orange-200">
-                        {lead.contact_type}
+                    <div className="flex flex-col gap-1">
+                      <span className="inline-flex items-center text-[9px] font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 uppercase tracking-tighter w-fit shadow-xs">
+                        {lead.lead_type || 'PF'}
                       </span>
-                    ) : (
-                      <span className="text-[10px] text-slate-400 font-medium italic">Sem tipo</span>
-                    )}
+                      {lead.contact_type && lead.contact_type !== 'Sem tipo' && (
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-0.5">
+                          {lead.contact_type}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-2 whitespace-nowrap">
                     <span className="text-sm font-medium text-slate-600">{lead.source}</span>
