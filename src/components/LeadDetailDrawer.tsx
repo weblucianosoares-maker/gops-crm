@@ -238,8 +238,34 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
     if (!phone || !leadId) return;
     
     try {
-      const ppUrl = await evolutionService.getProfilePictureUrl(phone);
-      if (!ppUrl) return;
+      let targetPhone = phone.replace(/\D/g, '');
+      
+      // Se o número tiver apenas 8 ou 9 dígitos, está faltando o DDD
+      if (targetPhone.length <= 9) {
+        console.log(`[SYNC PP] Número incompleto (${targetPhone}), tentando buscar no histórico de mensagens...`);
+        
+        // Tentar encontrar o número completo nas mensagens enviadas/recebidas
+        const { data: messages, error: msgError } = await supabase
+          .from('whatsapp_messages')
+          .select('sender_number')
+          .eq('lead_id', leadId)
+          .limit(1);
+
+        if (!msgError && messages && messages.length > 0 && messages[0].sender_number) {
+          targetPhone = messages[0].sender_number;
+          console.log(`[SYNC PP] Número completo encontrado no histórico: ${targetPhone}`);
+        } else {
+          // Fallback para DDD 21 conforme aprovado pelo usuário
+          targetPhone = `5521${targetPhone}`;
+          console.log(`[SYNC PP] Sem histórico, usando fallback DDD 21: ${targetPhone}`);
+        }
+      }
+
+      const ppUrl = await evolutionService.getProfilePictureUrl(targetPhone);
+      if (!ppUrl) {
+        console.log(`[SYNC PP] WhatsApp não retornou foto para o número: ${targetPhone}`);
+        return;
+      }
 
       // Use our local proxy to download the image and bypass CORS
       const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(ppUrl)}`;
