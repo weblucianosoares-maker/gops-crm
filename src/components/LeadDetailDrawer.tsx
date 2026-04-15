@@ -216,7 +216,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
   const [history, setHistory] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [activeTab, setActiveTab] = useState<'details' | 'chat' | 'history' | 'alerts'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'chat' | 'interview' | 'history' | 'alerts'>('details');
   const [reminders, setReminders] = useState<any[]>([]);
   const [loadingChat, setLoadingChat] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -541,6 +541,19 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
             </div>
           </div>
         );
+      case 'interview':
+        return (
+          <div className="h-full bg-white relative overflow-hidden">
+             <AIGuidedLeadCreate 
+               isOpen={true} 
+               onClose={() => setActiveTab('details')}
+               onSuccess={() => {
+                 fetchHistory(lead.id);
+                 setActiveTab('history');
+               }}
+             />
+          </div>
+        );
       default: return null;
     }
   };
@@ -574,9 +587,9 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
         </div>
 
         <div className="flex px-8 border-b bg-white shadow-sm shrink-0">
-          {['details', 'chat', 'history', 'alerts'].map((tab: any) => (
+          {['details', 'chat', 'interview', 'history', 'alerts'].map((tab: any) => (
             <button key={tab} onClick={() => setActiveTab(tab)} className={cn("px-6 py-5 text-[10px] font-black uppercase tracking-widest transition-all border-b-2", activeTab === tab ? "border-blue-600 text-blue-600" : "border-transparent text-slate-400")}>
-              {tab === 'details' ? 'Ficha' : tab === 'chat' ? 'Chat' : tab === 'history' ? 'Histórico' : 'Avisos'}
+              {tab === 'details' ? 'Ficha' : tab === 'chat' ? 'Chat' : tab === 'interview' ? 'Entrevista IA' : tab === 'history' ? 'Histórico' : 'Avisos'}
             </button>
           ))}
         </div>

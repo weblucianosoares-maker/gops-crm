@@ -9,6 +9,7 @@ import { LeadDetailDrawer } from "../components/LeadDetailDrawer";
 import { supabase } from "../lib/supabase";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useToast } from "../components/Toasts";
+import { AIGuidedLeadCreate } from "../components/AIGuidedLeadCreate";
 
 const interactionStatusOptions = [
   { label: 'Sem Status', value: 'Sem Status', color: 'bg-slate-100 text-slate-500' },
@@ -24,6 +25,7 @@ export default function Funnel() {
   const [selectedLead, setSelectedLead] = useState<any>(null);
   const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [isAIInterviewOpen, setIsAIInterviewOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -198,14 +200,33 @@ export default function Funnel() {
               </div>
             </div>
           </div>
-          <button 
-            onClick={() => setIsSelectionModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-          >
-            <Icons.Plus className="w-4 h-4" /> Nova Oportunidade
-          </button>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setIsAIInterviewOpen(true)}
+              className="group flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-blue-600 text-sm font-bold rounded-xl hover:bg-blue-50 transition-all shadow-sm hover:border-blue-300"
+            >
+              <Icons.Sparkles className="w-4 h-4 animate-pulse group-hover:rotate-12 transition-transform" /> 
+              Novo Lead com IA
+            </button>
+            <button 
+              onClick={() => setIsSelectionModalOpen(true)}
+              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white text-sm font-black uppercase tracking-widest rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 active:scale-95"
+            >
+              <Icons.Plus className="w-4 h-4" /> Nova Oportunidade
+            </button>
+          </div>
         </div>
       </header>
+
+      {/* IA Interview Modal */}
+      <AIGuidedLeadCreate 
+        isOpen={isAIInterviewOpen} 
+        onClose={() => setIsAIInterviewOpen(false)}
+        onSuccess={(id) => {
+          fetchLeads();
+          // Opcional: abrir o drawer do novo lead
+        }}
+      />
 
       {/* Main Kanban Content */}
       <DragDropContext onDragEnd={onDragEnd}>

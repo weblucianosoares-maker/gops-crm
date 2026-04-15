@@ -63,3 +63,55 @@ export const extractNetworkData = async (fileBuffer: Buffer, mimeType: string, c
   
   throw new Error("Não foi possível extrair dados estruturados do documento.");
 };
+export const processInterviewStep = async (chatHistory: { role: "user" | "model"; parts: { text: string }[] }[], leadContext?: any) => {
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+  const systemPrompt = `
+    Você é um Consultor Especialista em Planos de Saúde Brasileiro da "Efraim Saúde".
+    Sua missão é guiar o consultor de vendas em uma entrevista com um novo Lead para coletar dados e sugerir o melhor plano.
+
+    REGRAS DE NEGÓCIO IMPORTANTES QUE VOCÊ DEVE SABER:
+    1. CNPJ: Empresas normais precisam de 90 dias de abertura. MEI precisa de 180 dias. Isso muda as operadoras disponíveis.
+    2. ADESÃO: Se o lead não tem CNPJ, você DEVE buscar a PROFISSÃO ou FORMAÇÃO. Existem tabelas especiais para entidades de classe (Ex: Engenheiros, Professores, Médicos, Servidores).
+    3. CARÊNCIA: Saber se tem plano atual (Operadora, Produto, Valor) é crucial para oferecer redução de carência.
+    4. SAÚDE: Pergunte sobre doenças preexistentes e cirurgias planejadas (essencial para declaração de saúde).
+
+    OBJETIVO DA CONVERSA:
+    Extrair os seguintes campos enquanto sugere a PRÓXIMA PERGUNTA lógica:
+    - name, phone (whatsapp), email, address, age
+    - lead_type (PF ou PJ), cnpj (se PJ), profession (se PF)
+    - interested_lives (vidas)
+    - has_current_plan, current_carrier, current_product, current_value, current_lives
+    - preferred_hospital (hospitais de preferência)
+    - pre_existing_condition (doenças/cirurgias)
+
+    SAÍDA ESPERADA (JSON apenas):
+    {
+      "next_question": "Sua sugestão de pergunta para o consultor fazer ao lead agora",
+      "extracted_data": {
+        "name": "...",
+        "phone": "...",
+        ... (campos que você conseguir identificar ou atualizar)
+      },
+      "is_finished": true/false (true apenas quando tiver todos os dados essenciais),
+      "analysis": "Breve nota interna para o consultor sobre o que você percebeu (ex: 'Lead sensível a preço')",
+      "recommendation": "Se is_finished for true, sugira o tipo de plano ideal (ex: 'Plano PME via CNPJ para redução de custo')"
+    }
+
+    DICAS:
+    - Não peça tudo de uma vez. Seja conversacional mas focado.
+    - Se o consultor digitar um CNPJ, valide se você extraiu os 14 dígitos.
+    - Se o consultor digitar um endereço, tente extrair CEP, RUA e CIDADE.
+  `;
+
+  const chat = model.startChat({
+    history: chatHistory,
+    generationConfig: {
+      responseMimeType: "application/json",
+    },
+  });
+
+  const result = await chat.sendMessage(leadContext ? `Iniciando nova entrevista. Contexto inicial: ${JSON.stringify(leadContext)}. ${systemPrompt}` : systemPrompt);
+  const response = await result.response;
+  return JSON.parse(response.text());
+};
