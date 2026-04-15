@@ -34,8 +34,9 @@ export function AIGuidedLeadCreate({ isOpen, onClose, onSuccess }: AIGuidedLeadC
       const res = await processInterviewStep([]);
       setMessages([{ role: "model", text: res.next_question }]);
       setIsThinking(false);
-    } catch (e) {
-      showError("Erro ao iniciar entrevista com Gemini.");
+    } catch (e: any) {
+      console.error("ERRO GEMINI (START):", e);
+      showError(`Erro ao iniciar Gemini: ${e.message || 'Sem conexão'}`);
       setIsThinking(false);
     }
   };
@@ -74,8 +75,9 @@ export function AIGuidedLeadCreate({ isOpen, onClose, onSuccess }: AIGuidedLeadC
            handleCEPLookup(res.extracted_data.address);
         }
       }
-    } catch (e) {
-      showError("O Gemini teve um soluço. Tente enviar novamente.");
+    } catch (e: any) {
+      console.error("ERRO GEMINI (SEND):", e);
+      showError(`Erro na resposta: ${e.message || 'Tente novamente'}`);
     } finally {
       setIsThinking(false);
     }
