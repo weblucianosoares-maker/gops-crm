@@ -13,6 +13,7 @@ const menuItems = [
   { icon: Icons.Dashboard, label: "Dashboard", path: "/" },
   { icon: Icons.Leads, label: "Leads", path: "/leads" },
   { icon: Icons.Funnel, label: "Funil de Vendas", path: "/funnel" },
+  { icon: Icons.Sparkles, label: "Entrevista IA", path: "/interview" },
   { icon: Icons.Contracts, label: "Contratos", path: "/contracts" },
   { icon: Icons.Carriers, label: "Operadoras", path: "/carriers" },
   { icon: Icons.MapPin, label: "Rede Médica", path: "/network" },
