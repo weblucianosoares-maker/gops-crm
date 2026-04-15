@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
 
 export const extractNetworkData = async (fileBuffer: Buffer, mimeType: string, carrierName: string) => {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
   const prompt = `
     Você é um especialista em processamento de documentos de seguros de saúde brasileiros.
@@ -61,7 +61,7 @@ export const extractNetworkData = async (fileBuffer: Buffer, mimeType: string, c
   throw new Error("Não foi possível extrair dados estruturados do documento.");
 };
 export const processInterviewStep = async (chatHistory: { role: "user" | "model"; parts: { text: string }[] }[], leadContext?: any) => {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
   const systemPrompt = `
     Você é um Consultor Especialista em Planos de Saúde Brasileiro da "Efraim Saúde".
