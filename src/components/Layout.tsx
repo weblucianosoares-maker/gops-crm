@@ -78,14 +78,7 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (
                      {alerts.length}
                    </span>
                 )}
-
-                {isLeads && isActive && (
-                  <Icons.ChevronDown className="w-4 h-4 ml-auto mr-4 text-blue-400" />
-                )}
               </NavLink>
-
-              {/* Submenu for Leads */}
-              {isLeads && isActive && <LeadsSubMenu setIsOpen={setIsOpen} />}
             </React.Fragment>
           );
         })}
@@ -106,38 +99,6 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (
   );
 }
 
-function LeadsSubMenu({ setIsOpen }: { setIsOpen?: (val: boolean) => void }) {
-  const { filter, setFilter, filterCounts } = useLeads();
-  const sources = ["Todos", "Grupo RH", "Ex-colegas", "Leads Eventos"];
-
-  return (
-    <div className="ml-12 mt-1 mb-4 space-y-1 border-l border-slate-200">
-      {sources.map((s) => (
-        <button
-          key={s}
-          onClick={() => {
-            setFilter(s);
-            if (window.innerWidth < 768 && setIsOpen) setIsOpen(false);
-          }}
-          className={cn(
-            "flex items-center justify-between w-full pl-4 py-2 transition-all text-left",
-            filter === s 
-              ? "text-blue-600 font-bold" 
-              : "text-slate-400 hover:text-slate-600 hover:pl-5"
-          )}
-        >
-          <span className="text-[10px] uppercase tracking-widest">{s}</span>
-          <span className={cn(
-            "mr-4 text-[9px] px-1.5 py-0.5 rounded-full font-bold",
-            filter === s ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-400"
-          )}>
-            {filterCounts[s] || 0}
-          </span>
-        </button>
-      ))}
-    </div>
-  );
-}
 
 
 function GlobalAlertBar() {
