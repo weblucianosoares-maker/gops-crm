@@ -6,8 +6,8 @@ import { supabase } from "../lib/supabase";
 import { useLeads } from "../lib/leadsContext";
 import { evolutionService } from "../lib/evolution";
 import { useToast } from "./Toasts";
+import { DatePicker } from "./DatePicker";
 
-// Cores para os status de interação
 const getStatusColor = (name: string) => {
   switch (name) {
     case 'Sem Status': return 'bg-slate-100 text-slate-500';
@@ -19,7 +19,6 @@ const getStatusColor = (name: string) => {
   }
 };
 
-// Componente para renderizar mensagens com mídia
 const MediaMessage = ({ msg }: { msg: any }) => {
   const [mediaData, setMediaData] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -151,40 +150,51 @@ const SectionHeader = ({ icon: Icon, title, colorClass }: { icon: any, title: st
   </div>
 );
 
-const DetailField = ({ label, value, onChange, placeholder, type = "text", mask, selectOptions, lead, setLead, interactionStatuses }: any) => (
-  <div className="space-y-1">
-    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">{label}</label>
-    {label === "Status de Interação" ? (
-      <select 
-        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700 transition-all hover:bg-slate-100/50" 
-        value={lead.interaction_status} 
-        onChange={e => setLead({...lead, interaction_status: e.target.value})}
-      >
-        <option value="">Selecione o Status</option>
-        {interactionStatuses?.filter((s: any) => s.active).map((status: any) => (
-          <option key={status.id} value={status.name}>{status.name}</option>
-        ))}
-      </select>
-    ) : selectOptions ? (
-      <select 
-        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" 
-        value={value || ""} 
-        onChange={e => onChange(e.target.value)}
-      >
-        <option value="">Selecione...</option>
-        {selectOptions.map((opt:any) => <option key={opt.id || opt} value={opt.value !== undefined ? opt.value : (opt.name || opt)}>{opt.label || opt.name || opt}</option>)}
-      </select>
-    ) : (
-      <input 
-        type={type}
-        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:bg-white focus:ring-4 focus:ring-blue-100/10 focus:border-blue-500 transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
-        placeholder={placeholder}
-        value={mask ? mask(value) : (value || '')}
-        onChange={e => onChange(e.target.value)}
-      />
-    )}
-  </div>
-);
+const DetailField = ({ label, value, onChange, placeholder, type = "text", mask, selectOptions, lead, setLead, interactionStatuses }: any) => {
+  if (type === "date") {
+    return (
+      <div className="space-y-1">
+        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">{label}</label>
+        <DatePicker value={value} onChange={onChange} themeColor="blue-600" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1">
+      <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">{label}</label>
+      {label === "Status de Interação" ? (
+        <select 
+          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700 transition-all hover:bg-slate-100/50" 
+          value={lead.interaction_status} 
+          onChange={e => setLead({...lead, interaction_status: e.target.value})}
+        >
+          <option value="">Selecione o Status</option>
+          {interactionStatuses?.filter((s: any) => s.active).map((status: any) => (
+            <option key={status.id} value={status.name}>{status.name}</option>
+          ))}
+        </select>
+      ) : selectOptions ? (
+        <select 
+          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" 
+          value={value || ""} 
+          onChange={e => onChange(e.target.value)}
+        >
+          <option value="">Selecione...</option>
+          {selectOptions.map((opt:any) => <option key={opt.id || opt} value={opt.value !== undefined ? opt.value : (opt.name || opt)}>{opt.label || opt.name || opt}</option>)}
+        </select>
+      ) : (
+        <input 
+          type={type}
+          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:bg-white focus:ring-4 focus:ring-blue-100/10 focus:border-blue-500 transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
+          placeholder={placeholder}
+          value={mask ? mask(value) : (value || '')}
+          onChange={e => onChange(e.target.value)}
+        />
+      )}
+    </div>
+  );
+};
 
 interface LeadDetailDrawerProps {
   lead: any;
@@ -197,12 +207,9 @@ interface LeadDetailDrawerProps {
 export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate, onRefreshAlerts }: LeadDetailDrawerProps) {
   const { 
     stages, 
-    fetchLeads, 
-    fetchStages, 
     contactTypes, 
     interactionStatuses,
     carriers, 
-    products 
   } = useLeads();
   const { success, error: showError } = useToast();
   const [lead, setLead] = useState(initialLead);
@@ -227,8 +234,6 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       setLead(initialLead);
       fetchHistory(initialLead.id);
       setActiveTab('details');
-      
-      // Auto-sync profile picture if missing and has phone
       if (initialLead.phone && !initialLead.profile_picture_url) {
         syncProfilePicture(initialLead.id, initialLead.phone);
       }
@@ -238,75 +243,31 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
 
   const syncProfilePicture = async (leadId: string, phone: string) => {
     if (!phone || !leadId) return;
-    
     try {
       let targetPhone = phone.replace(/\D/g, '');
-      
-      // Se o número tiver apenas 8 ou 9 dígitos, está faltando o DDD
       if (targetPhone.length <= 9) {
-        console.log(`[SYNC PP] Número incompleto (${targetPhone}), tentando buscar no histórico de mensagens...`);
-        
-        // Tentar encontrar o número completo nas mensagens enviadas/recebidas
-        const { data: messages, error: msgError } = await supabase
-          .from('whatsapp_messages')
-          .select('sender_number')
-          .eq('lead_id', leadId)
-          .limit(1);
-
-        if (!msgError && messages && messages.length > 0 && messages[0].sender_number) {
+        const { data: messages } = await supabase.from('whatsapp_messages').select('sender_number').eq('lead_id', leadId).limit(1);
+        if (messages && messages.length > 0 && messages[0].sender_number) {
           targetPhone = messages[0].sender_number;
-          console.log(`[SYNC PP] Número completo encontrado no histórico: ${targetPhone}`);
         } else {
-          // Fallback para DDD 21 conforme aprovado pelo usuário
           targetPhone = `5521${targetPhone}`;
-          console.log(`[SYNC PP] Sem histórico, usando fallback DDD 21: ${targetPhone}`);
         }
       }
-
       const ppUrl = await evolutionService.getProfilePictureUrl(targetPhone);
-      if (!ppUrl) {
-        console.log(`[SYNC PP] WhatsApp não retornou foto para o número: ${targetPhone}`);
-        return;
-      }
-
-      // Use our local proxy to download the image and bypass CORS
+      if (!ppUrl) return;
       const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(ppUrl)}`;
       const response = await fetch(proxyUrl);
-      if (!response.ok) throw new Error('Falha ao baixar imagem via proxy');
-      
+      if (!response.ok) throw new Error('Falha ao baixar imagem');
       const blob = await response.blob();
       const fileExt = blob.type.split('/')[1] || 'jpg';
-      const fileName = `${leadId}_${Date.now()}.${fileExt}`;
-      const filePath = `leads/${fileName}`;
-
-      // Upload to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, blob, { 
-          contentType: blob.type,
-          upsert: true 
-        });
-
+      const filePath = `leads/${leadId}_${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, blob, { contentType: blob.type, upsert: true });
       if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      // Update lead record
-      const { error: updateError } = await supabase
-        .from('leads')
-        .update({ profile_picture_url: publicUrl })
-        .eq('id', leadId);
-
-      if (updateError) throw updateError;
-
-      // Update local state
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      await supabase.from('leads').update({ profile_picture_url: publicUrl }).eq('id', leadId);
       setLead(prev => prev?.id === leadId ? { ...prev, profile_picture_url: publicUrl } : prev);
-      console.log('Foto do perfil sincronizada:', publicUrl);
     } catch (e) {
-      console.error('Erro ao sincronizar foto do perfil:', e);
+      console.error('Erro ao sincronizar foto:', e);
     }
   };
 
@@ -315,61 +276,25 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
     setLoadingChat(true);
     try {
       const apiRes = await evolutionService.getMessages(lead.phone);
-      const { data: localData } = await supabase
-        .from('whatsapp_messages')
-        .select('*')
-        .eq('lead_id', lead.id)
-        .order('created_at', { ascending: true });
-
-      let rawApi = [];
-      if (Array.isArray(apiRes)) {
-        rawApi = apiRes;
-      } else if (apiRes && typeof apiRes === 'object' && 'messages' in apiRes && Array.isArray((apiRes as any).messages)) {
-        rawApi = (apiRes as any).messages;
-      }
-
+      const { data: localData } = await supabase.from('whatsapp_messages').select('*').eq('lead_id', lead.id).order('created_at', { ascending: true });
+      let rawApi = Array.isArray(apiRes) ? apiRes : (apiRes && (apiRes as any).messages) || [];
       const normalizedApi = rawApi.map((m: any) => {
         const msg = m.message || {};
         let text = msg.conversation || msg.extendedTextMessage?.text || "";
-        let mediaType = undefined;
-        let mimetype = undefined;
-        let fileName = undefined;
-
+        let mediaType, mimetype, fileName;
         if (msg.imageMessage) { mediaType = 'image'; mimetype = msg.imageMessage.mimetype; text = msg.imageMessage.caption || ""; }
         else if (msg.audioMessage) { mediaType = 'audio'; mimetype = msg.audioMessage.mimetype; }
         else if (msg.videoMessage) { mediaType = 'video'; mimetype = msg.videoMessage.mimetype; text = msg.videoMessage.caption || ""; }
-        else if (msg.documentMessage) { mediaType = 'document'; mimetype = msg.documentMessage.mimetype; fileName = msg.documentMessage.fileName || msg.documentMessage.title; text = msg.documentMessage.caption || ""; }
-        else if (msg.stickerMessage) { mediaType = 'sticker'; mimetype = msg.stickerMessage.mimetype; }
-
-        return {
-          id: m.key?.id || `api-${Math.random()}`,
-          fromMe: !!m.key?.fromMe,
-          text,
-          timestamp: m.messageTimestamp ? (typeof m.messageTimestamp === 'number' ? m.messageTimestamp * 1000 : m.messageTimestamp) : Date.now(),
-          media_type: mediaType,
-          mimetype,
-          file_name: fileName,
-          source: 'api'
-        };
+        else if (msg.documentMessage) { mediaType = 'document'; mimetype = msg.documentMessage.mimetype; fileName = msg.documentMessage.fileName; text = msg.documentMessage.caption || ""; }
+        return { id: m.key?.id || `api-${Math.random()}`, fromMe: !!m.key?.fromMe, text, timestamp: m.messageTimestamp * 1000, media_type: mediaType, mimetype, file_name: fileName };
       });
-
       const normalizedLocal = (localData || []).map((m: any) => ({
-        id: m.message_id,
-        fromMe: m.is_from_me,
-        text: m.message_body,
-        timestamp: new Date(m.created_at).getTime(),
-        media_type: m.media_type,
-        mimetype: m.mimetype,
-        file_name: m.file_name,
-        is_read: m.is_read ?? true,
-        source: 'local'
+        id: m.message_id, fromMe: m.is_from_me, text: m.message_body, timestamp: new Date(m.created_at).getTime(), media_type: m.media_type, mimetype: m.mimetype, file_name: m.file_name, is_read: m.is_read ?? true
       }));
-
       const merged = [...normalizedApi, ...normalizedLocal].reduce((acc: any[], curr: any) => {
         if (!acc.find(m => m.id === curr.id)) acc.push(curr);
         return acc;
       }, []);
-
       setMessages(merged.sort((a,b) => a.timestamp - b.timestamp));
     } catch (e) {
       console.error("Erro ao carregar mensagens:", e);
@@ -381,16 +306,11 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
   useEffect(() => {
     if (activeTab === 'chat' && lead?.id) {
        loadMessages();
-       const markRead = async () => {
-         await supabase.from('whatsapp_messages').update({ is_read: true }).eq('lead_id', lead.id).eq('is_from_me', false).eq('is_read', false);
-       };
+       const markRead = () => supabase.from('whatsapp_messages').update({ is_read: true }).eq('lead_id', lead.id).eq('is_from_me', false).eq('is_read', false);
        markRead();
        const channel = supabase.channel(`chat-${lead.id}`).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'whatsapp_messages', filter: `lead_id=eq.${lead.id}` }, (payload) => {
            const n = payload.new;
-           setMessages(prev => {
-             if (prev.find(m => m.id === n.message_id)) return prev;
-             return [...prev, { id: n.message_id, fromMe: n.is_from_me, text: n.message_body, timestamp: new Date(n.created_at).getTime(), media_type: n.media_type, mimetype: n.mimetype, file_name: n.file_name, is_read: true, source: 'realtime' }].sort((a,b) => a.timestamp - b.timestamp);
-           });
+           setMessages(prev => prev.find(m => m.id === n.message_id) ? prev : [...prev, { id: n.message_id, fromMe: n.is_from_me, text: n.message_body, timestamp: new Date(n.created_at).getTime(), media_type: n.media_type, mimetype: n.mimetype, file_name: n.file_name, is_read: true }].sort((a,b) => a.timestamp - b.timestamp));
            markRead();
        }).subscribe();
        return () => { supabase.removeChannel(channel); };
@@ -409,53 +329,15 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       if (res && res.key?.id) {
         const now = new Date();
         const formattedDate = `${now.getDate()} ${now.toLocaleString('pt-BR', { month: 'short' }).replace('.', '')}, ${now.getFullYear()}`;
-        
-        // Update messages table
-        const { error: upsertError } = await supabase.from('whatsapp_messages').upsert({ 
-          lead_id: lead.id, 
-          message_id: res.key.id, 
-          sender_number: lead.phone.replace(/\D/g, ''), 
-          message_body: txt, 
-          is_from_me: true, 
-          is_read: true, 
-          created_at: now.toISOString() 
-        }, { onConflict: 'message_id' });
-
-        if (upsertError) console.error('Erro ao registrar mensagem no Supabase:', upsertError);
-        
-        // Update lead contact info
-        const { error: updateError } = await supabase.from('leads').update({ 
-          last_app_message_at: now.toISOString(),
-          lastcontact: formattedDate 
-        }).eq('id', lead.id);
-
-        if (updateError) {
-          console.error('Erro ao atualizar lead no Supabase:', updateError);
-        } else {
-          // Update local state for immediate feedback
-          setLead(prev => ({ ...prev, last_app_message_at: now.toISOString(), lastcontact: formattedDate }));
-        }
-
+        await supabase.from('whatsapp_messages').upsert({ lead_id: lead.id, message_id: res.key.id, sender_number: lead.phone.replace(/\D/g, ''), message_body: txt, is_from_me: true, is_read: true, created_at: now.toISOString() });
+        await supabase.from('leads').update({ last_app_message_at: now.toISOString(), lastcontact: formattedDate }).eq('id', lead.id);
+        setLead(prev => ({ ...prev, last_app_message_at: now.toISOString(), lastcontact: formattedDate }));
         setMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: res.key.id, status: 'sent' } : m));
-        
-        // Notify parent without awaiting it (don't block the UI)
-        setTimeout(() => { if (onUpdate) onUpdate(); }, 100);
-      } else {
-        throw new Error("Resposta da API sem ID de mensagem");
+        setTimeout(() => onUpdate(), 100);
       }
     } catch (e: any) { 
-      console.error('Falha crítica no envio:', e);
+      showError(e.message || "Erro ao enviar");
       setMessages(prev => prev.filter(m => m.id !== tempId)); 
-      
-      let userMsg = "Falha ao enviar mensagem. Verifique a conexão.";
-      const errorMessage = e.message || "";
-      if (errorMessage.includes('"exists":false')) {
-        userMsg = "Este número não possui WhatsApp ou é inválido.";
-      } else if (errorMessage) {
-        userMsg = errorMessage;
-      }
-      
-      showError(userMsg); 
     }
   };
 
@@ -472,54 +354,16 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
         if (res && res.key?.id) {
           const now = new Date();
           const formattedDate = `${now.getDate()} ${now.toLocaleString('pt-BR', { month: 'short' }).replace('.', '')}, ${now.getFullYear()}`;
-
-          // Update messages table
-          const { error: upsertError } = await supabase.from('whatsapp_messages').upsert({ 
-            lead_id: lead.id, 
-            message_id: res.key.id, 
-            sender_number: lead.phone.replace(/\D/g, ''),
-            message_body: `[Arquivo: ${file.name}]`, 
-            is_from_me: true, 
-            is_read: true, 
-            created_at: now.toISOString(),
-            media_type: type,
-            mimetype: file.type,
-            file_name: file.name
-          }, { onConflict: 'message_id' });
-
-          if (upsertError) console.error('Erro ao registrar mídia no Supabase:', upsertError);
-
-          // Update lead contact info
-          const { error: updateError } = await supabase.from('leads').update({ 
-            last_app_message_at: now.toISOString(),
-            lastcontact: formattedDate 
-          }).eq('id', lead.id);
-
-          if (updateError) {
-            console.error('Erro ao atualizar lead após mídia:', updateError);
-          } else {
-            // Update local state
-            setLead(prev => ({ ...prev, last_app_message_at: now.toISOString(), lastcontact: formattedDate }));
-          }
-
+          await supabase.from('whatsapp_messages').upsert({ lead_id: lead.id, message_id: res.key.id, sender_number: lead.phone.replace(/\D/g, ''), message_body: `[Arquivo: ${file.name}]`, is_from_me: true, is_read: true, created_at: now.toISOString(), media_type: type, mimetype: file.type, file_name: file.name });
+          await supabase.from('leads').update({ last_app_message_at: now.toISOString(), lastcontact: formattedDate }).eq('id', lead.id);
+          setLead(prev => ({ ...prev, last_app_message_at: now.toISOString(), lastcontact: formattedDate }));
           setMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: res.key.id, status: 'sent' } : m));
-          
           success("Arquivo enviado!");
-          setTimeout(() => { if (onUpdate) onUpdate(); }, 100);
+          setTimeout(() => onUpdate(), 100);
         }
       } catch (e: any) {
-        console.error('Erro no envio de mídia:', e);
+        showError("Erro ao enviar arquivo");
         setMessages(prev => prev.filter(m => m.id !== tempId));
-        
-        let userMsg = "Falha ao enviar arquivo.";
-        const errorMessage = e.message || "";
-        if (errorMessage.includes('"exists":false')) {
-          userMsg = "Este número não possui WhatsApp ou é inválido.";
-        } else if (errorMessage) {
-          userMsg = errorMessage;
-        }
-        
-        showError(userMsg);
       }
     };
     reader.readAsDataURL(file);
@@ -533,172 +377,173 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
   const handleAddNote = async () => {
     if (!noteContent.trim() || !lead?.id) return;
     setIsSavingNote(true);
-    const content = `[NOTA] ${noteContent}`;
-    const { error } = await supabase.from('lead_history').insert([{ lead_id: lead.id, content }]);
+    const { error } = await supabase.from('lead_history').insert([{ lead_id: lead.id, content: `[NOTA] ${noteContent}` }]);
     setIsSavingNote(false);
-    if (!error) {
-       success("Nota adicionada ao histórico!");
-       setNoteContent("");
-       fetchHistory(lead.id);
-    } else {
-       showError("Erro ao salvar nota: " + error.message);
-    }
+    if (!error) { success("Nota adicionada!"); setNoteContent(""); fetchHistory(lead.id); }
   };
 
   const handleAddReminder = async (days?: number) => {
     if (!lead?.id) return;
     let finalDate = reminderDate;
-    let finalTitle = reminderTitle || "Lembrete de acompanhamento";
-
     if (days !== undefined) {
-      const d = new Date();
-      d.setDate(d.getDate() + days);
+      const d = new Date(); d.setDate(d.getDate() + days);
       finalDate = d.toISOString().split('T')[0];
     }
-
-    if (!finalDate) {
-      showError("Selecione uma data para o lembrete.");
-      return;
-    }
-
+    if (!finalDate) return showError("Selecione uma data");
     setIsSavingReminder(true);
-    const { error } = await supabase.from('reminders').insert([{
-      lead_id: lead.id,
-      title: finalTitle,
-      due_date: finalDate,
-      status: 'pendente'
-    }]);
-    
+    const { error } = await supabase.from('reminders').insert([{ lead_id: lead.id, title: reminderTitle || "Follow-up", due_date: finalDate, status: 'pendente' }]);
     setIsSavingReminder(false);
-    if (!error) {
-       success("Lembrete agendado com sucesso!");
-       setReminderTitle("");
-       setReminderDate("");
-       if (onRefreshAlerts) onRefreshAlerts();
-    } else {
-       showError("Erro ao salvar lembrete: " + error.message);
-    }
+    if (!error) { success("Lembrete agendado!"); setReminderTitle(""); setReminderDate(""); onRefreshAlerts?.(); fetchReminders(lead.id); }
   };
 
   const fetchReminders = async (id: string) => {
-    const { data } = await supabase
-      .from('reminders')
-      .select('*')
-      .eq('lead_id', id)
-      .order('due_date', { ascending: false });
+    const { data } = await supabase.from('reminders').select('*').eq('lead_id', id).order('due_date', { ascending: false });
     setReminders(data || []);
   };
 
   const handleResolveReminder = async (remId: string) => {
-    const { error } = await supabase
-      .from('reminders')
-      .update({ status: 'concluido' })
-      .eq('id', remId);
-
+    const { error } = await supabase.from('reminders').update({ status: 'concluido' }).eq('id', remId);
     if (!error) {
-       success("Aviso resolvido!");
-       fetchReminders(lead.id);
-       if (onRefreshAlerts) onRefreshAlerts();
-       
-       // Registrar no histórico
-       await supabase.from('lead_history').insert([{
-         lead_id: lead.id,
-         content: `[AVISO RESOLVIDO] ${reminders.find(r => r.id === remId)?.title || 'Lembrete'}`
-       }]);
+       success("Resolvido!"); fetchReminders(lead.id); onRefreshAlerts?.();
+       await supabase.from('lead_history').insert([{ lead_id: lead.id, content: `[AVISO RESOLVIDO] ${reminders.find(r => r.id === remId)?.title}` }]);
        fetchHistory(lead.id);
-    } else {
-       showError("Erro ao resolver aviso: " + error.message);
     }
   };
 
   const handleSave = async () => {
-    if (!lead.name?.trim()) {
-      showError("O nome é obrigatório para cadastrar ou atualizar.");
-      return;
-    }
-
+    if (!lead.name?.trim()) return showError("Nome obrigatório");
     setIsSaving(true);
     const updates = { 
-      name: lead.name, 
-      email: lead.email, 
-      phone: lead.phone?.replace(/\D/g, '') || null, 
-      status: lead.status, 
-      nickname: lead.nickname, 
-      lead_type: lead.lead_type || 'PF', 
-      company_name: lead.company_name, 
-      contact_person: lead.contact_person, 
-      job_title: lead.job_title,
-      birth_date: lead.birth_date || null, 
-      marriage_date: lead.marriage_date || null, 
-      rg: lead.rg, 
-      cnpj: lead.cnpj?.replace(/\D/g, '') || null,
-      address_zip: lead.address_zip, 
-      address_street: lead.address_street, 
-      address_neighborhood: lead.address_neighborhood,
-      address_city: lead.address_city, 
-      address_state: lead.address_state, 
-      address_number: lead.address_number,
-      address_complement: lead.address_complement, 
-      current_carrier: lead.current_carrier, 
-      current_product: lead.current_product,
-      current_lives: lead.current_lives, 
-      current_value: lead.current_value, 
-      docs_link: lead.docs_link,
-      plan_type: lead.plan_type, 
-      carrier: lead.carrier, 
-      product: lead.product,
-      interested_lives: lead.interested_lives, 
-      deal_value: lead.deal_value,
-      has_current_plan: lead.has_current_plan,
-      contract_expiry_date: lead.contract_expiry_date || null,
-      has_broker: !!lead.has_broker,
-      source: lead.source || 'Manual',
-      initials: (lead.name || "?").substring(0, 2).toUpperCase(),
-      // PME Data
-      resp_emp_name: lead.resp_emp_name, 
-      resp_emp_job: lead.resp_emp_job, 
-      resp_emp_birth_date: lead.resp_emp_birth_date || null,
-      resp_emp_marital_status: lead.resp_emp_marital_status, 
-      resp_emp_marriage_date: lead.resp_emp_marriage_date || null,
-      resp_emp_cpf: lead.resp_emp_cpf?.replace(/\D/g, '') || null, 
-      resp_emp_rg: lead.resp_emp_rg,
-      resp_emp_whatsapp: lead.resp_emp_whatsapp?.replace(/\D/g, '') || null, 
-      resp_emp_phone: lead.resp_emp_phone?.replace(/\D/g, '') || null,
-      resp_emp_email: lead.resp_emp_email,
-      resp_con_name: lead.resp_con_name, 
-      resp_con_job: lead.resp_con_job, 
-      resp_con_birth_date: lead.resp_con_birth_date || null,
-      resp_con_marital_status: lead.resp_con_marital_status, 
-      resp_con_marriage_date: lead.resp_con_marriage_date || null,
-      resp_con_cpf: lead.resp_con_cpf?.replace(/\D/g, '') || null, 
-      resp_con_rg: lead.resp_con_rg,
-      resp_con_whatsapp: lead.resp_con_whatsapp?.replace(/\D/g, '') || null, 
-      resp_con_phone: lead.resp_con_phone?.replace(/\D/g, '') || null,
-      resp_con_email: lead.resp_con_email,
-      temperature: lead.temperature || 'Morno',
+      name: lead.name, email: lead.email, phone: lead.phone?.replace(/\D/g, ''), 
+      status: lead.status, nickname: lead.nickname, lead_type: lead.lead_type || 'PF', 
+      company_name: lead.company_name, contact_person: lead.contact_person, 
+      birth_date: lead.birth_date, marriage_date: lead.marriage_date,
+      cnpj: lead.cnpj?.replace(/\D/g, ''), cpf: lead.cpf?.replace(/\D/g, ''),
+      address_zip: lead.address_zip, address_street: lead.address_street, 
+      address_neighborhood: lead.address_neighborhood, address_city: lead.address_city, 
+      address_state: lead.address_state, address_number: lead.address_number,
+      current_carrier: lead.current_carrier, current_product: lead.current_product,
+      current_lives: lead.current_lives, current_value: lead.current_value, 
+      docs_link: lead.docs_link, plan_type: lead.plan_type, 
+      carrier: lead.carrier, product: lead.product,
+      interested_lives: lead.interested_lives, deal_value: lead.deal_value,
+      has_current_plan: lead.has_current_plan, temperature: lead.temperature || 'Morno',
       interaction_status: lead.interaction_status || 'Sem Status',
-      profile_picture_url: lead.profile_picture_url,
-      status_updated_at: lead.status !== initialLead.status ? new Date().toISOString() : lead.status_updated_at
+      profile_picture_url: lead.profile_picture_url
     };
-
-    let result;
-    if (lead.id) {
-      result = await supabase.from('leads').update(updates).eq('id', lead.id);
-    } else {
-      result = await supabase.from('leads').insert([updates]);
-    }
-
+    const res = lead.id ? await supabase.from('leads').update(updates).eq('id', lead.id) : await supabase.from('leads').insert([updates]);
     setIsSaving(false);
-    if (!result.error) { 
-      success(lead.id ? "Lead atualizado!" : "Oportunidade cadastrada!"); 
-      onUpdate(); 
-      onClose(); 
-    } else { 
-      showError("Erro ao salvar: " + result.error.message); 
-    }
+    if (!res.error) { success("Salvo!"); onUpdate(); onClose(); } else showError("Erro ao salvar");
   };
 
-  const handleDelete = async () => { if (window.confirm(`Excluir permanentemente "${lead.name}"?`)) { await supabase.from('leads').delete().eq('id', lead.id); onUpdate(); onClose(); } };
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'details':
+        return (
+          <div className="p-8 space-y-10 bg-white pb-24">
+            <section>
+              <SectionHeader icon={Icons.Users} title="Identificação do Lead" colorClass="bg-blue-50 text-blue-600" />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <DetailField label="Categoria" value={lead.lead_type} selectOptions={['PF', 'PJ']} onChange={(v:any) => setLead({...lead, lead_type: v})} />
+                <div className="md:col-span-2">
+                   <DetailField label="Nome/Razão Social" value={lead.name} onChange={(v:any) => setLead({...lead, name: v})} />
+                </div>
+                <DetailField label="Apelido" value={lead.nickname} onChange={(v:any) => setLead({...lead, nickname: v})} />
+                <DetailField label="CPF/CNPJ" value={lead.lead_type === 'PJ' ? lead.cnpj : lead.cpf} onChange={(v:any) => setLead({...lead, [lead.lead_type === 'PJ' ? 'cnpj' : 'cpf']: v})} />
+                <DetailField label="Data Nascimento" type="date" value={lead.birth_date} onChange={(v:any) => setLead({...lead, birth_date: v})} />
+              </div>
+            </section>
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+              <div className="space-y-6">
+                <SectionHeader icon={Icons.Phone} title="Contato" colorClass="bg-green-50 text-green-600" />
+                <DetailField label="WhatsApp" value={lead.phone} mask={formatPhone} onChange={(v:any) => setLead({...lead, phone: v})} />
+                <DetailField label="E-mail" value={lead.email} onChange={(v:any) => setLead({...lead, email: v})} />
+              </div>
+              <div className="space-y-6">
+                <SectionHeader icon={Icons.MapPin} title="Localização" colorClass="bg-orange-50 text-orange-600" />
+                <DetailField label="Cidade" value={lead.address_city} onChange={(v:any) => setLead({...lead, address_city: v})} />
+              </div>
+            </section>
+            
+            <section className="pt-10 border-t border-slate-100 grid grid-cols-1 lg:grid-cols-2 gap-10">
+               <div className="space-y-6">
+                 <SectionHeader icon={Icons.FileText} title="Nova Anotação" colorClass="bg-blue-50 text-blue-600" />
+                 <textarea value={noteContent} onChange={e => setNoteContent(e.target.value)} placeholder="Anotação..." className="w-full bg-slate-50 border rounded-2xl p-4 min-h-[100px] outline-none" />
+                 <button onClick={handleAddNote} disabled={isSavingNote || !noteContent.trim()} className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold uppercase text-[10px]">Salvar Nota</button>
+               </div>
+               <div className="space-y-6">
+                 <SectionHeader icon={Icons.Bell} title="Agendar Follow-up" colorClass="bg-amber-50 text-amber-600" />
+                 <input type="text" value={reminderTitle} onChange={e => setReminderTitle(e.target.value)} placeholder="Título..." className="w-full bg-slate-50 border rounded-xl p-3 text-sm font-bold" />
+                 <div className="flex gap-2">
+                   <div className="flex-1">
+                     <DatePicker value={reminderDate} onChange={setReminderDate} themeColor="amber-500" />
+                   </div>
+                   <button onClick={() => handleAddReminder()} className="px-4 bg-amber-500 text-white rounded-xl font-bold">OK</button>
+                 </div>
+                 <div className="grid grid-cols-3 gap-2">
+                   {[1,3,7].map(d => <button key={d} onClick={() => handleAddReminder(d)} className="py-2 bg-white border rounded-xl text-[9px] font-black text-slate-400">+{d}D</button>)}
+                 </div>
+               </div>
+            </section>
+          </div>
+        );
+      case 'chat':
+        return (
+          <div className="h-full flex flex-col bg-[#efe7de]">
+             <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 flex flex-col custom-scrollbar">
+                {messages.map((msg, idx) => (
+                  <div key={msg.id || idx} className={cn("max-w-[85%] p-3 rounded-2xl text-sm shadow-sm", msg.fromMe ? "bg-[#dcf8c6] self-end" : "bg-white self-start border")}>
+                     <MediaMessage msg={msg} />
+                     <p className="text-[9px] text-slate-400 text-right mt-1 font-bold">{msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : ""}</p>
+                  </div>
+                ))}
+             </div>
+             <div className="bg-[#f0f0f0] p-4 flex flex-col gap-3 border-t">
+                <div className="flex bg-white rounded-2xl items-center px-4 py-1 border">
+                  <textarea rows={1} value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())} placeholder="Mensagem..." className="flex-1 bg-transparent py-3 text-sm outline-none resize-none h-12" />
+                  <div className="flex items-center gap-1">
+                     <button onClick={() => fileInputRef.current?.click()} className="p-2 text-slate-400"><Icons.Paperclip className="w-5 h-5"/></button>
+                     <button onClick={handleSendMessage} className="p-2 text-[#00a884]"><Icons.CheckCircle className="w-6 h-6"/></button>
+                  </div>
+                </div>
+             </div>
+          </div>
+        );
+      case 'history':
+        return (
+          <div className="p-8 space-y-6">
+            <SectionHeader icon={Icons.History} title="Histórico" colorClass="bg-amber-50 text-amber-600" />
+            <div className="space-y-4">
+              {history.map(h => (
+                <div key={h.id} className="p-4 bg-white border rounded-3xl shadow-sm">
+                   <p className="text-[8px] font-black text-slate-400 uppercase mb-1">{new Date(h.created_at).toLocaleString()}</p>
+                   <p className="text-sm font-semibold text-slate-700">{h.content}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      case 'alerts':
+        return (
+          <div className="p-8 space-y-6">
+            <SectionHeader icon={Icons.Bell} title="Avisos" colorClass="bg-red-50 text-red-600" />
+            <div className="space-y-4">
+              {reminders.map(rem => (
+                <div key={rem.id} className={cn("p-5 border rounded-3xl", rem.status === 'pendente' ? "bg-white" : "bg-slate-50 opacity-60")}>
+                   <div className="flex justify-between items-start mb-2">
+                      <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-600">{rem.status}</span>
+                      {rem.status === 'pendente' && <button onClick={() => handleResolveReminder(rem.id)} className="text-[8px] font-black uppercase bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-xl">Resolver</button>}
+                   </div>
+                   <h5 className="text-sm font-black italic">{rem.title}</h5>
+                   <p className="text-[10px] text-slate-400 font-bold uppercase mt-2">Vence: {new Date(rem.due_date).toLocaleDateString()}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      default: return null;
+    }
+  };
 
   if (!isOpen || !lead) return null;
 
@@ -706,443 +551,41 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
     <div className="fixed inset-0 z-[200] overflow-hidden">
       <div onClick={onClose} className="absolute inset-0 bg-slate-900/95 backdrop-blur-md" />
       <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} className="absolute right-0 top-0 h-[100dvh] w-full max-w-3xl bg-white shadow-2xl flex flex-col">
-        
-        {/* Header Premium */}
-        <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+        <div className="px-8 py-6 border-b flex justify-between items-center bg-slate-50/50">
           <div className="flex items-center gap-4">
-            <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center text-white text-xl font-black shadow-xl overflow-hidden", lead.lead_type === 'PJ' ? "bg-indigo-600 shadow-indigo-100" : "bg-blue-600 shadow-blue-100")}>
-              {lead.profile_picture_url ? (
-                <img 
-                  src={lead.profile_picture_url} 
-                  alt={lead.name} 
-                  className="w-full h-full object-cover" 
-                  onError={(e) => {
-                    // Fallback se a imagem falhar (ex: link quebrado)
-                    (e.target as HTMLImageElement).style.display = 'none';
-                    (e.target as HTMLElement).parentElement!.innerHTML = (lead.name || "?").substring(0,1).toUpperCase();
-                  }}
-                />
-              ) : (
-                (lead.name || "?").substring(0,1).toUpperCase()
-              )}
+            <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white text-xl font-black overflow-hidden shadow-xl">
+              {lead.profile_picture_url ? <img src={lead.profile_picture_url} className="w-full h-full object-cover" /> : (lead.name || "?").substring(0,1).toUpperCase()}
             </div>
             <div>
-              <h2 className="text-xl font-black text-slate-900 leading-tight">{lead.id ? (lead.name || "Sem Nome") : "Nova Oportunidade"}</h2>
-              <div className="flex items-center gap-2 mt-1">
-                 <span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded text-[9px] font-black uppercase tracking-tighter">{lead.lead_type || 'PF'}</span>
-                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{stages.find(s => s.name === lead.status)?.label || lead.status}</span>
-                  <div className="relative">
-                    <select 
-                      value={lead.interaction_status || 'Sem Status'}
-                      onChange={(e) => setLead({ ...lead, interaction_status: e.target.value })}
-                      className={cn(
-                        "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border-0 cursor-pointer outline-none transition-all appearance-none text-center",
-                        getStatusColor(lead.interaction_status || 'Sem Status')
-                      )}
-                    >
-                      {interactionStatuses.filter((s: any) => s.active).map((opt: any) => (
-                        <option key={opt.id} value={opt.name} className="bg-white text-slate-900 uppercase font-bold text-[10px]">{opt.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  {lead.created_at && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-full text-[9px] font-black uppercase tracking-tighter">
-                      <Icons.Calendar className="w-2.5 h-2.5" />
-                      {(() => {
-                        const days = Math.floor((new Date().getTime() - new Date(lead.created_at).getTime()) / (1000 * 60 * 60 * 24));
-                        return `No Funil há ${days === 0 ? 'menos de 1' : days} ${days === 1 ? 'dia' : 'dias'}`;
-                      })()}
-                    </div>
-                  )}
+              <h2 className="text-xl font-black text-slate-900 leading-tight">{lead.name || "Sem Nome"}</h2>
+              <div className="flex gap-2 items-center mt-1">
+                 <span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded text-[9px] font-black uppercase">LEAD</span>
+                 <span className="text-[10px] text-slate-400 font-bold uppercase">{lead.status}</span>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {lead.id && (
-              <button onClick={handleDelete} title="Excluir Lead" className="p-2.5 text-red-500 hover:bg-red-50 rounded-xl transition-all"><Icons.Trash className="w-5 h-5"/></button>
-            )}
-            <button onClick={handleSave} disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl text-sm font-black shadow-lg shadow-blue-200 active:scale-95 disabled:opacity-50 transition-all flex items-center gap-2 uppercase tracking-widest">
+            <button onClick={handleSave} disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl text-sm font-black shadow-lg shadow-blue-200 uppercase transition-all flex items-center gap-2">
                {isSaving ? <Icons.Loader2 className="w-4 h-4 animate-spin" /> : <Icons.CheckCircle className="w-4 h-4" />}
-               {isSaving ? "Salvando..." : "Salvar Oportunidade"}
+               {isSaving ? "Salvando..." : "Salvar"}
             </button>
             <button onClick={onClose} className="p-2 text-slate-300 hover:text-slate-600 transition-colors"><Icons.X className="w-6 h-6"/></button>
           </div>
         </div>
 
-        {/* Navigation Tabs Premium */}
-        <div className="flex px-8 border-b border-slate-100 bg-white shadow-sm z-10 shrink-0">
-          <button onClick={() => setActiveTab('details')} className={cn("px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2", activeTab === 'details' ? "border-blue-600 text-blue-600" : "border-transparent text-slate-400")}>Ficha Detalhada</button>
-          <button onClick={() => setActiveTab('chat')} className={cn("px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2", activeTab === 'chat' ? "border-green-500 text-green-600" : "border-transparent text-slate-400")}>WhatsApp Chat</button>
-          <button onClick={() => setActiveTab('history')} className={cn("px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2", activeTab === 'history' ? "border-amber-500 text-amber-600" : "border-transparent text-slate-400")}>Linha do Tempo</button>
-          <button onClick={() => setActiveTab('alerts')} className={cn("px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 relative", activeTab === 'alerts' ? "border-red-500 text-red-600" : "border-transparent text-slate-400")}>
-            Avisos
-            {reminders.filter(r => r.status === 'pendente').length > 0 && (
-              <span className="absolute top-3 right-2 w-4 h-4 bg-red-500 text-white text-[8px] font-black flex items-center justify-center rounded-full ring-2 ring-white animate-pulse">
-                {reminders.filter(r => r.status === 'pendente').length}
-              </span>
-            )}
-          </button>
+        <div className="flex px-8 border-b bg-white shadow-sm shrink-0">
+          {['details', 'chat', 'history', 'alerts'].map((tab: any) => (
+            <button key={tab} onClick={() => setActiveTab(tab)} className={cn("px-6 py-5 text-[10px] font-black uppercase tracking-widest transition-all border-b-2", activeTab === tab ? "border-blue-600 text-blue-600" : "border-transparent text-slate-400")}>
+              {tab === 'details' ? 'Ficha' : tab === 'chat' ? 'Chat' : tab === 'history' ? 'Histórico' : 'Avisos'}
+            </button>
+          ))}
         </div>
 
-        {/* Content Area */}
         <div className="flex-1 overflow-y-auto relative bg-slate-50 custom-scrollbar">
-          {activeTab === 'details' ? (
-            <div className="p-8 space-y-10 bg-white pb-24">
-               {/* Identificação */}
-               <section>
-                  <SectionHeader icon={Icons.Users} title="Identificação do Lead" colorClass="bg-blue-50 text-blue-600" />
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    <div>
-                      <DetailField 
-                        label="Categoria / Perfil" 
-                        value={lead.lead_type || 'PF'} 
-                        selectOptions={[{ value: 'PF', label: 'Pessoa Física (PF)' }, { value: 'PJ', label: 'Corporativo (PME)' }]} 
-                        onChange={(v:any) => setLead({...lead, lead_type: v})} 
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                       <DetailField label={lead.lead_type === 'PJ' ? "Razão Social" : "Nome Completo"} value={lead.name} onChange={(v:any) => setLead({...lead, name: v, company_name: lead.lead_type === 'PJ' ? v : lead.company_name})} />
-                    </div>
-                    <DetailField label="Apelido / Fantasia" value={lead.nickname} onChange={(v:any) => setLead({...lead, nickname: v})} />
-                    <DetailField label={lead.lead_type === 'PJ' ? "CNPJ" : "CPF"} value={lead.lead_type === 'PJ' ? lead.cnpj : lead.cpf} mask={lead.lead_type === 'PJ' ? formatCNPJ : formatCPF} onChange={(v:any) => setLead({...lead, [lead.lead_type === 'PJ' ? 'cnpj' : 'cpf']: v})} />
-                    <DetailField label="RG" value={lead.rg} onChange={(v:any) => setLead({...lead, rg: v})} />
-                    <DetailField label="Status Fluxo" value={lead.status} selectOptions={stages.map(s => ({ value: s.name, label: s.label }))} onChange={(v:any) => setLead({...lead, status: v})} />
-                    <DetailField label="Data Nascimento" type="date" value={lead.birth_date} onChange={(v:any) => setLead({...lead, birth_date: v})} />
-                    <DetailField label="Estado Civil" value={lead.marital_status} selectOptions={['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União Estável']} onChange={(v:any) => setLead({...lead, marital_status: v})} />
-                    <DetailField label="Data Casamento" type="date" value={lead.marriage_date} onChange={(v:any) => setLead({...lead, marriage_date: v})} />
-                    <DetailField 
-                      label="Temperatura" 
-                      value={lead.temperature || 'Morno'} 
-                      selectOptions={['Muito quente', 'Quente', 'Morno', 'Frio', 'Congelado']} 
-                      onChange={(v:any) => setLead({...lead, temperature: v})} 
-                    />
-                    <DetailField 
-                      label="Origem do Lead" 
-                      value={lead.source || 'Manual'} 
-                      onChange={(v:any) => setLead({...lead, source: v})} 
-                    />
-                  </div>
-               </section>
-
-               {/* Contato & Localização */}
-               <section className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                  <div className="space-y-6">
-                    <SectionHeader icon={Icons.Phone} title="Canais de Contato" colorClass="bg-green-50 text-green-600" />
-                    <div className="space-y-5">
-                       <DetailField label="WhatsApp Principal" value={lead.phone} mask={formatPhone} onChange={(v:any) => setLead({...lead, phone: v})} />
-                       <DetailField label="E-mail" value={lead.email} onChange={(v:any) => setLead({...lead, email: v})} />
-                       <DetailField label="Tipo de Contato" value={lead.contact_type} selectOptions={contactTypes.map((t:any) => t.name)} onChange={(v:any) => setLead({...lead, contact_type: v})} />
-                    </div>
-                  </div>
-                  <div className="space-y-6">
-                    <SectionHeader icon={Icons.MapPin} title="Localização" colorClass="bg-orange-50 text-orange-600" />
-                    <div className="grid grid-cols-2 gap-4">
-                       <div className="col-span-2"><DetailField label="CEP" value={lead.address_zip} mask={formatCEP} onChange={(v:any) => setLead({...lead, address_zip: v})} /></div>
-                       <div className="col-span-2"><DetailField label="Logradouro" value={lead.address_street} onChange={(v:any) => setLead({...lead, address_street: v})} /></div>
-                       <DetailField label="Número" value={lead.address_number} onChange={(v:any) => setLead({...lead, address_number: v})} />
-                       <DetailField label="Bairro" value={lead.address_neighborhood} onChange={(v:any) => setLead({...lead, address_neighborhood: v})} />
-                       <DetailField label="Cidade" value={lead.address_city} onChange={(v:any) => setLead({...lead, address_city: v})} />
-                       <DetailField label="UF" value={lead.address_state} onChange={(v:any) => setLead({...lead, address_state: v})} />
-                    </div>
-                  </div>
-               </section>
-
-               {/* Responsáveis (Apenas PME) */}
-               {lead.lead_type === 'PJ' && (
-                 <section className="space-y-10">
-                    <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100">
-                       <SectionHeader icon={Icons.Building2} title="Responsável pela Empresa" colorClass="bg-indigo-100 text-indigo-700" />
-                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                          <div className="md:col-span-2"><DetailField label="Nome Completo" value={lead.resp_emp_name} onChange={(v:any) => setLead({...lead, resp_emp_name: v})} /></div>
-                          <DetailField label="Cargo" value={lead.resp_emp_job} onChange={(v:any) => setLead({...lead, resp_emp_job: v})} />
-                          <DetailField label="CPF" value={lead.resp_emp_cpf} mask={formatCPF} onChange={(v:any) => setLead({...lead, resp_emp_cpf: v})} />
-                          <DetailField label="WhatsApp" value={lead.resp_emp_whatsapp} mask={formatPhone} onChange={(v:any) => setLead({...lead, resp_emp_whatsapp: v})} />
-                          <DetailField label="E-mail" value={lead.resp_emp_email} onChange={(v:any) => setLead({...lead, resp_emp_email: v})} />
-                       </div>
-                    </div>
-                    <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100">
-                       <SectionHeader icon={Icons.FileText} title="Responsável pelo Contrato" colorClass="bg-emerald-100 text-emerald-700" />
-                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                          <div className="md:col-span-2"><DetailField label="Nome Completo" value={lead.resp_con_name} onChange={(v:any) => setLead({...lead, resp_con_name: v})} /></div>
-                          <DetailField label="Cargo" value={lead.resp_con_job} onChange={(v:any) => setLead({...lead, resp_con_job: v})} />
-                          <DetailField label="CPF" value={lead.resp_con_cpf} mask={formatCPF} onChange={(v:any) => setLead({...lead, resp_con_cpf: v})} />
-                          <DetailField label="WhatsApp" value={lead.resp_con_whatsapp} mask={formatPhone} onChange={(v:any) => setLead({...lead, resp_con_whatsapp: v})} />
-                          <DetailField label="E-mail" value={lead.resp_con_email} onChange={(v:any) => setLead({...lead, resp_con_email: v})} />
-                       </div>
-                    </div>
-                 </section>
-               )}
-
-               {/* Plano Atual & Proposta */}
-               <section className="space-y-10">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                    <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100">
-                       <SectionHeader icon={Icons.Target} title="Plano Atual" colorClass="bg-amber-100 text-amber-700" />
-                       <div className="space-y-6">
-                          <div className="space-y-2">
-                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">Possui plano atualmente?</label>
-                            <div className="flex gap-2">
-                               <button onClick={() => setLead({...lead, has_current_plan: true})} className={cn("flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border-2 transition-all", lead.has_current_plan ? "bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-100" : "bg-white border-slate-200 text-slate-400")}>Sim</button>
-                               <button onClick={() => setLead({...lead, has_current_plan: false})} className={cn("flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border-2 transition-all", !lead.has_current_plan ? "bg-slate-800 border-slate-800 text-white" : "bg-white border-slate-200 text-slate-400")}>Não</button>
-                            </div>
-                          </div>
-                          
-                          {lead.has_current_plan && (
-                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5 pt-4 border-t border-slate-200">
-                               <DetailField label="Operadora Atual" value={lead.current_carrier} onChange={(v:any) => setLead({...lead, current_carrier: v})} />
-                               <DetailField label="Produto Atual" value={lead.current_product} onChange={(v:any) => setLead({...lead, current_product: v})} />
-                               <div className="grid grid-cols-2 gap-4">
-                                  <DetailField label="Vidas" type="number" value={lead.current_lives} onChange={(v:any) => setLead({...lead, current_lives: Number(v)})} />
-                                  <DetailField 
-                                    label="Valor Atual" 
-                                    value={lead.current_value ? Math.round(lead.current_value * 100).toString() : ""} 
-                                    mask={formatCurrencyValue}
-                                    onChange={(v:any) => setLead({...lead, current_value: parseCurrencyValue(v)})} 
-                                    placeholder="R$ 0,00"
-                                  />
-                               </div>
-                               <div className="grid grid-cols-2 gap-4">
-                                  <DetailField label="Vencimento Contrato" type="date" value={lead.contract_expiry_date} onChange={(v:any) => setLead({...lead, contract_expiry_date: v})} />
-                                  <div className="space-y-2">
-                                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">Tem Corretor?</label>
-                                     <div className="flex gap-2">
-                                        <button onClick={() => setLead({...lead, has_broker: true})} className={cn("flex-1 py-2 rounded-xl text-[9px] font-black uppercase border-2 transition-all", lead.has_broker ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-100" : "bg-white border-slate-200 text-slate-400 text-[8px]")}>Sim</button>
-                                        <button onClick={() => setLead({...lead, has_broker: false})} className={cn("flex-1 py-2 rounded-xl text-[9px] font-black uppercase border-2 transition-all", lead.has_broker === false ? "bg-slate-700 border-slate-700 text-white" : "bg-white border-slate-200 text-slate-400 text-[8px]")}>Não</button>
-                                     </div>
-                                  </div>
-                               </div>
-                            </motion.div>
-                          )}
-                       </div>
-                    </div>
-                    <div className="p-8 bg-white rounded-[2rem] border border-slate-100 shadow-sm">
-                       <SectionHeader icon={Icons.FileText} title="Proposta Solicitada" colorClass="bg-blue-50 text-blue-600" />
-                       <div className="space-y-5">
-                          <div className="space-y-2">
-                             <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">Tipo de Plano</label>
-                             <div className="flex gap-2">
-                               {['Saúde', 'Odonto', 'Saúde + Odonto'].map(t => (
-                                 <button key={t} onClick={() => setLead({...lead, plan_type: t})} className={cn("flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter border-2 transition-all", lead.plan_type === t ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100" : "bg-slate-50 border-transparent text-slate-400")}>{t}</button>
-                               ))}
-                             </div>
-                          </div>
-                          <DetailField label="Operadora Proposta" value={lead.carrier} selectOptions={carriers} onChange={(v:any) => setLead({...lead, carrier: v, product: ''})} />
-                          <DetailField label="Produto Proposta" value={lead.product} onChange={(v:any) => setLead({...lead, product: v})} placeholder="Ex: Produto Saúde Master" />
-                          <div className="grid grid-cols-2 gap-4">
-                             <DetailField label="Interesse (Vidas)" type="number" value={lead.interested_lives} onChange={(v:any) => setLead({...lead, interested_lives: Number(v)})} />
-                             <DetailField 
-                               label="Valor Proposta" 
-                               value={lead.deal_value ? Math.round(lead.deal_value * 100).toString() : ""} 
-                               mask={formatCurrencyValue}
-                               onChange={(v:any) => setLead({...lead, deal_value: parseCurrencyValue(v)})} 
-                               placeholder="R$ 0,00"
-                             />
-                          </div>
-                       </div>
-                    </div>
-                  </div>
-                  <div className="flex items-end gap-3">
-                    <div className="flex-1">
-                      <DetailField label="Link Documentação (Drive/Dropbox)" value={lead.docs_link} onChange={(v:any) => setLead({...lead, docs_link: v})} placeholder="https://..." />
-                    </div>
-                    {lead.docs_link && (
-                      <button 
-                        onClick={() => window.open(lead.docs_link.startsWith('http') ? lead.docs_link : `https://${lead.docs_link}`, '_blank')}
-                        className="mb-1 p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm flex items-center gap-2 group"
-                      >
-                        <Icons.ExternalLink className="w-4 h-4" />
-                        <span className="text-[10px] font-black uppercase tracking-widest hidden group-hover:block transition-all">Abrir Pasta</span>
-                      </button>
-                    )}
-                  </div>
-               </section>
-
-               {/* Ações Rápidas: Notas & Lembretes */}
-               <section className="pt-10 border-t border-slate-100 grid grid-cols-1 lg:grid-cols-2 gap-10">
-                  {/* Bloco de Notas */}
-                  <div className="space-y-6">
-                    <SectionHeader icon={Icons.FileText} title="Nova Anotação" colorClass="bg-blue-50 text-blue-600" />
-                    <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4">
-                      <textarea
-                        value={noteContent}
-                        onChange={e => setNoteContent(e.target.value)}
-                        placeholder="Digite aqui uma observação importante sobre o lead..."
-                        className="w-full bg-white border border-slate-100 rounded-2xl px-6 py-4 text-sm font-medium text-slate-700 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all min-h-[120px] resize-none"
-                      />
-                      <button 
-                        onClick={handleAddNote}
-                        disabled={isSavingNote || !noteContent.trim()}
-                        className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-blue-100 hover:bg-blue-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-                      >
-                        {isSavingNote ? <Icons.Loader2 className="w-4 h-4 animate-spin" /> : <Icons.Check className="w-4 h-4" />}
-                        Salvar Nota no Histórico
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Bloco de Lembretes */}
-                  <div className="space-y-6">
-                    <SectionHeader icon={Icons.Bell} title="Agendar Follow-up" colorClass="bg-amber-50 text-amber-600" />
-                    <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4">
-                      <input 
-                        type="text" 
-                        value={reminderTitle}
-                        onChange={e => setReminderTitle(e.target.value)}
-                        placeholder="O que precisa ser feito?"
-                        className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-amber-500"
-                      />
-                      <div className="flex gap-2">
-                        <input 
-                          type="date" 
-                          value={reminderDate}
-                          onChange={e => setReminderDate(e.target.value)}
-                          className="flex-1 bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-amber-500"
-                        />
-                        <button 
-                          onClick={() => handleAddReminder()}
-                          disabled={isSavingReminder || !reminderDate}
-                          className="px-6 bg-amber-500 text-white rounded-xl font-bold text-xs uppercase shadow-lg shadow-amber-100 hover:bg-amber-600"
-                        >
-                          OK
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <button onClick={() => handleAddReminder(1)} className="py-2.5 bg-white border border-slate-100 rounded-xl text-[9px] font-black uppercase text-slate-400 hover:border-amber-500 hover:text-amber-500 transition-all">+1 Dia</button>
-                        <button onClick={() => handleAddReminder(3)} className="py-2.5 bg-white border border-slate-100 rounded-xl text-[9px] font-black uppercase text-slate-400 hover:border-amber-500 hover:text-amber-500 transition-all">+3 Dias</button>
-                        <button onClick={() => handleAddReminder(7)} className="py-2.5 bg-white border border-slate-100 rounded-xl text-[9px] font-black uppercase text-slate-400 hover:border-amber-500 hover:text-amber-500 transition-all">+7 Dias</button>
-                      </div>
-                    </div>
-                  </div>
-               </section>
-            </div>
-          ) : activeTab === 'chat' ? (
-            <div className="h-full flex flex-col bg-[#efe7de]">
-               <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 flex flex-col custom-scrollbar scroll-smooth">
-                  {messages.map((msg, idx) => (
-                    <div key={msg.id || idx} className={cn("max-w-[85%] p-3 rounded-2xl text-sm shadow-sm relative animate-in fade-in slide-in-from-bottom-2 duration-300", 
-                      msg.fromMe ? "bg-[#dcf8c6] self-end rounded-tr-none" : "bg-white self-start rounded-tl-none border border-black/5"
-                    )}>
-                       {!msg.fromMe && !msg.is_read && <div className="absolute -left-2 top-0 w-2.5 h-2.5 rounded-full bg-green-500 shadow-sm ring-2 ring-white animate-pulse" />}
-                       <MediaMessage msg={msg} />
-                       <p className="text-[9px] text-slate-400 text-right mt-1 font-bold opacity-70">
-                         {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ""}
-                       </p>
-                    </div>
-                  ))}
-                  {loadingChat && <div className="mx-auto bg-white/90 px-4 py-1.5 rounded-full text-[10px] font-black text-slate-400 uppercase shadow-sm">Buscando mensagens...</div>}
-               </div>
-               <div className="bg-[#f0f0f0] p-4 flex flex-col gap-3 border-t border-black/5">
-                  <div className="flex bg-white rounded-2xl items-center px-4 py-1 shadow-sm border border-black/5">
-                    <textarea rows={1} value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }} placeholder="Sua mensagem..." className="flex-1 bg-transparent border-none py-3 text-sm focus:ring-0 outline-none resize-none font-medium h-12 flex items-center" />
-                    <div className="flex items-center gap-0.5">
-                       <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
-                       <button onClick={() => fileInputRef.current?.click()} className="p-2 text-slate-400 hover:text-blue-600 transition-colors rounded-full hover:bg-slate-50"><Icons.Paperclip className="w-5 h-5"/></button>
-                       <button onClick={handleSendMessage} disabled={!newMessage.trim()} className="p-2 text-[#00a884] hover:scale-110 active:scale-95 transition-all disabled:opacity-30 disabled:scale-100"><Icons.CheckCircle className="w-6 h-6"/></button>
-                    </div>
-                  </div>
-               </div>
-            </div>
-          ) : (
-            /* Linha do Tempo / Histórico */
-            <div className="p-8 space-y-6">
-                <SectionHeader icon={Icons.History} title="Histórico de Atividades" colorClass="bg-amber-50 text-amber-600" />
-                <div className="space-y-4">
-                  {history.length > 0 ? history.map(h => {
-                    const isManualNote = h.content?.startsWith('[NOTA]');
-                    const displayContent = isManualNote ? h.content.replace('[NOTA]', '').trim() : h.content;
-                    
-                    return (
-                      <div key={h.id} className={cn(
-                        "p-5 rounded-3xl border shadow-sm relative overflow-hidden group transition-all",
-                        isManualNote ? "bg-blue-50 border-blue-100 ring-2 ring-blue-500/5 shadow-blue-100" : "bg-white border-slate-100"
-                      )}>
-                         <div className={cn(
-                           "absolute left-0 top-0 bottom-0 w-1 opacity-20 group-hover:opacity-100 transition-opacity",
-                           isManualNote ? "bg-blue-600" : "bg-amber-500"
-                         )} />
-                         <div className="flex justify-between items-start mb-2">
-                            <p className="text-[10px] font-black text-slate-400 uppercase leading-none">{new Date(h.created_at).toLocaleString('pt-BR')}</p>
-                            {isManualNote && <span className="text-[8px] font-black uppercase bg-blue-600 text-white px-1.5 py-0.5 rounded tracking-tighter">Anotação Manual</span>}
-                         </div>
-                         <p className={cn(
-                           "text-sm leading-relaxed",
-                           isManualNote ? "text-blue-900 font-bold" : "text-slate-700 font-semibold"
-                         )}>{displayContent}</p>
-                      </div>
-                    );
-                  }) : (
-                    <div className="py-20 text-center space-y-4">
-                       <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-200"><Icons.History className="w-8 h-8"/></div>
-                       <p className="text-sm text-slate-400 font-black uppercase tracking-widest italic">Nenhum evento registrado</p>
-                    </div>
-                  )}
-                </div>
-            </div>
-          ) : (
-            /* Tab de Avisos */
-            <div className="p-8 space-y-6">
-               <SectionHeader icon={Icons.Bell} title="Avisos e Lembretes" colorClass="bg-red-50 text-red-600" />
-               <div className="space-y-4">
-                  {reminders.length > 0 ? reminders.map(rem => {
-                    const isPending = rem.status === 'pendente';
-                    const isOverdue = isPending && new Date(rem.due_date) < new Date(new Date().setHours(0,0,0,0));
-
-                    return (
-                      <div key={rem.id} className={cn(
-                        "p-5 rounded-3xl border transition-all relative overflow-hidden group",
-                        isPending ? (isOverdue ? "bg-red-50/50 border-red-100 shadow-sm" : "bg-white border-slate-100 hover:shadow-md") : "bg-slate-50 border-slate-200 opacity-60"
-                      )}>
-                         <div className={cn(
-                           "absolute left-0 top-0 bottom-0 w-1",
-                           !isPending ? "bg-slate-300" : (isOverdue ? "bg-red-500" : "bg-blue-500")
-                         )} />
-                         
-                         <div className="flex justify-between items-start mb-2">
-                            <div className="flex items-center gap-2">
-                               <span className={cn(
-                                 "text-[8px] font-black uppercase px-1.5 py-0.5 rounded tracking-tighter",
-                                 !isPending ? "bg-slate-200 text-slate-500" : (isOverdue ? "bg-red-500 text-white animate-pulse" : "bg-blue-100 text-blue-600")
-                               )}>
-                                 {rem.status === 'concluido' ? 'Resolvido' : (isOverdue ? 'Atrasado' : 'Pendente')}
-                               </span>
-                               <p className="text-[10px] font-black text-slate-400 uppercase">Vencimento: {new Date(rem.due_date).toLocaleDateString('pt-BR')}</p>
-                            </div>
-                            
-                            {isPending && (
-                              <button 
-                                onClick={() => handleResolveReminder(rem.id)}
-                                className="text-[9px] font-black uppercase flex items-center gap-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white px-3 py-1.5 rounded-xl transition-all shadow-sm"
-                              >
-                                <Icons.Check className="w-3 h-3" />
-                                Resolver
-                              </button>
-                            )}
-                         </div>
-
-                         <div className="space-y-1">
-                            <h5 className={cn("text-sm font-black italic tracking-tight", isPending ? "text-slate-900" : "text-slate-500 line-through")}>{rem.title}</h5>
-                            {rem.description && <p className="text-xs text-slate-500 font-medium leading-relaxed italic">{rem.description}</p>}
-                         </div>
-
-                         {!isPending && (
-                            <div className="mt-3 pt-3 border-t border-slate-200/50 flex items-center gap-2">
-                               <Icons.CheckCircle className="w-3 h-3 text-emerald-500" />
-                               <span className="text-[9px] font-black text-slate-400 uppercase">Concluído</span>
-                            </div>
-                         )}
-                      </div>
-                    );
-                  }) : (
-                    <div className="py-20 text-center space-y-4">
-                       <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-200"><Icons.Bell className="w-8 h-8"/></div>
-                       <p className="text-sm text-slate-400 font-black uppercase tracking-widest italic text-center">Nenhum aviso para este lead</p>
-                    </div>
-                  )}
-               </div>
-            </div>
-          )}
+          {renderTabContent()}
         </div>
       </motion.div>
+      <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} />
     </div>
   );
 }
