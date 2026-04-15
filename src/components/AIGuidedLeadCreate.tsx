@@ -182,7 +182,6 @@ export function AIGuidedLeadCreate({ isOpen, onClose, onSuccess }: AIGuidedLeadC
   if (!isOpen) return null;
 
   return (
-  return (
     <div className={cn(
       "flex items-center justify-center",
       isOpen && !onClose.toString().includes('() => {}') ? "fixed inset-0 z-[300] bg-slate-900/40 backdrop-blur-sm p-4" : "h-full w-full"
