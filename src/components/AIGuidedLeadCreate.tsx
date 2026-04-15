@@ -180,11 +180,18 @@ export function AIGuidedLeadCreate({ isOpen, onClose, onSuccess }: AIGuidedLeadC
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[300] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+  return (
+    <div className={cn(
+      "flex items-center justify-center",
+      isOpen && !onClose.toString().includes('() => {}') ? "fixed inset-0 z-[300] bg-slate-900/40 backdrop-blur-sm p-4" : "h-full w-full"
+    )}>
       <motion.div 
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        initial={onClose.toString().includes('() => {}') ? { opacity: 1 } : { opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-white w-full max-w-5xl h-[85vh] rounded-[2.5rem] shadow-2xl flex overflow-hidden border border-slate-100"
+        className={cn(
+          "bg-white flex overflow-hidden border border-slate-100",
+          isOpen && !onClose.toString().includes('() => {}') ? "w-full max-w-5xl h-[85vh] rounded-[2.5rem] shadow-2xl" : "h-full w-full rounded-none border-none"
+        )}
       >
         {/* Lado Esquerdo: Chat */}
         <div className="flex-1 flex flex-col bg-slate-50/50">
@@ -201,9 +208,11 @@ export function AIGuidedLeadCreate({ isOpen, onClose, onSuccess }: AIGuidedLeadC
                 </p>
               </div>
             </div>
-            <button onClick={onClose} className="p-2 text-slate-300 hover:text-slate-900 transition-colors">
-              <Icons.X className="w-7 h-7" />
-            </button>
+            {!onClose.toString().includes('() => {}') && (
+              <button onClick={onClose} className="p-2 text-slate-300 hover:text-slate-900 transition-colors">
+                <Icons.X className="w-7 h-7" />
+              </button>
+            )}
           </div>
 
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
@@ -223,7 +232,7 @@ export function AIGuidedLeadCreate({ isOpen, onClose, onSuccess }: AIGuidedLeadC
                     ? "bg-white text-slate-800 rounded-tl-none border border-slate-100" 
                     : "bg-blue-600 text-white rounded-tr-none"
                 )}>
-                  {m.text}
+                  {String(m.text)}
                 </div>
               </motion.div>
             ))}
