@@ -1,9 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import dotenv from "dotenv";
-
-dotenv.config();
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
 
 export const extractNetworkData = async (fileBuffer: Buffer, mimeType: string, carrierName: string) => {
   const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
