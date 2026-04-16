@@ -605,6 +605,19 @@ export default function Leads() {
               </div>
 
               <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-1.5 hover:border-blue-300 transition-colors">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5"><Icons.Mail className="w-3 h-3 text-blue-600"/> Histórico de Contato</label>
+                <select
+                  value={contactFilter}
+                  onChange={(e) => setContactFilter(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 transition-all text-sm font-bold text-slate-700 cursor-pointer"
+                >
+                  <option value="Todos">Todos</option>
+                  <option value="Com Contato">Com Contato</option>
+                  <option value="Sem Contato">Sem Contato</option>
+                </select>
+              </div>
+
+              <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-1.5 hover:border-blue-300 transition-colors">
                 <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5"><Icons.AlertCircle className="w-3 h-3 text-red-500"/> Não realizar contato</label>
                 <select
                   value={blockingFilter}
