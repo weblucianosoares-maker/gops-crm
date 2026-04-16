@@ -226,7 +226,6 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
   const [reminderDate, setReminderDate] = useState("");
   const [isSearchingCNPJ, setIsSearchingCNPJ] = useState(false);
   const [isSavingReminder, setIsSavingReminder] = useState(false);
-  const [waProfile, setWaProfile] = useState<any>(null);
   const [isLoadingInsights, setIsLoadingInsights] = useState(false);
 
   const handleCNPJChange = async (cnpj: string) => {
@@ -290,19 +289,6 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
     }
   };
 
-  const loadWhatsAppInsights = async (phoneNumber: string) => {
-    if (!phoneNumber) return;
-    setIsLoadingInsights(true);
-    try {
-      const profile = await evolutionService.fetchProfile(phoneNumber);
-      setWaProfile(profile);
-    } catch (e) {
-      console.error("Erro ao carregar insights do WhatsApp:", e);
-    } finally {
-      setIsLoadingInsights(false);
-    }
-  };
-  
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -310,13 +296,11 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
     if (initialLead) {
       setLead(initialLead);
       fetchHistory(initialLead.id);
-      setWaProfile(null);
       setActiveTab('details');
       if (initialLead.phone) {
         if (!initialLead.profile_picture_url) {
           syncProfilePicture(initialLead.id, initialLead.phone);
         }
-        loadWhatsAppInsights(initialLead.phone);
       }
       fetchReminders(initialLead.id);
     }
@@ -874,34 +858,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">{String(lead.status || "Sem Status")}</span>
                   </div>
                 </div>
-                <button 
-                  onClick={() => lead.phone && loadWhatsAppInsights(lead.phone)}
-                  disabled={isLoadingInsights}
-                  className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all shadow-sm group shrink-0"
-                  title="Atualizar Dados do WhatsApp"
-                >
-                  <Icons.RefreshCw className={cn("w-4 h-4", isLoadingInsights && "animate-spin")} />
-                </button>
               </div>
-
-              {/* WhatsApp Profile Insights */}
-              {waProfile && (
-                <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-100/50">
-                  <div className={cn(
-                    "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter border shadow-sm transition-all animate-in fade-in slide-in-from-left-2",
-                    waProfile.isBusiness 
-                      ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
-                      : "bg-slate-50 text-slate-500 border-slate-200"
-                  )}>
-                    {waProfile.isBusiness ? (
-                      <><Icons.CheckCircle className="w-3 h-3" /> Conta Comercial</>
-                    ) : (
-                      <><Icons.Users className="w-3 h-3" /> Conta Pessoal</>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
             </div>
           </div>
           <div className="flex items-center gap-2">

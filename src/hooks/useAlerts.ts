@@ -24,7 +24,7 @@ export function useAlerts() {
       const [leadsRes, beneficiariesRes, remindersRes] = await Promise.all([
         supabase.from('leads').select('*'),
         supabase.from('beneficiaries').select('id, name, birth_date, lead_id'),
-        supabase.from('reminders').select('*, leads(*)').eq('status', 'pendente')
+        supabase.from('reminders').select('*, leads(id, name, phone, birth_date)').eq('status', 'pendente')
       ]);
 
       const now = new Date();
