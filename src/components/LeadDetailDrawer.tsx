@@ -516,6 +516,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       lastcontact: lead.lastcontact,
       cnae: lead.cnae,
       opening_date: lead.opening_date,
+      do_not_contact: lead.do_not_contact || false,
       profile_picture_url: lead.profile_picture_url
     };
     const res = lead.id ? await supabase.from('leads').update(updates).eq('id', lead.id) : await supabase.from('leads').insert([updates]);
@@ -530,7 +531,31 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
           <div className="p-8 space-y-10 bg-white pb-24">
             {/* IDENTIFICAÇÃO */}
             <section>
-              <SectionHeader icon={Icons.Users} title="Identificação do Lead" colorClass="bg-blue-50 text-blue-600" />
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
+                    <Icons.Users className="w-4 h-4" />
+                  </div>
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Identificação do Lead</h4>
+                </div>
+                
+                <label className="flex items-center gap-2 cursor-pointer group select-none">
+                  <div className={cn(
+                    "w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
+                    lead.do_not_contact ? "bg-red-500 border-red-500 shadow-sm" : "bg-white border-slate-200 group-hover:border-red-300"
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLead({ ...lead, do_not_contact: !lead.do_not_contact });
+                  }}>
+                    {lead.do_not_contact && <Icons.Check className="w-3.5 h-3.5 text-white" />}
+                  </div>
+                  <span className={cn(
+                    "text-[10px] font-black uppercase tracking-wider transition-colors",
+                    lead.do_not_contact ? "text-red-600" : "text-slate-400 group-hover:text-red-400"
+                  )}>Não realizar contato</span>
+                </label>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 <DetailField label="Categoria" value={lead.lead_type} selectOptions={['PF', 'PJ']} onChange={(v:any) => setLead({...lead, lead_type: v})} />
                 <div className="md:col-span-2">

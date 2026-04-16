@@ -31,6 +31,7 @@ export default function Leads() {
   const [showFilters, setShowFilters] = useState(false);
   const [ufFilter, setUfFilter] = useState("Todos");
   const [statusFilter, setStatusFilter] = useState("Todos");
+  const [blockingFilter, setBlockingFilter] = useState("Ativos");
   const [importResult, setImportResult] = useState<{imported: number, duplicated: number} | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
@@ -285,6 +286,14 @@ export default function Leads() {
       }
     }
 
+    if (blockingFilter !== "Todos") {
+      if (blockingFilter === "Ativos") {
+        result = result.filter((l: any) => !l.do_not_contact);
+      } else if (blockingFilter === "Somente Banidos") {
+        result = result.filter((l: any) => l.do_not_contact);
+      }
+    }
+
     if (searchTerm.trim()) {
       const words = searchTerm.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().split(/\s+/);
       result = result.filter((l: any) => {
@@ -318,7 +327,7 @@ export default function Leads() {
     }
     
     return result;
-  }, [leads, filter, ufFilter, statusFilter, sortConfig, searchTerm, whatsappFilter, contactFilter]);
+  }, [leads, filter, ufFilter, statusFilter, sortConfig, searchTerm, whatsappFilter, contactFilter, blockingFilter]);
 
   const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
@@ -352,7 +361,7 @@ export default function Leads() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filter, ufFilter, statusFilter, perPage, searchTerm]);
+  }, [filter, ufFilter, statusFilter, perPage, searchTerm, blockingFilter]);
 
   useEffect(() => {
     if (isModalOpen || selectedLead) {
@@ -596,15 +605,15 @@ export default function Leads() {
               </div>
 
               <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-1.5 hover:border-blue-300 transition-colors">
-                <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5"><Icons.Mail className="w-3 h-3 text-blue-600"/> Histórico de Contato</label>
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5"><Icons.AlertCircle className="w-3 h-3 text-red-500"/> Não realizar contato</label>
                 <select
-                  value={contactFilter}
-                  onChange={(e) => setContactFilter(e.target.value)}
+                  value={blockingFilter}
+                  onChange={(e) => setBlockingFilter(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 transition-all text-sm font-bold text-slate-700 cursor-pointer"
                 >
-                  <option value="Todos">Todos</option>
-                  <option value="Com Contato">Com Contato</option>
-                  <option value="Sem Contato">Sem Contato</option>
+                  <option value="Ativos">Esconder Banidos</option>
+                  <option value="Somente Banidos">Apenas Banidos</option>
+                  <option value="Todos">Ver Todos</option>
                 </select>
               </div>
             </div>
