@@ -222,9 +222,32 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
   const [isSaving, setIsSaving] = useState(false);
   const [noteContent, setNoteContent] = useState("");
   const [isSavingNote, setIsSavingNote] = useState(false);
-  const [reminderTitle, setReminderTitle] = useState("");
   const [reminderDate, setReminderDate] = useState("");
   const [isSavingReminder, setIsSavingReminder] = useState(false);
+
+  const handleCEPChange = async (cep: string) => {
+    const cleanCEP = cep.replace(/\D/g, "");
+    setLead((prev: any) => ({ ...prev, address_zip: cep }));
+    
+    if (cleanCEP.length === 8) {
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`);
+        const data = await response.json();
+        if (!data.erro) {
+          setLead((prev: any) => ({
+            ...prev,
+            address_street: data.logradouro,
+            address_neighborhood: data.bairro,
+            address_city: data.localidade,
+            address_state: data.uf,
+            address_zip: formatCEP(cleanCEP)
+          }));
+        }
+      } catch (e) {
+        console.error("Erro ao buscar CEP:", e);
+      }
+    }
+  };
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -414,21 +437,44 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
     if (!lead.name?.trim()) return showError("Nome obrigatório");
     setIsSaving(true);
     const updates = { 
-      name: lead.name, email: lead.email, phone: lead.phone?.replace(/\D/g, ''), 
-      status: lead.status, nickname: lead.nickname, lead_type: lead.lead_type || 'PF', 
-      company_name: lead.company_name, contact_person: lead.contact_person, 
-      birth_date: lead.birth_date, marriage_date: lead.marriage_date,
-      cnpj: lead.cnpj?.replace(/\D/g, ''), cpf: lead.cpf?.replace(/\D/g, ''),
-      address_zip: lead.address_zip, address_street: lead.address_street, 
-      address_neighborhood: lead.address_neighborhood, address_city: lead.address_city, 
-      address_state: lead.address_state, address_number: lead.address_number,
-      current_carrier: lead.current_carrier, current_product: lead.current_product,
-      current_lives: lead.current_lives, current_value: lead.current_value, 
-      docs_link: lead.docs_link, plan_type: lead.plan_type, 
-      carrier: lead.carrier, product: lead.product,
-      interested_lives: lead.interested_lives, deal_value: lead.deal_value,
-      has_current_plan: lead.has_current_plan, temperature: lead.temperature || 'Morno',
+      name: lead.name, 
+      email: lead.email, 
+      phone: lead.phone?.replace(/\D/g, ''), 
+      secondary_phone: lead.secondary_phone?.replace(/\D/g, ''),
+      status: lead.status, 
+      nickname: lead.nickname, 
+      lead_type: lead.lead_type || 'PF', 
+      company_name: lead.company_name, 
+      contact_person: lead.contact_person, 
+      job_title: lead.job_title,
+      birth_date: lead.birth_date, 
+      marriage_date: lead.marriage_date,
+      cnpj: lead.cnpj?.replace(/\D/g, ''), 
+      cpf: lead.cpf?.replace(/\D/g, ''),
+      address_zip: lead.address_zip, 
+      address_street: lead.address_street, 
+      address_neighborhood: lead.address_neighborhood, 
+      address_city: lead.address_city, 
+      address_state: lead.address_state, 
+      address_number: lead.address_number,
+      address_complement: lead.address_complement,
+      current_carrier: lead.current_carrier, 
+      current_product: lead.current_product,
+      current_lives: lead.current_lives, 
+      current_value: lead.current_value, 
+      has_current_plan: lead.has_current_plan,
+      contract_expiry_date: lead.contract_expiry_date,
+      docs_link: lead.docs_link, 
+      plan_type: lead.plan_type, 
+      carrier: lead.carrier, 
+      product: lead.product,
+      interested_lives: lead.interested_lives, 
+      deal_value: lead.deal_value,
+      temperature: lead.temperature || 'Morno',
       interaction_status: lead.interaction_status || 'Sem Status',
+      contact_type: lead.contact_type,
+      source: lead.source,
+      lastcontact: lead.lastcontact,
       profile_picture_url: lead.profile_picture_url
     };
     const res = lead.id ? await supabase.from('leads').update(updates).eq('id', lead.id) : await supabase.from('leads').insert([updates]);
@@ -441,47 +487,197 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       case 'details':
         return (
           <div className="p-8 space-y-10 bg-white pb-24">
+            {/* IDENTIFICAÇÃO */}
             <section>
               <SectionHeader icon={Icons.Users} title="Identificação do Lead" colorClass="bg-blue-50 text-blue-600" />
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 <DetailField label="Categoria" value={lead.lead_type} selectOptions={['PF', 'PJ']} onChange={(v:any) => setLead({...lead, lead_type: v})} />
                 <div className="md:col-span-2">
-                   <DetailField label="Nome/Razão Social" value={lead.name} onChange={(v:any) => setLead({...lead, name: v})} />
+                   <DetailField label="Nome / Razão Social" value={lead.name} onChange={(v:any) => setLead({...lead, name: v})} />
                 </div>
-                <DetailField label="Apelido" value={lead.nickname} onChange={(v:any) => setLead({...lead, nickname: v})} />
-                <DetailField label="CPF/CNPJ" value={lead.lead_type === 'PJ' ? lead.cnpj : lead.cpf} onChange={(v:any) => setLead({...lead, [lead.lead_type === 'PJ' ? 'cnpj' : 'cpf']: v})} />
+                <DetailField label="Apelido / Fantasia" value={lead.nickname} onChange={(v:any) => setLead({...lead, nickname: v})} />
+                <DetailField 
+                  label={lead.lead_type === 'PJ' ? "CNPJ" : "CPF"} 
+                  value={lead.lead_type === 'PJ' ? lead.cnpj : lead.cpf} 
+                  mask={lead.lead_type === 'PJ' ? formatCNPJ : formatCPF}
+                  onChange={(v:any) => setLead({...lead, [lead.lead_type === 'PJ' ? 'cnpj' : 'cpf']: v})} 
+                />
                 <DetailField label="Data Nascimento" type="date" value={lead.birth_date} onChange={(v:any) => setLead({...lead, birth_date: v})} />
               </div>
             </section>
+
+            {/* CICLO DE VENDAS */}
+            <section>
+              <SectionHeader icon={Icons.Target} title="Ciclo de Vendas e Status" colorClass="bg-indigo-50 text-indigo-600" />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <DetailField 
+                  label="Status no Funil" 
+                  value={lead.status} 
+                  selectOptions={stages.map(s => ({ value: s.name, label: s.label }))}
+                  onChange={(v:any) => setLead({...lead, status: v})} 
+                />
+                <DetailField 
+                  label="Status de Interação" 
+                  value={lead.interaction_status} 
+                  lead={lead} 
+                  setLead={setLead} 
+                  interactionStatuses={interactionStatuses} 
+                />
+                <DetailField 
+                  label="Tipo de Contato" 
+                  value={lead.contact_type} 
+                  selectOptions={contactTypes?.filter((t: any) => t.active).map((t: any) => t.name)}
+                  onChange={(v:any) => setLead({...lead, contact_type: v})} 
+                />
+                <div className="space-y-1">
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">Último Contato</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text"
+                      className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-900"
+                      value={lead.lastcontact || ''}
+                      onChange={e => setLead({...lead, lastcontact: e.target.value})}
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setLead({...lead, lastcontact: 'Não entrar em contato'})}
+                      className={cn(
+                        "px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all shadow-sm border whitespace-nowrap",
+                        lead.lastcontact === 'Não entrar em contato' 
+                          ? "bg-red-500 border-red-500 text-white" 
+                          : "bg-white border-slate-200 text-red-500 hover:bg-red-50"
+                      )}
+                    >
+                      Banir Contato
+                    </button>
+                  </div>
+                </div>
+                <DetailField label="Origem" value={lead.source} onChange={(v:any) => setLead({...lead, source: v})} />
+                <DetailField 
+                  label="Temperatura" 
+                  value={lead.temperature} 
+                  selectOptions={[
+                    { value: 'Muito quente', label: 'Muito quente 🔥' },
+                    { value: 'Quente', label: 'Quente ☀️' },
+                    { value: 'Morno', label: 'Morno 🌤️' },
+                    { value: 'Frio', label: 'Frio ❄️' },
+                    { value: 'Congelado', label: 'Congelado 🧊' }
+                  ]}
+                  onChange={(v:any) => setLead({...lead, temperature: v})} 
+                />
+              </div>
+            </section>
+
+            {/* CONTATO */}
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-10">
               <div className="space-y-6">
                 <SectionHeader icon={Icons.Phone} title="Contato" colorClass="bg-green-50 text-green-600" />
-                <DetailField label="WhatsApp" value={lead.phone} mask={formatPhone} onChange={(v:any) => setLead({...lead, phone: v})} />
+                <DetailField label="WhatsApp Principal" value={lead.phone} mask={formatPhone} onChange={(v:any) => setLead({...lead, phone: v})} />
+                <DetailField label="Telefone Secundário" value={lead.secondary_phone} mask={formatPhone} onChange={(v:any) => setLead({...lead, secondary_phone: v})} />
                 <DetailField label="E-mail" value={lead.email} onChange={(v:any) => setLead({...lead, email: v})} />
               </div>
               <div className="space-y-6">
                 <SectionHeader icon={Icons.MapPin} title="Localização" colorClass="bg-orange-50 text-orange-600" />
+                <div className="grid grid-cols-2 gap-4">
+                  <DetailField label="CEP" value={lead.address_zip} mask={formatCEP} onChange={handleCEPChange} />
+                  <DetailField label="Estado (UF)" value={lead.address_state} onChange={(v:any) => setLead({...lead, address_state: v})} />
+                </div>
                 <DetailField label="Cidade" value={lead.address_city} onChange={(v:any) => setLead({...lead, address_city: v})} />
+                <DetailField label="Logradouro" value={lead.address_street} onChange={(v:any) => setLead({...lead, address_street: v})} />
+                <div className="grid grid-cols-2 gap-4">
+                  <DetailField label="Número" value={lead.address_number} onChange={(v:any) => setLead({...lead, address_number: v})} />
+                  <DetailField label="Bairro" value={lead.address_neighborhood} onChange={(v:any) => setLead({...lead, address_neighborhood: v})} />
+                </div>
+                <DetailField label="Complemento" value={lead.address_complement} onChange={(v:any) => setLead({...lead, address_complement: v})} />
               </div>
+            </section>
+
+            {/* PLANO ATUAL */}
+            <section className="pt-10 border-t border-slate-100">
+               <SectionHeader icon={Icons.Shield} title="Plano de Saúde Atual" colorClass="bg-amber-50 text-amber-600" />
+               <div className="space-y-6">
+                  <div>
+                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Possui plano atualmente?</label>
+                    <div className="flex gap-2">
+                       <button 
+                        onClick={() => setLead({...lead, has_current_plan: true})} 
+                        className={cn("flex-1 py-2.5 rounded-xl font-bold text-xs border-2 transition-all", lead.has_current_plan ? "bg-amber-50 border-amber-500 text-amber-600" : "bg-slate-50 border-transparent text-slate-400")}
+                       >Sim</button>
+                       <button 
+                        onClick={() => setLead({...lead, has_current_plan: false})} 
+                        className={cn("flex-1 py-2.5 rounded-xl font-bold text-xs border-2 transition-all", !lead.has_current_plan ? "bg-slate-900 border-slate-900 text-white" : "bg-slate-50 border-transparent text-slate-400")}
+                       >Não</button>
+                    </div>
+                  </div>
+                  
+                  {lead.has_current_plan && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 pt-2">
+                      <DetailField label="Operadora Atual" value={lead.current_carrier} onChange={(v:any) => setLead({...lead, current_carrier: v})} />
+                      <DetailField label="Produto Atual" value={lead.current_product} onChange={(v:any) => setLead({...lead, current_product: v})} />
+                      <DetailField label="Qtde Vidas" type="number" value={lead.current_lives} onChange={(v:any) => setLead({...lead, current_lives: Number(v)})} />
+                      <DetailField 
+                        label="Valor Pago Atual" 
+                        value={lead.current_value ? Math.round(lead.current_value * 100).toString() : ""} 
+                        mask={formatCurrencyValue}
+                        onChange={(v:any) => setLead({...lead, current_value: parseCurrencyValue(v)})} 
+                      />
+                      <DetailField label="Vencimento Contrato" type="date" value={lead.contract_expiry_date} onChange={(v:any) => setLead({...lead, contract_expiry_date: v})} />
+                    </div>
+                  )}
+               </div>
+            </section>
+
+            {/* NOVA PROPOSTA */}
+            <section className="pt-10 border-t border-slate-100">
+               <SectionHeader icon={Icons.FileText} title="Proposta / Planejamento" colorClass="bg-emerald-50 text-emerald-600" />
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                  <DetailField label="Tipo de Plano" value={lead.plan_type} selectOptions={['Saúde', 'Odonto', 'Saúde + Odonto']} onChange={(v:any) => setLead({...lead, plan_type: v})} />
+                  <DetailField 
+                    label="Operadora Proposta" 
+                    value={lead.carrier} 
+                    selectOptions={carriers.map(c => c.name)}
+                    onChange={(v:any) => setLead({...lead, carrier: v})} 
+                  />
+                  <DetailField label="Produto Proposta" value={lead.product} onChange={(v:any) => setLead({...lead, product: v})} />
+                  <DetailField label="Vidas Proposta" type="number" value={lead.interested_lives} onChange={(v:any) => setLead({...lead, interested_lives: Number(v)})} />
+                  <DetailField 
+                    label="Valor Proposta" 
+                    value={lead.deal_value ? Math.round(lead.deal_value * 100).toString() : ""} 
+                    mask={formatCurrencyValue}
+                    onChange={(v:any) => setLead({...lead, deal_value: parseCurrencyValue(v)})} 
+                  />
+                  <div className="lg:col-span-2">
+                    <DetailField label="Link Documentos (Drive)" value={lead.docs_link} onChange={(v:any) => setLead({...lead, docs_link: v})} placeholder="https://..." />
+                  </div>
+               </div>
             </section>
             
             <section className="pt-10 border-t border-slate-100 grid grid-cols-1 lg:grid-cols-2 gap-10">
                <div className="space-y-6">
                  <SectionHeader icon={Icons.FileText} title="Nova Anotação" colorClass="bg-blue-50 text-blue-600" />
-                 <textarea value={noteContent} onChange={e => setNoteContent(e.target.value)} placeholder="Anotação..." className="w-full bg-slate-50 border rounded-2xl p-4 min-h-[100px] outline-none" />
-                 <button onClick={handleAddNote} disabled={isSavingNote || !noteContent.trim()} className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold uppercase text-[10px]">Salvar Nota</button>
+                 <textarea value={noteContent} onChange={e => setNoteContent(e.target.value)} placeholder="Digite observações importantes sobre o lead..." className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 min-h-[120px] outline-none focus:bg-white focus:border-blue-500 transition-all font-medium text-sm" />
+                 <button onClick={handleAddNote} disabled={isSavingNote || !noteContent.trim()} className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-bold uppercase text-[10px] tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 disabled:opacity-50">Salvar Nota no Histórico</button>
                </div>
                <div className="space-y-6">
                  <SectionHeader icon={Icons.Bell} title="Agendar Follow-up" colorClass="bg-amber-50 text-amber-600" />
-                 <input type="text" value={reminderTitle} onChange={e => setReminderTitle(e.target.value)} placeholder="Título..." className="w-full bg-slate-50 border rounded-xl p-3 text-sm font-bold" />
-                 <div className="flex gap-2">
-                   <div className="flex-1">
-                     <DatePicker value={reminderDate} onChange={setReminderDate} themeColor="amber-500" />
-                   </div>
-                   <button onClick={() => handleAddReminder()} className="px-4 bg-amber-500 text-white rounded-xl font-bold">OK</button>
-                 </div>
-                 <div className="grid grid-cols-3 gap-2">
-                   {[1,3,7].map(d => <button key={d} onClick={() => handleAddReminder(d)} className="py-2 bg-white border rounded-xl text-[9px] font-black text-slate-400">+{d}D</button>)}
+                 <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4">
+                    <input type="text" value={reminderTitle} onChange={e => setReminderTitle(e.target.value)} placeholder="O que precisa ser feito?" className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-bold outline-none focus:border-amber-500" />
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <DatePicker value={reminderDate} onChange={setReminderDate} themeColor="amber-500" />
+                      </div>
+                      <button onClick={() => handleAddReminder()} disabled={isSavingReminder} className="px-6 bg-amber-500 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-amber-600 transition-all shadow-lg shadow-amber-100">Criar Alerta</button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[1,3,7].map(d => (
+                        <button 
+                          key={d} 
+                          type="button"
+                          onClick={() => handleAddReminder(d)} 
+                          className="py-2.5 bg-white border border-slate-200 rounded-xl text-[10px] font-black text-slate-500 hover:border-amber-500 hover:text-amber-600 transition-all shadow-sm"
+                        >+{d}D</button>
+                      ))}
+                    </div>
                  </div>
                </div>
             </section>
