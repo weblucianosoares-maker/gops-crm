@@ -620,10 +620,10 @@ export default function Leads() {
           </div>
         </div>
         <div className="flex-1 overflow-x-auto overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
-          <table className="min-w-[1400px] w-full text-left border-separate border-spacing-y-2">
+          <table className="min-w-[1200px] w-full text-left border-separate border-spacing-y-2">
             <thead className="sticky top-0 z-20 bg-white">
-              <tr className="text-[0.6875rem] uppercase tracking-[0.1em] text-slate-400">
-                <th onClick={() => handleSort("name")} className="px-4 py-2 font-semibold cursor-pointer select-none group hover:text-blue-600 transition-colors">
+              <tr className="text-[0.65rem] uppercase tracking-[0.1em] text-slate-400">
+                <th onClick={() => handleSort("name")} className="px-2 py-2 font-semibold cursor-pointer select-none group hover:text-blue-600 transition-colors">
                   <div className="flex items-center gap-1">
                     Nome do Lead
                     {sortConfig?.key === "name" ? (
@@ -631,7 +631,7 @@ export default function Leads() {
                     ) : <Icons.ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-50" />}
                   </div>
                 </th>
-                <th onClick={() => handleSort("contact_type")} className="px-4 py-2 font-semibold cursor-pointer select-none group hover:text-blue-600 transition-colors">
+                <th onClick={() => handleSort("contact_type")} className="px-2 py-2 font-semibold cursor-pointer select-none group hover:text-blue-600 transition-colors">
                   <div className="flex items-center gap-1">
                     Tipo
                     {sortConfig?.key === "contact_type" ? (
@@ -639,15 +639,7 @@ export default function Leads() {
                     ) : <Icons.ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-50" />}
                   </div>
                 </th>
-                <th onClick={() => handleSort("source")} className="px-4 py-2 font-semibold cursor-pointer select-none group hover:text-blue-600 transition-colors">
-                  <div className="flex items-center gap-1">
-                    Origem
-                    {sortConfig?.key === "source" ? (
-                      sortConfig.direction === 'asc' ? <Icons.ChevronUp className="w-3 h-3 text-blue-600" /> : <Icons.ChevronDown className="w-3 h-3 text-blue-600" />
-                    ) : <Icons.ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-50" />}
-                  </div>
-                </th>
-                <th onClick={() => handleSort("lastcontact")} className="px-4 py-2 font-semibold text-center cursor-pointer select-none group hover:text-blue-600 transition-colors">
+                <th onClick={() => handleSort("lastcontact")} className="px-2 py-2 font-semibold text-center cursor-pointer select-none group hover:text-blue-600 transition-colors">
                   <div className="flex items-center justify-center gap-1">
                     Último Contato
                     {sortConfig?.key === "lastcontact" ? (
@@ -655,7 +647,7 @@ export default function Leads() {
                     ) : <Icons.ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-50" />}
                   </div>
                 </th>
-                <th onClick={() => handleSort("status")} className="px-4 py-2 font-semibold text-center cursor-pointer select-none group hover:text-blue-600 transition-colors">
+                <th onClick={() => handleSort("status")} className="px-2 py-2 font-semibold text-center cursor-pointer select-none group hover:text-blue-600 transition-colors">
                   <div className="flex items-center justify-center gap-1">
                     Funil
                     {sortConfig?.key === "status" ? (
@@ -663,7 +655,7 @@ export default function Leads() {
                     ) : <Icons.ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-50" />}
                   </div>
                 </th>
-                <th onClick={() => handleSort("last_app_message_at")} className="px-4 py-2 font-semibold text-center cursor-pointer select-none group hover:text-blue-600 transition-colors">
+                <th onClick={() => handleSort("last_app_message_at")} className="px-2 py-2 font-semibold text-center cursor-pointer select-none group hover:text-blue-600 transition-colors">
                   <div className="flex items-center justify-center gap-1">
                     Chat App
                     {sortConfig?.key === "last_app_message_at" ? (
@@ -671,7 +663,7 @@ export default function Leads() {
                     ) : <Icons.ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-50" />}
                   </div>
                 </th>
-                <th className="px-4 py-2 font-semibold text-right">Ações</th>
+                <th className="px-2 py-2 font-semibold text-right">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -684,7 +676,7 @@ export default function Leads() {
                   onClick={() => setSelectedLead(lead)}
                   className="bg-slate-50 hover:bg-white hover:shadow-md hover:scale-[1.005] transition-all group cursor-pointer"
                 >
-                  <td className="px-4 py-2 rounded-l-lg border-l-2 border-transparent group-hover:border-blue-600">
+                  <td className="px-2 py-2 rounded-l-lg border-l-2 border-transparent group-hover:border-blue-600">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold shrink-0 overflow-hidden">
                         {lead.profile_picture_url ? (
@@ -755,7 +747,7 @@ export default function Leads() {
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-2">
+                  <td className="px-2 py-2">
                     <div className="flex flex-col gap-1">
                       <span className="inline-flex items-center text-[9px] font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 uppercase tracking-tighter w-fit shadow-xs">
                         {lead.lead_type || 'PF'}
@@ -767,13 +759,10 @@ export default function Leads() {
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-2 whitespace-nowrap">
-                    <span className="text-sm font-medium text-slate-600">{lead.source}</span>
+                  <td className="px-2 py-2 text-center">
+                    <span className="text-xs text-slate-500">{lead.lastcontact || lead.lastContact || lead.last_contact}</span>
                   </td>
-                  <td className="px-4 py-2 text-center">
-                    <span className="text-sm text-slate-500">{lead.lastcontact || lead.lastContact || lead.last_contact}</span>
-                  </td>
-                  <td className="px-4 py-2 text-center">
+                  <td className="px-2 py-2 text-center">
                     {(() => {
                       const currentStage = stages.find(s => s.name === lead.status);
                       if (currentStage) {
@@ -793,7 +782,7 @@ export default function Leads() {
                       );
                     })()}
                   </td>
-                  <td className="px-4 py-2 text-center">
+                  <td className="px-2 py-2 text-center">
                     {lead.last_app_message_at ? (
                       <div className="flex flex-col items-center gap-0.5">
                         <span className="text-[10px] font-black text-blue-600 uppercase tracking-tighter">Mensagem enviada em</span>
@@ -803,7 +792,7 @@ export default function Leads() {
                       <span className="text-[10px] text-slate-400 font-medium italic">Sem envio</span>
                     )}
                   </td>
-                  <td className="px-4 py-2 rounded-r-lg text-right">
+                  <td className="px-2 py-2 rounded-r-lg text-right">
                     <div className="flex items-center justify-end gap-2">
                        <button className="text-slate-400 hover:text-blue-600 transition-colors p-2 hover:bg-blue-50 rounded-lg">
                         <Icons.Mail className="w-5 h-5" />
