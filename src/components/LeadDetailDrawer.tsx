@@ -865,29 +865,51 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
             <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white text-xl font-black overflow-hidden shadow-xl">
               {lead.profile_picture_url ? <img src={lead.profile_picture_url} className="w-full h-full object-cover" /> : (lead.name || "?").substring(0,1).toUpperCase()}
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-black text-slate-900 leading-tight">{lead.name || "Sem Nome"}</h2>
-                {waProfile?.isBusiness && (
-                  <span className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded text-[8px] font-black uppercase tracking-tighter shadow-sm">
-                    <Icons.CheckCircle className="w-2.5 h-2.5" /> Conta Comercial
-                  </span>
-                )}
-                {isLoadingInsights && <Icons.Loader2 className="w-3 h-3 animate-spin text-blue-400" />}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-xl font-black text-slate-900 leading-tight break-words pr-2">{lead.name || "Sem Nome"}</h2>
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    <span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded text-[9px] font-black uppercase shadow-sm">LEAD</span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">{lead.status}</span>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => lead.phone && loadWhatsAppInsights(lead.phone)}
+                  disabled={isLoadingInsights}
+                  className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all shadow-sm group shrink-0"
+                  title="Atualizar Dados do WhatsApp"
+                >
+                  <Icons.RefreshCw className={cn("w-4 h-4", isLoadingInsights && "animate-spin")} />
+                </button>
               </div>
-              <div className="flex flex-wrap gap-2 items-center mt-1">
-                 <span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded text-[9px] font-black uppercase">LEAD</span>
-                 <span className="text-[10px] text-slate-400 font-bold uppercase">{lead.status}</span>
-                 {waStatus && (
-                   <>
-                     <span className="w-1 h-1 rounded-full bg-slate-300 mx-1" />
-                     <span className="text-[10px] text-slate-500 font-medium italic flex items-center gap-1.5 truncate max-w-[300px]" title="Recado do WhatsApp">
-                       <Icons.MessageSquare className="w-3 h-3 text-slate-300" />
-                       "{waStatus}"
-                     </span>
-                   </>
-                 )}
-              </div>
+
+              {/* WhatsApp Bio & Profile Insights */}
+              {(waProfile || waStatus) && (
+                <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-100/50">
+                  {waProfile && (
+                    <div className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter border shadow-sm transition-all animate-in fade-in slide-in-from-left-2",
+                      waProfile.isBusiness 
+                        ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
+                        : "bg-slate-50 text-slate-500 border-slate-200"
+                    )}>
+                      {waProfile.isBusiness ? (
+                        <><Icons.CheckCircle className="w-3 h-3" /> Conta Comercial</>
+                      ) : (
+                        <><Icons.Users className="w-3 h-3" /> Conta Pessoal</>
+                      )}
+                    </div>
+                  )}
+
+                  {waStatus && (
+                    <div className="flex items-center gap-2 px-3 py-1 bg-white border border-slate-200 rounded-lg text-[10px] text-slate-600 font-bold italic shadow-sm max-w-full animate-in fade-in slide-in-from-left-4" title="Recado do WhatsApp">
+                      <Icons.MessageSquare className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+                      <span className="truncate">"{waStatus}"</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">
