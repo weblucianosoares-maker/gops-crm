@@ -222,6 +222,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
   const [isSaving, setIsSaving] = useState(false);
   const [noteContent, setNoteContent] = useState("");
   const [isSavingNote, setIsSavingNote] = useState(false);
+  const [reminderTitle, setReminderTitle] = useState("");
   const [reminderDate, setReminderDate] = useState("");
   const [isSavingReminder, setIsSavingReminder] = useState(false);
 
