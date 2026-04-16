@@ -234,7 +234,13 @@ export const evolutionService = {
       });
 
       if (!response.ok) return null;
-      return await response.json();
+      const data = await response.json();
+      
+      // Sanitizar retorno para evitar objetos complexos no estado do React
+      return {
+        isBusiness: !!(data.isBusiness || data.businessProfile || data.profile?.isBusiness),
+        verifiedName: typeof data.verifiedName === 'string' ? data.verifiedName : (data.profile?.verifiedName || null)
+      };
     } catch (error) {
       console.error('Erro ao buscar perfil WhatsApp:', error);
       return null;
@@ -255,7 +261,13 @@ export const evolutionService = {
 
       if (!response.ok) return null;
       const data = await response.json();
-      return data.status || null;
+      
+      // Se data.status for um objeto (comum em algumas versões), pegamos a string interna
+      if (data?.status && typeof data.status === 'object' && data.status.status) {
+        return String(data.status.status);
+      }
+      
+      return typeof data.status === 'string' ? data.status : null;
     } catch (error) {
       console.error('Erro ao buscar status WhatsApp:', error);
       return null;

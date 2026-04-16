@@ -905,7 +905,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                   {waStatus && (
                     <div className="flex items-center gap-2 px-3 py-1 bg-white border border-slate-200 rounded-lg text-[10px] text-slate-600 font-bold italic shadow-sm max-w-full animate-in fade-in slide-in-from-left-4" title="Recado do WhatsApp">
                       <Icons.MessageSquare className="w-3.5 h-3.5 text-slate-300 shrink-0" />
-                      <span className="truncate">"{waStatus}"</span>
+                      <span className="truncate">"{typeof waStatus === 'string' ? waStatus : (waStatus?.status || 'Disponível')}"</span>
                     </div>
                   )}
                 </div>
