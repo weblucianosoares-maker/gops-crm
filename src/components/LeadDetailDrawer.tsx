@@ -224,7 +224,45 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
   const [isSavingNote, setIsSavingNote] = useState(false);
   const [reminderTitle, setReminderTitle] = useState("");
   const [reminderDate, setReminderDate] = useState("");
+  const [isSearchingCNPJ, setIsSearchingCNPJ] = useState(false);
   const [isSavingReminder, setIsSavingReminder] = useState(false);
+
+  const handleCNPJChange = async (cnpj: string) => {
+    const formatted = formatCNPJ(cnpj);
+    const cleanCNPJ = formatted.replace(/\D/g, "");
+    setLead((prev: any) => ({ ...prev, cnpj: formatted }));
+    
+    if (cleanCNPJ.length === 14) {
+      setIsSearchingCNPJ(true);
+      try {
+        const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCNPJ}`);
+        const data = await response.json();
+        if (response.ok && !data.error) {
+          setLead((prev: any) => ({
+            ...prev,
+            company_name: data.razao_social || data.nome_fantasia || prev.company_name,
+            name: data.razao_social || data.nome_fantasia || prev.name,
+            nickname: data.nome_fantasia || data.razao_social || prev.nickname,
+            address_zip: data.cep ? formatCEP(data.cep) : prev.address_zip,
+            address_street: data.logradouro || prev.address_street,
+            address_neighborhood: data.bairro || prev.address_neighborhood,
+            address_city: data.municipio || prev.address_city,
+            address_state: data.uf || prev.address_state,
+            address_number: data.numero || prev.address_number,
+            cnae: data.cnae_fiscal_descricao || data.cnae_fiscal || prev.cnae,
+            opening_date: data.data_abertura || prev.opening_date,
+            email: data.email || prev.email,
+            phone: data.ddd_telefone_1 ? formatPhone(data.ddd_telefone_1) : prev.phone
+          }));
+          success("Dados do CNPJ carregados!");
+        }
+      } catch (e) {
+        console.error("Erro ao buscar CNPJ:", e);
+      } finally {
+        setIsSearchingCNPJ(false);
+      }
+    }
+  };
 
   const handleCEPChange = async (cep: string) => {
     const cleanCEP = cep.replace(/\D/g, "");
@@ -476,6 +514,8 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       contact_type: lead.contact_type,
       source: lead.source,
       lastcontact: lead.lastcontact,
+      cnae: lead.cnae,
+      opening_date: lead.opening_date,
       profile_picture_url: lead.profile_picture_url
     };
     const res = lead.id ? await supabase.from('leads').update(updates).eq('id', lead.id) : await supabase.from('leads').insert([updates]);
@@ -494,16 +534,25 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 <DetailField label="Categoria" value={lead.lead_type} selectOptions={['PF', 'PJ']} onChange={(v:any) => setLead({...lead, lead_type: v})} />
                 <div className="md:col-span-2">
-                   <DetailField label="Nome / Razão Social" value={lead.name} onChange={(v:any) => setLead({...lead, name: v})} />
+                   <DetailField label="Nome / Razão Social" value={lead.name} onChange={(v:any) => setLead({...lead, name: v, company_name: lead.lead_type === 'PJ' ? v : lead.company_name})} />
                 </div>
                 <DetailField label="Apelido / Fantasia" value={lead.nickname} onChange={(v:any) => setLead({...lead, nickname: v})} />
                 <DetailField 
                   label={lead.lead_type === 'PJ' ? "CNPJ" : "CPF"} 
                   value={lead.lead_type === 'PJ' ? lead.cnpj : lead.cpf} 
                   mask={lead.lead_type === 'PJ' ? formatCNPJ : formatCPF}
-                  onChange={(v:any) => setLead({...lead, [lead.lead_type === 'PJ' ? 'cnpj' : 'cpf']: v})} 
+                  onChange={(v:any) => lead.lead_type === 'PJ' ? handleCNPJChange(v) : setLead({...lead, cpf: v})} 
                 />
                 <DetailField label="Data Nascimento" type="date" value={lead.birth_date} onChange={(v:any) => setLead({...lead, birth_date: v})} />
+                {lead.lead_type === 'PJ' && (
+                  <>
+                    <DetailField label="CNAE" value={lead.cnae} onChange={(v:any) => setLead({...lead, cnae: v})} />
+                    <DetailField label="Data Abertura" type="date" value={lead.opening_date} onChange={(v:any) => setLead({...lead, opening_date: v})} />
+                    <div className="flex items-center gap-2 pt-6">
+                      {isSearchingCNPJ && <Icons.Loader2 className="w-4 h-4 animate-spin text-blue-500" />}
+                    </div>
+                  </>
+                )}
               </div>
             </section>
 
