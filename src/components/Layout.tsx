@@ -21,7 +21,7 @@ const menuItems = [
   { icon: Icons.Settings, label: "Configurações", path: "/settings" },
 ];
 
-export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (val: boolean) => void }) {
+export function Sidebar({ isOpen, setIsOpen, isCollapsed, onToggleCollapse }: { isOpen?: boolean; setIsOpen?: (val: boolean) => void; isCollapsed?: boolean; onToggleCollapse?: () => void }) {
   const location = useLocation();
   const { alerts } = useAlerts();
   
@@ -36,23 +36,42 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (
       )}
       
       <aside className={cn(
-        "flex flex-col h-screen w-64 fixed left-0 top-0 bg-slate-50 border-r border-slate-200 py-6 z-50 transition-transform duration-300 md:translate-x-0",
+        "flex flex-col h-screen fixed left-0 top-0 bg-slate-50 border-r border-slate-200 py-6 z-50 transition-all duration-300 md:translate-x-0 overflow-hidden",
+        isCollapsed ? "w-20" : "w-64",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="px-6 mb-10 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white">
+        <div className={cn("px-6 mb-10 flex items-center shrink-0", isCollapsed ? "justify-center" : "justify-between")}>
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white shrink-0">
               <Icons.CheckCircle className="w-6 h-6" />
             </div>
-            <div>
-              <h1 className="text-2xl font-black tracking-tight text-blue-900 leading-none">Efraim</h1>
-              <p className="text-[0.6875rem] tracking-wider uppercase text-slate-500 mt-1 font-semibold">Gestão de Leads de Saúde</p>
-            </div>
+            {!isCollapsed && (
+              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
+                <h1 className="text-2xl font-black tracking-tight text-blue-900 leading-none">Efraim</h1>
+                <p className="text-[0.6875rem] tracking-wider uppercase text-slate-500 mt-1 font-semibold whitespace-nowrap">Gestão de Leads</p>
+              </motion.div>
+            )}
           </div>
-          <button className="md:hidden text-slate-500 hover:text-slate-700" onClick={() => setIsOpen && setIsOpen(false)}>
-            <Icons.X className="w-6 h-6" />
-          </button>
+          
+          <div className="flex items-center">
+            {!isCollapsed && (
+              <button onClick={onToggleCollapse} className="hidden md:flex p-1.5 text-slate-400 hover:text-blue-600 hover:bg-white rounded-lg transition-all border border-transparent hover:border-slate-100">
+                <Icons.ChevronLeft className="w-4 h-4" />
+              </button>
+            )}
+            <button className="md:hidden text-slate-500 hover:text-slate-700 ml-2" onClick={() => setIsOpen && setIsOpen(false)}>
+              <Icons.X className="w-6 h-6" />
+            </button>
+          </div>
         </div>
+
+        {isCollapsed && (
+          <div className="flex justify-center mb-6">
+            <button onClick={onToggleCollapse} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-white rounded-lg transition-all border border-transparent hover:border-slate-100 shadow-sm">
+              <Icons.ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       
       <nav className="flex-1 space-y-1">
         {menuItems.map((item) => {
@@ -65,17 +84,21 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (
                 to={item.path}
                 onClick={() => setIsOpen && setIsOpen(false)}
                 className={({ isActive }) => cn(
-                   "flex items-center pl-6 py-3 transition-all group",
+                   "flex items-center py-3 transition-all group",
+                   isCollapsed ? "justify-center px-0 mx-2 rounded-xl" : "pl-6 rounded-l-lg ml-2 pl-4",
                    isActive 
-                     ? "text-blue-700 font-semibold bg-white rounded-l-lg ml-2 pl-4 shadow-sm" 
+                     ? "text-blue-700 font-semibold bg-white shadow-sm" 
                      : "text-slate-500 hover:text-blue-600 hover:translate-x-1"
                 )}
               >
-                <item.icon className={cn("w-5 h-5 mr-3", "group-hover:text-blue-600")} />
-                <span className="text-[0.6875rem] tracking-wider uppercase">{item.label}</span>
+                <item.icon className={cn("w-5 h-5", !isCollapsed && "mr-3", "group-hover:text-blue-600")} />
+                {!isCollapsed && <span className="text-[0.6875rem] tracking-wider uppercase truncate">{item.label}</span>}
                 
                 {item.path === '/alerts' && alerts.length > 0 && (
-                   <span className="ml-auto mr-4 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-sm animate-pulse">
+                   <span className={cn(
+                     "bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-sm animate-pulse",
+                     isCollapsed ? "absolute top-2 right-2 scale-75" : "ml-auto mr-4"
+                   )}>
                      {alerts.length}
                    </span>
                 )}
@@ -85,14 +108,14 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (
         })}
       </nav>
 
-      <div className="mt-auto border-t border-slate-100 pt-6 px-6 space-y-1">
-        <button className="flex items-center w-full text-slate-500 py-3 hover:text-blue-600 transition-all">
-          <Icons.Support className="w-5 h-5 mr-3" />
-          <span className="text-[0.6875rem] tracking-wider uppercase font-medium">Suporte</span>
+      <div className={cn("mt-auto border-t border-slate-100 pt-6 px-6 space-y-1", isCollapsed && "px-0 flex flex-col items-center")}>
+        <button className={cn("flex items-center w-full text-slate-500 py-3 hover:text-blue-600 transition-all", isCollapsed && "justify-center")}>
+          <Icons.Support className={cn("w-5 h-5", !isCollapsed && "mr-3")} />
+          {!isCollapsed && <span className="text-[0.6875rem] tracking-wider uppercase font-medium">Suporte</span>}
         </button>
-        <button className="flex items-center w-full text-slate-500 py-3 hover:text-blue-600 transition-all">
-          <Icons.Logout className="w-5 h-5 mr-3" />
-          <span className="text-[0.6875rem] tracking-wider uppercase font-medium">Sair</span>
+        <button className={cn("flex items-center w-full text-slate-500 py-3 hover:text-blue-600 transition-all", isCollapsed && "justify-center")}>
+          <Icons.Logout className={cn("w-5 h-5", !isCollapsed && "mr-3")} />
+          {!isCollapsed && <span className="text-[0.6875rem] tracking-wider uppercase font-medium">Sair</span>}
         </button>
       </div>
     </aside>

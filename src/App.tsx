@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { cn } from "@/src/lib/utils";
 import { Sidebar, TopBar } from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Leads from "./pages/Leads";
@@ -19,6 +20,7 @@ import { ToastProvider } from "./components/Toasts";
 function AppContent() {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   
   const getTitle = (path: string) => {
     switch (path) {
@@ -36,9 +38,17 @@ function AppContent() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-slate-50 overflow-hidden">
-      <Sidebar isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} />
-      <div className="flex-1 md:ml-64 flex flex-col min-w-0 w-full overflow-hidden">
+    <div className="flex h-screen w-full bg-slate-50 overflow-hidden text-slate-900">
+      <Sidebar 
+        isOpen={isMobileMenuOpen} 
+        setIsOpen={setIsMobileMenuOpen} 
+        isCollapsed={isCollapsed}
+        onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
+      />
+      <div className={cn(
+        "flex-1 flex flex-col min-w-0 w-full overflow-hidden transition-all duration-300",
+        isCollapsed ? "md:ml-20" : "md:ml-64"
+      )}>
         <TopBar title={getTitle(location.pathname)} onMenuClick={() => setIsMobileMenuOpen(true)} />
         {/* Main now has overflow-hidden to allow children pages to manage their own scrolling */}
         <main className="flex-1 overflow-hidden relative">
