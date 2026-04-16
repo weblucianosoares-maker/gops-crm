@@ -863,15 +863,21 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
         <div className="px-8 py-6 border-b flex justify-between items-center bg-slate-50/50">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white text-xl font-black overflow-hidden shadow-xl">
-              {lead.profile_picture_url ? <img src={lead.profile_picture_url} className="w-full h-full object-cover" /> : (lead.name || "?").substring(0,1).toUpperCase()}
+              {lead.profile_picture_url ? (
+                <img src={lead.profile_picture_url} className="w-full h-full object-cover" />
+              ) : (
+                String(lead.nickname || lead.name || "?").substring(0,1).toUpperCase()
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-xl font-black text-slate-900 leading-tight break-words pr-2">{lead.name || "Sem Nome"}</h2>
+                  <h2 className="text-xl font-black text-slate-900 leading-tight break-words pr-2">
+                    {String(lead.name || "Sem Nome")}
+                  </h2>
                   <div className="flex flex-wrap items-center gap-2 mt-2">
                     <span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded text-[9px] font-black uppercase shadow-sm">LEAD</span>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">{lead.status}</span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">{String(lead.status || "Sem Status")}</span>
                   </div>
                 </div>
                 <button 
@@ -905,7 +911,9 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                   {waStatus && (
                     <div className="flex items-center gap-2 px-3 py-1 bg-white border border-slate-200 rounded-lg text-[10px] text-slate-600 font-bold italic shadow-sm max-w-full animate-in fade-in slide-in-from-left-4" title="Recado do WhatsApp">
                       <Icons.MessageSquare className="w-3.5 h-3.5 text-slate-300 shrink-0" />
-                      <span className="truncate">"{typeof waStatus === 'string' ? waStatus : (waStatus?.status || 'Disponível')}"</span>
+                      <span className="truncate">
+                        "{typeof waStatus === 'string' ? waStatus : String(waStatus?.status || waStatus || 'Disponível')}"
+                      </span>
                     </div>
                   )}
                 </div>

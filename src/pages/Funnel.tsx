@@ -30,7 +30,7 @@ export default function Funnel() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const columns = stages.map(col => {
-    const stageLeads = leads.filter(l => l.status === col.name);
+    const stageLeads = leads.filter(l => l.status === col.name && !l.do_not_contact);
     return {
       ...col,
       count: stageLeads.length,
