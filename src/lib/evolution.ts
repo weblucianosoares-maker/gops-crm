@@ -219,6 +219,47 @@ export const evolutionService = {
       console.error('Erro ao buscar foto do perfil:', error);
       return null;
     }
+  },
+
+  // Buscar perfil detalhado (Tipo de conta, Business, etc)
+  async fetchProfile(number: string) {
+    try {
+      const cleanNumber = number.replace(/\D/g, '');
+      const formattedNumber = cleanNumber.startsWith('55') ? cleanNumber : `55${cleanNumber}`;
+      
+      const response = await fetch(`${BASE_URL}/chat/fetchProfile/${encodeURIComponent(INSTANCE)}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ number: formattedNumber })
+      });
+
+      if (!response.ok) return null;
+      return await response.json();
+    } catch (error) {
+      console.error('Erro ao buscar perfil WhatsApp:', error);
+      return null;
+    }
+  },
+
+  // Buscar recado/status (About)
+  async fetchStatus(number: string) {
+    try {
+      const cleanNumber = number.replace(/\D/g, '');
+      const formattedNumber = cleanNumber.startsWith('55') ? cleanNumber : `55${cleanNumber}`;
+      
+      const response = await fetch(`${BASE_URL}/chat/fetchStatus/${encodeURIComponent(INSTANCE)}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ number: formattedNumber })
+      });
+
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data.status || null;
+    } catch (error) {
+      console.error('Erro ao buscar status WhatsApp:', error);
+      return null;
+    }
   }
 };
 

@@ -226,6 +226,9 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
   const [reminderDate, setReminderDate] = useState("");
   const [isSearchingCNPJ, setIsSearchingCNPJ] = useState(false);
   const [isSavingReminder, setIsSavingReminder] = useState(false);
+  const [waProfile, setWaProfile] = useState<any>(null);
+  const [waStatus, setWaStatus] = useState<string | null>(null);
+  const [isLoadingInsights, setIsLoadingInsights] = useState(false);
 
   const handleCNPJChange = async (cnpj: string) => {
     const formatted = formatCNPJ(cnpj);
@@ -287,6 +290,23 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       }
     }
   };
+
+  const loadWhatsAppInsights = async (phoneNumber: string) => {
+    if (!phoneNumber) return;
+    setIsLoadingInsights(true);
+    try {
+      const [profile, status] = await Promise.all([
+        evolutionService.fetchProfile(phoneNumber),
+        evolutionService.fetchStatus(phoneNumber)
+      ]);
+      setWaProfile(profile);
+      setWaStatus(status);
+    } catch (e) {
+      console.error("Erro ao carregar insights do WhatsApp:", e);
+    } finally {
+      setIsLoadingInsights(false);
+    }
+  };
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -295,9 +315,14 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
     if (initialLead) {
       setLead(initialLead);
       fetchHistory(initialLead.id);
+      setWaProfile(null);
+      setWaStatus(null);
       setActiveTab('details');
-      if (initialLead.phone && !initialLead.profile_picture_url) {
-        syncProfilePicture(initialLead.id, initialLead.phone);
+      if (initialLead.phone) {
+        if (!initialLead.profile_picture_url) {
+          syncProfilePicture(initialLead.id, initialLead.phone);
+        }
+        loadWhatsAppInsights(initialLead.phone);
       }
       fetchReminders(initialLead.id);
     }
@@ -841,10 +866,27 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
               {lead.profile_picture_url ? <img src={lead.profile_picture_url} className="w-full h-full object-cover" /> : (lead.name || "?").substring(0,1).toUpperCase()}
             </div>
             <div>
-              <h2 className="text-xl font-black text-slate-900 leading-tight">{lead.name || "Sem Nome"}</h2>
-              <div className="flex gap-2 items-center mt-1">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-black text-slate-900 leading-tight">{lead.name || "Sem Nome"}</h2>
+                {waProfile?.isBusiness && (
+                  <span className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded text-[8px] font-black uppercase tracking-tighter shadow-sm">
+                    <Icons.CheckCircle className="w-2.5 h-2.5" /> Conta Comercial
+                  </span>
+                )}
+                {isLoadingInsights && <Icons.Loader2 className="w-3 h-3 animate-spin text-blue-400" />}
+              </div>
+              <div className="flex flex-wrap gap-2 items-center mt-1">
                  <span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded text-[9px] font-black uppercase">LEAD</span>
                  <span className="text-[10px] text-slate-400 font-bold uppercase">{lead.status}</span>
+                 {waStatus && (
+                   <>
+                     <span className="w-1 h-1 rounded-full bg-slate-300 mx-1" />
+                     <span className="text-[10px] text-slate-500 font-medium italic flex items-center gap-1.5 truncate max-w-[300px]" title="Recado do WhatsApp">
+                       <Icons.MessageSquare className="w-3 h-3 text-slate-300" />
+                       "{waStatus}"
+                     </span>
+                   </>
+                 )}
               </div>
             </div>
           </div>
