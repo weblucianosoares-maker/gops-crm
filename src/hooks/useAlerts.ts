@@ -21,10 +21,9 @@ export function useAlerts() {
 
   const fetchAlerts = async () => {
     try {
-      const [leadsRes, beneficiariesRes, contractsRes, remindersRes] = await Promise.all([
+      const [leadsRes, beneficiariesRes, remindersRes] = await Promise.all([
         supabase.from('leads').select('*'),
         supabase.from('beneficiaries').select('id, name, birth_date, lead_id'),
-        supabase.from('contracts').select('id, start_date, leads(name)'),
         supabase.from('reminders').select('*, leads(*)').eq('status', 'pendente')
       ]);
 

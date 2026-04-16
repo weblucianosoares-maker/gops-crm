@@ -236,43 +236,11 @@ export const evolutionService = {
       if (!response.ok) return null;
       const data = await response.json();
       
-      // Sanitização ultra-defensiva para evitar objetos no estado do React
       return {
-        isBusiness: !!(data.isBusiness || data.businessProfile || data.profile?.isBusiness),
-        verifiedName: typeof data.verifiedName === 'string' ? data.verifiedName : 
-                     (typeof data.profile?.verifiedName === 'string' ? data.profile.verifiedName : null)
+        isBusiness: !!(data.isBusiness || data.businessProfile || data.profile?.isBusiness)
       };
     } catch (error) {
       console.error('Erro ao buscar perfil WhatsApp:', error);
-      return null;
-    }
-  },
-
-  // Buscar recado/status (About)
-  async fetchStatus(number: string) {
-    try {
-      const cleanNumber = number.replace(/\D/g, '');
-      const formattedNumber = cleanNumber.startsWith('55') ? cleanNumber : `55${cleanNumber}`;
-      
-      const response = await fetch(`${BASE_URL}/chat/fetchStatus/${encodeURIComponent(INSTANCE)}`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ number: formattedNumber })
-      });
-
-      if (!response.ok) return null;
-      const data = await response.json();
-      
-      // Se data.status for um objeto ou qualquer coisa que não seja string, tentamos extrair o texto ou converter
-      if (data?.status) {
-        if (typeof data.status === 'string') return data.status;
-        if (typeof data.status === 'object' && typeof data.status.status === 'string') return data.status.status;
-        if (typeof data.status === 'object') return JSON.stringify(data.status).substring(0, 100); // Fallback seguro
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Erro ao buscar status WhatsApp:', error);
       return null;
     }
   }

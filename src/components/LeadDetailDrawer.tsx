@@ -227,7 +227,6 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
   const [isSearchingCNPJ, setIsSearchingCNPJ] = useState(false);
   const [isSavingReminder, setIsSavingReminder] = useState(false);
   const [waProfile, setWaProfile] = useState<any>(null);
-  const [waStatus, setWaStatus] = useState<string | null>(null);
   const [isLoadingInsights, setIsLoadingInsights] = useState(false);
 
   const handleCNPJChange = async (cnpj: string) => {
@@ -295,12 +294,8 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
     if (!phoneNumber) return;
     setIsLoadingInsights(true);
     try {
-      const [profile, status] = await Promise.all([
-        evolutionService.fetchProfile(phoneNumber),
-        evolutionService.fetchStatus(phoneNumber)
-      ]);
+      const profile = await evolutionService.fetchProfile(phoneNumber);
       setWaProfile(profile);
-      setWaStatus(status);
     } catch (e) {
       console.error("Erro ao carregar insights do WhatsApp:", e);
     } finally {
@@ -316,7 +311,6 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       setLead(initialLead);
       fetchHistory(initialLead.id);
       setWaProfile(null);
-      setWaStatus(null);
       setActiveTab('details');
       if (initialLead.phone) {
         if (!initialLead.profile_picture_url) {
@@ -890,34 +884,24 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                 </button>
               </div>
 
-              {/* WhatsApp Bio & Profile Insights */}
-              {(waProfile || waStatus) && (
+              {/* WhatsApp Profile Insights */}
+              {waProfile && (
                 <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-100/50">
-                  {waProfile && (
-                    <div className={cn(
-                      "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter border shadow-sm transition-all animate-in fade-in slide-in-from-left-2",
-                      waProfile.isBusiness 
-                        ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
-                        : "bg-slate-50 text-slate-500 border-slate-200"
-                    )}>
-                      {waProfile.isBusiness ? (
-                        <><Icons.CheckCircle className="w-3 h-3" /> Conta Comercial</>
-                      ) : (
-                        <><Icons.Users className="w-3 h-3" /> Conta Pessoal</>
-                      )}
-                    </div>
-                  )}
-
-                  {waStatus && (
-                    <div className="flex items-center gap-2 px-3 py-1 bg-white border border-slate-200 rounded-lg text-[10px] text-slate-600 font-bold italic shadow-sm max-w-full animate-in fade-in slide-in-from-left-4" title="Recado do WhatsApp">
-                      <Icons.MessageSquare className="w-3.5 h-3.5 text-slate-300 shrink-0" />
-                      <span className="truncate">
-                        "{typeof waStatus === 'string' ? waStatus : String(waStatus?.status || waStatus || 'Disponível')}"
-                      </span>
-                    </div>
-                  )}
+                  <div className={cn(
+                    "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter border shadow-sm transition-all animate-in fade-in slide-in-from-left-2",
+                    waProfile.isBusiness 
+                      ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
+                      : "bg-slate-50 text-slate-500 border-slate-200"
+                  )}>
+                    {waProfile.isBusiness ? (
+                      <><Icons.CheckCircle className="w-3 h-3" /> Conta Comercial</>
+                    ) : (
+                      <><Icons.Users className="w-3 h-3" /> Conta Pessoal</>
+                    )}
+                  </div>
                 </div>
               )}
+            </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
