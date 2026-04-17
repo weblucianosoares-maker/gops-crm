@@ -19,7 +19,9 @@ export const DatePicker = ({
   themeColor = "blue-600"
 }: DatePickerProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'days' | 'months' | 'years'>('days');
   const [displayValue, setDisplayValue] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   
   // Internal state for calendar navigation
@@ -27,15 +29,18 @@ export const DatePicker = ({
 
   // Sync internal display value when external value changes
   useEffect(() => {
+    if (isFocused) return; // Don't sync while user is typing
+    
     if (value) {
       const [y, m, d] = value.split('-').map(Number);
       if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
         setDisplayValue(`${d.toString().padStart(2, '0')}/${m.toString().padStart(2, '0')}/${y}`);
+        setViewDate(new Date(y, m - 1, d));
       }
     } else {
       setDisplayValue("");
     }
-  }, [value]);
+  }, [value, isFocused]);
 
   // Handle typing with mask
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,6 +54,25 @@ export const DatePicker = ({
     setDisplayValue(formatted);
 
     // If fully typed, trigger onChange
+    if (val.length === 8) {
+      const d = val.substring(0, 2);
+      const m = val.substring(2, 4);
+      const y = val.substring(4);
+      const iso = `${y}-${m}-${d}`;
+      const parsed = Date.parse(iso);
+      if (!isNaN(parsed)) {
+        onChange(iso);
+        setViewDate(new Date(parsed));
+      }
+    } else if (val.length === 0) {
+      onChange("");
+    }
+  };
+
+  const handleInputBlur = () => {
+    setIsFocused(false);
+    // Final validation on blur
+    const val = displayValue.replace(/\D/g, "");
     if (val.length === 8) {
       const d = val.substring(0, 2);
       const m = val.substring(2, 4);
@@ -95,6 +119,11 @@ export const DatePicker = ({
           type="text"
           value={displayValue}
           onChange={handleInputChange}
+          onFocus={() => {
+            setIsFocused(true);
+            setIsOpen(true);
+          }}
+          onBlur={handleInputBlur}
           placeholder={placeholder}
           className={cn(
             "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:bg-white transition-all pr-12",
@@ -128,9 +157,22 @@ export const DatePicker = ({
               >
                 <Icons.ChevronLeft className="w-4 h-4" />
               </button>
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-600">
-                {months[viewDate.getMonth()]} {viewDate.getFullYear()}
+              
+              <div className="flex items-center gap-1">
+                <button 
+                  onClick={() => setViewMode(viewMode === 'months' ? 'days' : 'months')}
+                  className="px-2 py-1 hover:bg-slate-50 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-600 transition-colors"
+                >
+                  {months[viewDate.getMonth()]}
+                </button>
+                <button 
+                  onClick={() => setViewMode(viewMode === 'years' ? 'days' : 'years')}
+                  className="px-2 py-1 hover:bg-slate-50 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-600 transition-colors"
+                >
+                  {viewDate.getFullYear()}
+                </button>
               </div>
+
               <button 
                 onClick={nextMonth}
                 className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-400 transition-colors"
@@ -139,39 +181,83 @@ export const DatePicker = ({
               </button>
             </div>
 
-            {/* Week Days */}
-            <div className="grid grid-cols-7 gap-1 mb-2">
-              {weekDays.map(d => (
-                <div key={d} className="text-[8px] font-black text-slate-300 text-center py-1">{d}</div>
-              ))}
-            </div>
+            {viewMode === 'days' && (
+              <>
+                {/* Week Days */}
+                <div className="grid grid-cols-7 gap-1 mb-2">
+                  {weekDays.map(d => (
+                    <div key={d} className="text-[8px] font-black text-slate-300 text-center py-1">{d}</div>
+                  ))}
+                </div>
 
-            {/* Month Days */}
-            <div className="grid grid-cols-7 gap-1">
-              {Array.from({ length: firstDayOfMonth(viewDate.getMonth(), viewDate.getFullYear()) }).map((_, i) => (
-                <div key={`empty-${i}`} />
-              ))}
-              {Array.from({ length: daysInMonth(viewDate.getMonth(), viewDate.getFullYear()) }).map((_, i) => {
-                const day = i + 1;
-                const isSelected = value === `${viewDate.getFullYear()}-${(viewDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                const isToday = new Date().toDateString() === new Date(viewDate.getFullYear(), viewDate.getMonth(), day).toDateString();
-                
-                return (
+                {/* Month Days */}
+                <div className="grid grid-cols-7 gap-1">
+                  {Array.from({ length: firstDayOfMonth(viewDate.getMonth(), viewDate.getFullYear()) }).map((_, i) => (
+                    <div key={`empty-${i}`} />
+                  ))}
+                  {Array.from({ length: daysInMonth(viewDate.getMonth(), viewDate.getFullYear()) }).map((_, i) => {
+                    const day = i + 1;
+                    const isSelected = value === `${viewDate.getFullYear()}-${(viewDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                    const isToday = new Date().toDateString() === new Date(viewDate.getFullYear(), viewDate.getMonth(), day).toDateString();
+                    
+                    return (
+                      <button
+                        key={day}
+                        onClick={() => handleDateSelect(day)}
+                        className={cn(
+                          "aspect-square text-[11px] font-bold rounded-lg flex items-center justify-center transition-all",
+                          isSelected 
+                            ? (themeColor === "blue-600" ? "bg-blue-600 text-white shadow-lg shadow-blue-100" : `bg-${themeColor} text-white shadow-lg`) 
+                            : (isToday ? "text-blue-500 bg-blue-50" : "text-slate-600 hover:bg-slate-50")
+                        )}
+                      >
+                        {day}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {viewMode === 'months' && (
+              <div className="grid grid-cols-3 gap-2 py-2">
+                {months.map((month, idx) => (
                   <button
-                    key={day}
-                    onClick={() => handleDateSelect(day)}
+                    key={month}
+                    onClick={() => {
+                      setViewDate(new Date(viewDate.getFullYear(), idx, 1));
+                      setViewMode('days');
+                    }}
                     className={cn(
-                      "aspect-square text-[11px] font-bold rounded-lg flex items-center justify-center transition-all",
-                      isSelected 
-                        ? (themeColor === "blue-600" ? "bg-blue-600 text-white shadow-lg shadow-blue-100" : `bg-${themeColor} text-white shadow-lg`) 
-                        : (isToday ? "text-blue-500 bg-blue-50" : "text-slate-600 hover:bg-slate-50")
+                      "py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all",
+                      viewDate.getMonth() === idx ? "bg-blue-600 text-white font-black" : "bg-slate-50 text-slate-500 hover:bg-slate-100"
                     )}
                   >
-                    {day}
+                    {month.substring(0, 3)}
                   </button>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            )}
+
+            {viewMode === 'years' && (
+              <div className="grid grid-cols-4 gap-2 py-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map(year => (
+                  <button
+                    key={year}
+                    onClick={() => {
+                      setViewDate(new Date(year, viewDate.getMonth(), 1));
+                      setViewMode('days');
+                    }}
+                    className={cn(
+                      "py-2 rounded-lg text-[10px] font-black transition-all",
+                      viewDate.getFullYear() === year ? "bg-blue-600 text-white" : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                    )}
+                  >
+                    {year}
+                  </button>
+                ))}
+              </div>
+            )}
             
             {/* Quick Actions */}
             <div className="mt-4 pt-4 border-t border-slate-50 grid grid-cols-2 gap-2">
