@@ -213,8 +213,6 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
       cnae: newLead.cnae,
       opening_date: newLead.opening_date || null,
       // PME Data
-      resp_emp_name: newLead.resp_emp_name,
-      resp_emp_job: newLead.resp_emp_job,
       resp_emp_birth_date: newLead.resp_emp_birth_date || null,
       resp_emp_marital_status: newLead.resp_emp_marital_status,
       resp_emp_marriage_date: newLead.resp_emp_marriage_date || null,
