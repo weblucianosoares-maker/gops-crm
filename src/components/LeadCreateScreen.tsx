@@ -140,7 +140,7 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
             address_city: data.municipio || prev.address_city,
             address_state: data.uf || prev.address_state,
             address_number: data.numero || prev.address_number,
-            cnae: data.cnae_fiscal_descricao || data.cnae_fiscal || prev.cnae,
+            cnae: data.cnae_fiscal ? `${data.cnae_fiscal}${data.cnae_fiscal_descricao ? ' - ' + data.cnae_fiscal_descricao : ''}` : (data.cnae_fiscal_descricao || prev.cnae),
             opening_date: data.data_abertura || prev.opening_date,
             email: data.email || prev.email,
             phone: data.ddd_telefone_1 ? formatPhone(data.ddd_telefone_1) : prev.phone
@@ -427,6 +427,11 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
                            <InputField label="Razão Social" value={newLead.company_name} onChange={(v:any) => setNewLead({...newLead, company_name: v, name: v})} required />
                          </div>
                          <InputField label="Nome Fantasia" value={newLead.nickname} onChange={(v:any) => setNewLead({...newLead, nickname: v})} />
+                         <InputField label="CNAE" value={newLead.cnae} onChange={(v:any) => setNewLead({...newLead, cnae: v})} />
+                         <div>
+                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Data Abertura</label>
+                           <DatePicker value={newLead.opening_date} onChange={(v:any) => setNewLead(prev => ({...prev, opening_date: v}))} />
+                         </div>
                          <div>
                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Tipo de Contato</label>
                            <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" value={newLead.contact_type} onChange={e => setNewLead({...newLead, contact_type: e.target.value})}>

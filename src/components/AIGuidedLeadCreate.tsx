@@ -95,6 +95,7 @@ export function AIGuidedLeadCreate({ isOpen, onClose, onSuccess }: AIGuidedLeadC
              company_name: data.razao_social,
              nickname: data.nome_fantasia,
              opening_date: data.data_abertura,
+             cnae: data.cnae_fiscal ? `${data.cnae_fiscal}${data.cnae_fiscal_descricao ? ' - ' + data.cnae_fiscal_descricao : ''}` : data.cnae_fiscal_descricao,
              address: `${data.logradouro}, ${data.numero} - ${data.municipio}/${data.uf}`
            }));
            success("Dados da empresa carregados via CNPJ!");
