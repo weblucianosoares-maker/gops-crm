@@ -6,6 +6,7 @@ import { supabase } from "../lib/supabase";
 import { useLeads } from "../lib/leadsContext";
 import { useToast } from "./Toasts";
 import { validateLeadWhatsApp } from "../lib/evolution";
+import { DatePicker } from "./DatePicker";
 
 interface LeadCreateScreenProps {
   isOpen: boolean;
@@ -353,7 +354,10 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
                          <div className="lg:col-span-2">
                            <InputField label="Nome Completo" value={newLead.name} onChange={(v:any) => setNewLead({...newLead, name: v})} placeholder="Ex: João da Silva" required />
                          </div>
-                         <InputField label="Data Nascimento" type="date" value={newLead.birth_date} onChange={(v:any) => setNewLead({...newLead, birth_date: v})} />
+                         <div>
+                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Data Nascimento</label>
+                           <DatePicker value={newLead.birth_date} onChange={(v:any) => setNewLead(prev => ({...prev, birth_date: v}))} />
+                         </div>
                          <div>
                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Estado Civil</label>
                            <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" value={newLead.marital_status} onChange={e => setNewLead({...newLead, marital_status: e.target.value})}>
@@ -365,7 +369,10 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
                              <option value="União Estável">União Estável</option>
                            </select>
                          </div>
-                         <InputField label="Data Casamento" type="date" value={newLead.marriage_date} onChange={(v:any) => setNewLead({...newLead, marriage_date: v})} />
+                         <div>
+                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Data Casamento</label>
+                           <DatePicker value={newLead.marriage_date} onChange={(v:any) => setNewLead(prev => ({...prev, marriage_date: v}))} />
+                         </div>
                          <InputField label="CPF" value={newLead.cpf} mask={formatCPF} onChange={(v:any) => setNewLead({...newLead, cpf: v})} placeholder="000.000.000-00" />
                          <InputField label="RG" value={newLead.rg} onChange={(v:any) => setNewLead({...newLead, rg: v})} placeholder="00.000.000-0" />
                          <div>
@@ -439,7 +446,10 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
                            <InputField label="Nome Completo" value={newLead.resp_emp_name} onChange={(v:any) => setNewLead({...newLead, resp_emp_name: v, contact_person: v})} />
                          </div>
                          <InputField label="Cargo" value={newLead.resp_emp_job} onChange={(v:any) => setNewLead({...newLead, resp_emp_job: v, job_title: v})} />
-                         <InputField label="Data Nascimento" type="date" value={newLead.resp_emp_birth_date} onChange={(v:any) => setNewLead({...newLead, resp_emp_birth_date: v})} />
+                         <div>
+                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Data Nascimento</label>
+                           <DatePicker value={newLead.resp_emp_birth_date} onChange={(v:any) => setNewLead(prev => ({...prev, resp_emp_birth_date: v}))} />
+                         </div>
                          <div>
                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Estado Civil</label>
                            <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" value={newLead.resp_emp_marital_status} onChange={e => setNewLead({...newLead, resp_emp_marital_status: e.target.value})}>
@@ -451,7 +461,10 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
                              <option value="União Estável">União Estável</option>
                            </select>
                          </div>
-                         <InputField label="Data Casamento" type="date" value={newLead.resp_emp_marriage_date} onChange={(v:any) => setNewLead({...newLead, resp_emp_marriage_date: v})} />
+                         <div>
+                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Data Casamento</label>
+                           <DatePicker value={newLead.resp_emp_marriage_date} onChange={(v:any) => setNewLead(prev => ({...prev, resp_emp_marriage_date: v}))} />
+                         </div>
                          <InputField label="CPF" value={newLead.resp_emp_cpf} mask={formatCPF} onChange={(v:any) => setNewLead({...newLead, resp_emp_cpf: v})} placeholder="000.000.000-00" />
                          <InputField label="RG" value={newLead.resp_emp_rg} onChange={(v:any) => setNewLead({...newLead, resp_emp_rg: v})} />
                          <InputField label="WhatsApp" value={newLead.resp_emp_whatsapp} mask={formatPhone} onChange={(v:any) => setNewLead({...newLead, resp_emp_whatsapp: v})} placeholder="(00) 00000-0000" />
@@ -468,7 +481,10 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
                            <InputField label="Nome Completo" value={newLead.resp_con_name} onChange={(v:any) => setNewLead({...newLead, resp_con_name: v})} />
                          </div>
                          <InputField label="Cargo" value={newLead.resp_con_job} onChange={(v:any) => setNewLead({...newLead, resp_con_job: v})} />
-                         <InputField label="Data Nascimento" type="date" value={newLead.resp_con_birth_date} onChange={(v:any) => setNewLead({...newLead, resp_con_birth_date: v})} />
+                         <div>
+                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Data Nascimento</label>
+                           <DatePicker value={newLead.resp_con_birth_date} onChange={(v:any) => setNewLead(prev => ({...prev, resp_con_birth_date: v}))} />
+                         </div>
                          <div>
                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Estado Civil</label>
                            <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" value={newLead.resp_con_marital_status} onChange={e => setNewLead({...newLead, resp_con_marital_status: e.target.value})}>
@@ -480,7 +496,10 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
                              <option value="União Estável">União Estável</option>
                            </select>
                          </div>
-                         <InputField label="Data Casamento" type="date" value={newLead.resp_con_marriage_date} onChange={(v:any) => setNewLead({...newLead, resp_con_marriage_date: v})} />
+                         <div>
+                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Data Casamento</label>
+                           <DatePicker value={newLead.resp_con_marriage_date} onChange={(v:any) => setNewLead(prev => ({...prev, resp_con_marriage_date: v}))} />
+                         </div>
                          <InputField label="CPF" value={newLead.resp_con_cpf} mask={formatCPF} onChange={(v:any) => setNewLead({...newLead, resp_con_cpf: v})} placeholder="000.000.000-00" />
                          <InputField label="RG" value={newLead.resp_con_rg} onChange={(v:any) => setNewLead({...newLead, resp_con_rg: v})} />
                          <InputField label="WhatsApp" value={newLead.resp_con_whatsapp} mask={formatPhone} onChange={(v:any) => setNewLead({...newLead, resp_con_whatsapp: v})} placeholder="(00) 00000-0000" />
@@ -538,7 +557,10 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
                               />
                            </div>
                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-                              <InputField label="Vencimento Contrato" type="date" value={newLead.contract_expiry_date} onChange={(v:any) => setNewLead({...newLead, contract_expiry_date: v})} />
+                              <div>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Vencimento Contrato</label>
+                                <DatePicker value={newLead.contract_expiry_date} onChange={(v:any) => setNewLead(prev => ({...prev, contract_expiry_date: v}))} />
+                              </div>
                               <div className="space-y-4">
                                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Tem Corretor?</label>
                                 <div className="flex gap-3">

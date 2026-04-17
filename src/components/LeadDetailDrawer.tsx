@@ -518,7 +518,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       source: lead.source,
       lastcontact: lead.lastcontact,
       cnae: lead.cnae,
-      opening_date: lead.opening_date,
+      opening_date: lead.opening_date || null,
       do_not_contact: lead.do_not_contact || false,
       profile_picture_url: lead.profile_picture_url
     };
@@ -571,11 +571,11 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                   mask={lead.lead_type === 'PJ' ? formatCNPJ : formatCPF}
                   onChange={(v:any) => lead.lead_type === 'PJ' ? handleCNPJChange(v) : setLead({...lead, cpf: v})} 
                 />
-                <DetailField label="Data Nascimento" type="date" value={lead.birth_date} onChange={(v:any) => setLead({...lead, birth_date: v})} />
+                <DetailField label="Data Nascimento" type="date" value={lead.birth_date} onChange={(v:any) => setLead((prev:any) => ({...prev, birth_date: v || null}))} />
                 {lead.lead_type === 'PJ' && (
                   <>
-                    <DetailField label="CNAE" value={lead.cnae} onChange={(v:any) => setLead({...lead, cnae: v})} />
-                    <DetailField label="Data Abertura" type="date" value={lead.opening_date} onChange={(v:any) => setLead({...lead, opening_date: v})} />
+                    <DetailField label="CNAE" value={lead.cnae} onChange={(v:any) => setLead((prev:any) => ({...prev, cnae: v}))} />
+                    <DetailField label="Data Abertura" type="date" value={lead.opening_date} onChange={(v:any) => setLead((prev:any) => ({...prev, opening_date: v || null}))} />
                     <div className="flex items-center gap-2 pt-6">
                       {isSearchingCNPJ && <Icons.Loader2 className="w-4 h-4 animate-spin text-blue-500" />}
                     </div>
@@ -697,9 +697,9 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                         label="Valor Pago Atual" 
                         value={lead.current_value ? Math.round(lead.current_value * 100).toString() : ""} 
                         mask={formatCurrencyValue}
-                        onChange={(v:any) => setLead({...lead, current_value: parseCurrencyValue(v)})} 
+                        onChange={(v:any) => setLead((prev:any) => ({...prev, current_value: parseCurrencyValue(v)}))} 
                       />
-                      <DetailField label="Vencimento Contrato" type="date" value={lead.contract_expiry_date} onChange={(v:any) => setLead({...lead, contract_expiry_date: v})} />
+                      <DetailField label="Vencimento Contrato" type="date" value={lead.contract_expiry_date} onChange={(v:any) => setLead((prev:any) => ({...prev, contract_expiry_date: v || null}))} />
                     </div>
                   )}
                </div>

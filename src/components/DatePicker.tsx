@@ -29,16 +29,18 @@ export const DatePicker = ({
 
   // Sync internal display value when external value changes
   useEffect(() => {
-    if (isFocused) return; // Don't sync while user is typing
-    
-    if (value) {
-      const [y, m, d] = value.split('-').map(Number);
-      if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
-        setDisplayValue(`${d.toString().padStart(2, '0')}/${m.toString().padStart(2, '0')}/${y}`);
-        setViewDate(new Date(y, m - 1, d));
+    // Only sync if field is NOT focused. If it IS focused, the user's typing
+    // takes priority, and we don't want to reset it while they are in the middle of a date.
+    if (!isFocused) {
+      if (value) {
+        const [y, m, d] = value.split('-').map(Number);
+        if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+          setDisplayValue(`${d.toString().padStart(2, '0')}/${m.toString().padStart(2, '0')}/${y}`);
+          setViewDate(new Date(y, m - 1, d));
+        }
+      } else {
+        setDisplayValue("");
       }
-    } else {
-      setDisplayValue("");
     }
   }, [value, isFocused]);
 
@@ -53,11 +55,19 @@ export const DatePicker = ({
     
     setDisplayValue(formatted);
 
-    // If fully typed, trigger onChange
-    if (val.length === 8) {
+    // Immediate validation for full dates (8 digits) or 6 digits (short year)
+    if (val.length === 8 || val.length === 6) {
       const d = val.substring(0, 2);
       const m = val.substring(2, 4);
-      const y = val.substring(4);
+      let y = val.substring(4);
+      
+      // Auto-convert YY to YYYY (assume 20YY if <= current year + 10, else 19YY)
+      if (y.length === 2) {
+        const yearNum = parseInt(y);
+        const currentYearShort = new Date().getFullYear() % 100;
+        y = yearNum <= currentYearShort + 2 ? `20${y}` : `19${y}`;
+      }
+      
       const iso = `${y}-${m}-${d}`;
       const parsed = Date.parse(iso);
       if (!isNaN(parsed)) {
@@ -65,7 +75,7 @@ export const DatePicker = ({
         setViewDate(new Date(parsed));
       }
     } else if (val.length === 0) {
-      onChange("");
+      onChange(null as any); // Use null for DB compatibility
     }
   };
 
@@ -73,16 +83,23 @@ export const DatePicker = ({
     setIsFocused(false);
     // Final validation on blur
     const val = displayValue.replace(/\D/g, "");
-    if (val.length === 8) {
+    if (val.length === 8 || val.length === 6) {
       const d = val.substring(0, 2);
       const m = val.substring(2, 4);
-      const y = val.substring(4);
+      let y = val.substring(4);
+      
+      if (y.length === 2) {
+        const yearNum = parseInt(y);
+        const currentYearShort = new Date().getFullYear() % 100;
+        y = yearNum <= currentYearShort + 2 ? `20${y}` : `19${y}`;
+      }
+      
       const iso = `${y}-${m}-${d}`;
       if (!isNaN(Date.parse(iso))) {
         onChange(iso);
       }
     } else if (val.length === 0) {
-      onChange("");
+      onChange(null as any);
     }
   };
 
