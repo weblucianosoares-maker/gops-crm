@@ -224,6 +224,33 @@ export default function Leads() {
   };
 
 
+  const handleExport = () => {
+    if (filteredLeads.length === 0) {
+      error("Nenhum lead para exportar.");
+      return;
+    }
+
+    const exportData = filteredLeads.map((lead: any) => ({
+      "Nome": lead.name,
+      "Telefone": formatPhone(lead.phone),
+      "Último Contato": lead.lastcontact || lead.last_contact || lead.last_app_message_at || "Sem contato"
+    }));
+
+    const csv = Papa.unparse(exportData);
+    const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", `leads_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    success(`${filteredLeads.length} leads exportados com sucesso!`);
+  };
+
   const handleDeleteLead = async () => {
     if (!leadToDelete) return;
     setIsDeleting(true);
@@ -519,6 +546,17 @@ export default function Leads() {
             </div>
           </div>
           
+          <button 
+            onClick={handleExport}
+            className="bg-emerald-50 text-emerald-600 border border-emerald-200 px-3 md:px-4 py-2 rounded-lg font-bold flex items-center gap-2.5 hover:bg-emerald-100 transition-all shadow-sm h-fit shrink-0 group"
+          >
+            <Icons.Download className="w-4 h-4 group-hover:scale-110 transition-transform" />
+            <div className="text-left">
+              <p className="text-[8px] uppercase tracking-tighter text-emerald-500 leading-none mb-0.5">Exportar</p>
+              <p className="text-[10px] md:text-xs">Pesquisa</p>
+            </div>
+          </button>
+
           <button 
             onClick={() => setShowFilters(!showFilters)}
             className={cn(
