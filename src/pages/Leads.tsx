@@ -834,7 +834,7 @@ export default function Leads() {
                   <td className="px-2 py-2 text-center">
                     {lead.last_app_message_at ? (
                       <div className="flex flex-col items-center gap-0.5">
-                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-tighter">Mensagem enviada em</span>
+                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-tighter">Última interação em</span>
                         <span className="text-[11px] font-bold text-slate-700">{formatDateTime(lead.last_app_message_at)}</span>
                       </div>
                     ) : (

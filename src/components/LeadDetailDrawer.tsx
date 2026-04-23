@@ -608,7 +608,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                   onChange={(v:any) => setLead({...lead, contact_type: v})} 
                 />
                 <div className="space-y-1">
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">Último Contato</label>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">Última Interação</label>
                   <div className="flex gap-2">
                     <input 
                       type="text"
