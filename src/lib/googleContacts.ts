@@ -2,6 +2,19 @@ import { supabase } from './supabase';
 import { batchValidateLeadsWhatsApp } from './evolution';
 import { normalizePhone } from './utils';
 
+/**
+ * Remove caracteres Unicode inválidos (surrogates órfãos) que quebram o tipo JSONB no Postgres
+ */
+function sanitizeString(str: string): string {
+  if (!str) return str;
+  // toWellFormed garante que a string não tenha sequências de escape Unicode inválidas
+  if ((str as any).toWellFormed) {
+    return (str as any).toWellFormed();
+  }
+  // Fallback para ambientes sem toWellFormed
+  return str.replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '');
+}
+
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "643139667607-0hj6tkuuk4tprhm6su71sggj2kd6ngj4.apps.googleusercontent.com";
 
 export interface GoogleContact {
@@ -136,11 +149,11 @@ async function fetchAndInportContacts(accessToken: string, onSuccess: (count: nu
         }
 
         newLeads.push({
-          name: name,
-          email: email || null,
+          name: sanitizeString(name),
+          email: sanitizeString(email) || null,
           phone: phone || null,
-          source: source,
-          initials: initials,
+          source: sanitizeString(source),
+          initials: sanitizeString(initials),
           status: 'Novo',
           lead_type: 'PF',
           birthday: false,
