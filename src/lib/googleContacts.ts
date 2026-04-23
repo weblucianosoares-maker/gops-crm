@@ -154,7 +154,7 @@ async function fetchAndInportContacts(accessToken: string, onSuccess: (count: nu
           phone: phone || '',
           source: sanitizeString(source),
           initials: sanitizeString(initials),
-          status: 'Novo',
+          status: '',
           lead_type: 'PF',
           birthday: false,
           lastcontact: null
