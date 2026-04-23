@@ -150,8 +150,8 @@ async function fetchAndInportContacts(accessToken: string, onSuccess: (count: nu
 
         newLeads.push({
           name: sanitizeString(name),
-          email: sanitizeString(email) || null,
-          phone: phone || null,
+          email: sanitizeString(email) || '',
+          phone: phone || '',
           source: sanitizeString(source),
           initials: sanitizeString(initials),
           status: 'Novo',
