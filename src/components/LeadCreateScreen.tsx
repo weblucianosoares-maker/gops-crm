@@ -131,9 +131,8 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
         if (response.ok && !data.error) {
           setNewLead(prev => ({
             ...prev,
-            company_name: data.razao_social || data.nome_fantasia || prev.company_name,
-            name: data.razao_social || data.nome_fantasia || prev.name,
-            nickname: data.nome_fantasia || data.razao_social || prev.nickname,
+            company_name: data.razao_social || prev.company_name,
+            nickname: data.nome_fantasia || prev.nickname,
             address_zip: data.cep ? formatCEP(data.cep) : prev.address_zip,
             address_street: data.logradouro || prev.address_street,
             address_neighborhood: data.bairro || prev.address_neighborhood,
@@ -424,7 +423,7 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                          <InputField label="CNPJ" value={newLead.cnpj} mask={formatCNPJ} onChange={(v:any) => handleCNPJChange(v)} placeholder="00.000.000/0000-00" required />
                          <div className="md:col-span-2">
-                           <InputField label="Razão Social" value={newLead.company_name} onChange={(v:any) => setNewLead({...newLead, company_name: v, name: v})} required />
+                           <InputField label="Razão Social" value={newLead.company_name} onChange={(v:any) => setNewLead({...newLead, company_name: v})} required />
                          </div>
                          <InputField label="Nome Fantasia" value={newLead.nickname} onChange={(v:any) => setNewLead({...newLead, nickname: v})} />
                          <InputField label="CNAE" value={newLead.cnae} onChange={(v:any) => setNewLead({...newLead, cnae: v})} />
