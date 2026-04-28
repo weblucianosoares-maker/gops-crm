@@ -481,8 +481,8 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
     const updates = { 
       name: lead.name, 
       email: lead.email, 
-      phone: lead.phone?.replace(/\D/g, ''), 
-      secondary_phone: lead.secondary_phone?.replace(/\D/g, ''),
+      phone: lead.phone?.toString().replace(/\D/g, ''), 
+      secondary_phone: lead.secondary_phone?.toString().replace(/\D/g, ''),
       status: lead.status, 
       nickname: lead.nickname, 
       lead_type: lead.lead_type || 'PF', 
@@ -491,8 +491,8 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       job_title: lead.job_title,
       birth_date: lead.birth_date || null, 
       marriage_date: lead.marriage_date || null,
-      cnpj: lead.cnpj?.replace(/\D/g, ''), 
-      cpf: lead.cpf?.replace(/\D/g, ''),
+      cnpj: lead.cnpj?.toString().replace(/\D/g, ''), 
+      cpf: lead.cpf?.toString().replace(/\D/g, ''),
       address_zip: lead.address_zip, 
       address_street: lead.address_street, 
       address_neighborhood: lead.address_neighborhood, 
@@ -505,6 +505,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       current_lives: lead.current_lives, 
       current_value: lead.current_value, 
       has_current_plan: lead.has_current_plan,
+      contract_start_date: lead.contract_start_date || null,
       contract_expiry_date: lead.contract_expiry_date || null,
       docs_link: lead.docs_link, 
       plan_type: lead.plan_type, 
@@ -522,9 +523,18 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       do_not_contact: lead.do_not_contact || false,
       profile_picture_url: lead.profile_picture_url
     };
+    
+    console.log("Salvando lead:", updates);
     const res = lead.id ? await supabase.from('leads').update(updates).eq('id', lead.id) : await supabase.from('leads').insert([updates]);
     setIsSaving(false);
-    if (!res.error) { success("Salvo!"); onUpdate(); onClose(); } else showError("Erro ao salvar");
+    if (!res.error) { 
+      success("Salvo com sucesso!"); 
+      onUpdate(); 
+      onClose(); 
+    } else {
+      console.error("Erro ao salvar lead:", res.error);
+      showError(`Erro ao salvar: ${res.error.message}`);
+    }
   };
 
   const renderTabContent = () => {
@@ -693,14 +703,14 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                       <DetailField label="Operadora Atual" value={lead.current_carrier} onChange={(v:any) => setLead({...lead, current_carrier: v})} />
                       <DetailField label="Produto Atual" value={lead.current_product} onChange={(v:any) => setLead({...lead, current_product: v})} />
                       <DetailField label="Qtde Vidas" type="number" value={lead.current_lives} onChange={(v:any) => setLead({...lead, current_lives: Number(v)})} />
-                      <DetailField 
-                        label="Valor Pago Atual" 
-                        value={lead.current_value ? Math.round(lead.current_value * 100).toString() : ""} 
-                        mask={formatCurrencyValue}
-                        onChange={(v:any) => setLead((prev:any) => ({...prev, current_value: parseCurrencyValue(v)}))} 
-                      />
-                      <DetailField label="Vencimento Contrato" type="date" value={lead.contract_expiry_date} onChange={(v:any) => setLead((prev:any) => ({...prev, contract_expiry_date: v || null}))} />
-                    </div>
+                       <DetailField label="Valor Pago Atual" 
+                         value={lead.current_value ? Math.round(lead.current_value * 100).toString() : ""} 
+                         mask={formatCurrencyValue}
+                         onChange={(v:any) => setLead((prev:any) => ({...prev, current_value: parseCurrencyValue(v)}))} 
+                       />
+                       <DetailField label="Data Início Vigência" type="date" value={lead.contract_start_date} onChange={(v:any) => setLead((prev:any) => ({...prev, contract_start_date: v || null}))} />
+                       <DetailField label="Vencimento Contrato" type="date" value={lead.contract_expiry_date} onChange={(v:any) => setLead((prev:any) => ({...prev, contract_expiry_date: v || null}))} />
+                     </div>
                   )}
                </div>
             </section>
