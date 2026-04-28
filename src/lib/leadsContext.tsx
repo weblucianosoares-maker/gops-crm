@@ -140,6 +140,7 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
         .from('leads')
         .select('*')
         .order('created_at', { ascending: false })
+        .order('id', { ascending: true })
         .range(from, to);
         
       if (error) {
@@ -159,7 +160,10 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
         hasMore = false;
       }
     }
-    setLeads(allLeads);
+
+    // Desduplicação final por ID para garantir integridade caso a paginação oscile
+    const uniqueLeads = Array.from(new Map(allLeads.map(lead => [lead.id, lead])).values());
+    setLeads(uniqueLeads);
   };
 
   const fetchUnread = async () => {
