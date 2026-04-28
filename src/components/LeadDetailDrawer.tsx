@@ -241,9 +241,8 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
         if (response.ok && !data.error) {
           setLead((prev: any) => ({
             ...prev,
-            company_name: data.razao_social || data.nome_fantasia || prev.company_name,
-            name: data.razao_social || data.nome_fantasia || prev.name,
-            nickname: data.nome_fantasia || data.razao_social || prev.nickname,
+            company_name: data.razao_social || prev.company_name,
+            nickname: data.nome_fantasia || prev.nickname,
             address_zip: data.cep ? formatCEP(data.cep) : prev.address_zip,
             address_street: data.logradouro || prev.address_street,
             address_neighborhood: data.bairro || prev.address_neighborhood,
@@ -569,11 +568,16 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                   )}>Não realizar contato</span>
                 </label>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                 <DetailField label="Categoria" value={lead.lead_type} selectOptions={['PF', 'PJ']} onChange={(v:any) => setLead({...lead, lead_type: v})} />
-                <div className="md:col-span-2">
-                   <DetailField label="Nome / Razão Social" value={lead.name} onChange={(v:any) => setLead({...lead, name: v, company_name: lead.lead_type === 'PJ' ? v : lead.company_name})} />
+                <div className={cn(lead.lead_type === 'PJ' ? "md:col-span-1" : "md:col-span-2")}>
+                   <DetailField label="Nome do Lead" value={lead.name} onChange={(v:any) => setLead({...lead, name: v})} />
                 </div>
+                {lead.lead_type === 'PJ' && (
+                  <div className="md:col-span-2">
+                    <DetailField label="Razão Social" value={lead.company_name} onChange={(v:any) => setLead({...lead, company_name: v})} />
+                  </div>
+                )}
                 <DetailField label="Apelido / Fantasia" value={lead.nickname} onChange={(v:any) => setLead({...lead, nickname: v})} />
                 <DetailField 
                   label={lead.lead_type === 'PJ' ? "CNPJ" : "CPF"} 
