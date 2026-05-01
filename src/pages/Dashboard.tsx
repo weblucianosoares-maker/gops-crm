@@ -89,15 +89,6 @@ export default function Dashboard() {
       c.client_name // Garante que não é um registro vazio ou de teste sem nome
     );
 
-    // DEBUG: Imprime no console para que o usuário veja o que está sendo contado
-    if (activeContracts.length > 0) {
-      console.log("--- DEBUG: CONTRATOS ATIVOS ENCONTRADOS ---");
-      activeContracts.forEach(c => {
-        console.log(`ID: ${c.id} | Cliente: ${c.client_name} | Vidas: ${c.lives} | Data: ${c.start_date}`);
-      });
-      console.log("-------------------------------------------");
-    }
-
     const totalActiveContracts = activeContracts.length;
     
     // Calcula vidas ativas estritamente dos contratos que passaram no filtro acima
@@ -238,7 +229,7 @@ export default function Dashboard() {
       d.setHours(0,0,0,0);
       const diff = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       if (diff >= 0 && diff <= 7) {
-        upcoming.push({ name: rem.title, type: "Lembrete", date: d, diff, parentName: rem.leads?.name });
+        upcoming.push({ name: String(rem.title || ''), type: "Lembrete", date: d, diff, parentName: String(rem.leads?.name || '') });
       }
     });
 
@@ -614,14 +605,14 @@ export default function Dashboard() {
               {proposals.slice(0, 4).map((prop) => (
                 <div key={prop.id} className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center font-bold text-xs">
-                    {prop.initials}
+                    {String(prop.initials)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold truncate">{prop.client}</p>
-                    <p className="text-[10px] text-slate-400 uppercase font-black">{prop.carrier}</p>
+                    <p className="text-sm font-bold truncate">{String(prop.client)}</p>
+                    <p className="text-[10px] text-slate-400 uppercase font-black">{String(prop.carrier)}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-black text-blue-400">{formatCurrency(prop.value).split(',')[0]}</p>
+                    <p className="text-sm font-black text-blue-400">{String(formatCurrency(prop.value).split(',')[0])}</p>
                   </div>
                 </div>
               ))}

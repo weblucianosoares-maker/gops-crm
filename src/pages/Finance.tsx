@@ -232,14 +232,14 @@ export default function Finance() {
               {currentMonthData.commissions.map((c, idx) => (
                 <tr key={c.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4">
-                    <p className="text-sm font-bold text-slate-900">{c.client_name}</p>
+                    <p className="text-sm font-bold text-slate-900">{String(c.client_name || '')}</p>
                     <p className="text-[10px] text-slate-400 uppercase font-bold tracking-tight">
                       Vigência: {new Date(c.start_date).toLocaleDateString('pt-BR')} • {c.type === 'PJ' ? 'PME' : 'Adesão'}
                     </p>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-xs font-bold text-slate-700">{c.carrier}</p>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase">{c.product || 'Plano de Saúde'}</p>
+                    <p className="text-xs font-bold text-slate-700">{String(c.carrier || '')}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">{String(c.product || 'Plano de Saúde')}</p>
                   </td>
                   <td className="px-6 py-4">
                     <p className="text-sm font-bold text-slate-700">{formatCurrency(c.monthly_fee)}</p>
