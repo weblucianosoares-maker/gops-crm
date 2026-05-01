@@ -183,7 +183,7 @@ export default function Funnel() {
         .single();
 
       if (!existingBen) {
-        await supabase.from('beneficiaries').insert([{
+        const { error: benErr } = await supabase.from('beneficiaries').insert([{
           contract_id: contractId,
           lead_id: lead.id,
           name: lead.name,
@@ -192,9 +192,9 @@ export default function Funnel() {
           cpf: (lead.cpf || lead.cnpj || '').replace(/\D/g, ''),
           initials: lead.name.split(' ').filter(Boolean).map((n:any) => n[0]).join('').substring(0, 2).toUpperCase()
         }]);
+        
+        if (benErr) console.error("Erro ao criar beneficiário automático:", benErr);
       }
-
-      if (benErr) console.error("Erro ao criar beneficiário automático:", benErr);
 
       success(`Contrato para ${lead.name} gerado com sucesso!`);
     } catch (err: any) {
