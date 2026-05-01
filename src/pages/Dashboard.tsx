@@ -188,10 +188,13 @@ export default function Dashboard() {
     let dayCount = 0;
     const upcoming: any[] = [];
 
-    const checkEvent = (dateStr: string, name: string, type: string, parentName?: string) => {
+    const checkEvent = (dateStr: string, name: any, type: string, parentName?: any) => {
       if (!dateStr) return;
       const d = new Date(dateStr);
       
+      const safeName = String(name || '');
+      const safeParent = parentName ? String(parentName) : undefined;
+
       // Contar aniversariantes do dia (ignorar ano)
       if (d.getDate() === now.getDate() && d.getMonth() === now.getMonth()) dayCount++;
       
@@ -208,7 +211,7 @@ export default function Dashboard() {
 
       const diff = Math.ceil((eventThisYear.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       if (diff >= 0 && diff <= 7) {
-        upcoming.push({ name, type, date: d, diff, parentName });
+        upcoming.push({ name: safeName, type, date: d, diff, parentName: safeParent });
       }
     };
 
@@ -591,9 +594,9 @@ export default function Dashboard() {
                       "w-2.5 h-2.5 rounded-full",
                       idx === 0 ? "bg-blue-600" : idx === 1 ? "bg-emerald-500" : idx === 2 ? "bg-amber-500" : "bg-red-500"
                     )} />
-                    <span className="text-xs font-black text-slate-600 truncate max-w-[120px]">{item.name}</span>
+                    <span className="text-xs font-black text-slate-600 truncate max-w-[120px]">{String(item.name)}</span>
                   </div>
-                  <span className="text-[10px] font-black text-slate-400">{item.percentage}%</span>
+                  <span className="text-[10px] font-black text-slate-400">{Number(item.percentage)}%</span>
                 </div>
               ))}
             </div>
@@ -613,7 +616,7 @@ export default function Dashboard() {
                     <p className="text-[10px] text-slate-400 uppercase font-black">{String(prop.carrier)}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-black text-blue-400">{String(formatCurrency(prop.value).split(',')[0])}</p>
+                    <p className="text-sm font-black text-blue-400">{String(formatCurrency(Number(prop.value)).split(',')[0])}</p>
                   </div>
                 </div>
               ))}

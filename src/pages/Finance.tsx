@@ -259,10 +259,10 @@ export default function Finance() {
                        <div className="flex-1 min-w-[120px]">
                           <p className="text-sm font-black text-slate-900">{formatCurrency(c.commission.net)}</p>
                           <div className="flex gap-1.5 mt-1">
-                             {c.commission.installments.map((inst: number, i: number) => (
+                             {c.commission.installments.map((inst: any, i: number) => (
                                <div key={i} className="flex flex-col items-center">
                                   <span className="text-[8px] font-black text-slate-400 uppercase">{i+1}ª</span>
-                                  <span className="text-[10px] font-bold text-slate-600">{formatCurrency(inst)}</span>
+                                  <span className="text-[10px] font-bold text-slate-600">{formatCurrency(Number(inst) || 0)}</span>
                                </div>
                              ))}
                           </div>

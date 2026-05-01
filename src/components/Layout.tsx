@@ -183,13 +183,13 @@ function GlobalAlertBar() {
                <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
                  <div className="flex items-center gap-2 md:gap-3 pr-2 md:pr-4 border-r border-white/10 shrink-0">
                     <div className="flex flex-col items-start">
-                       <p className="text-[9px] md:text-[11px] font-black tracking-widest group-hover:text-amber-400 transition-colors uppercase whitespace-nowrap">{current.title}</p>
+                       <p className="text-[9px] md:text-[11px] font-black tracking-widest group-hover:text-amber-400 transition-colors uppercase whitespace-nowrap">{String(current.title || '')}</p>
                        <p className="text-[7px] md:text-[8px] font-bold text-slate-500 uppercase tracking-tighter">
                          Data: {new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(current.date)}
                        </p>
                     </div>
                  </div>
-                 <p className="text-[10px] font-bold text-slate-400 group-hover:text-slate-100 transition-colors truncate max-w-lg hidden md:block italic tracking-tight">{current.description}</p>
+                 <p className="text-[10px] font-bold text-slate-400 group-hover:text-slate-100 transition-colors truncate max-w-lg hidden md:block italic tracking-tight">{String(current.description || '')}</p>
                </div>
 
                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
