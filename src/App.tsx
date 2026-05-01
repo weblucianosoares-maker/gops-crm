@@ -11,6 +11,7 @@ import Settings from "./pages/Settings";
 import NetworkSearch from "./pages/NetworkSearch";
 import Alerts from "./pages/Alerts";
 import AIInterview from "./pages/AIInterview";
+import Finance from "./pages/Finance";
 
 import { LeadsProvider } from "./lib/leadsContext";
 import { BrokerProvider } from "./lib/brokerContext";
@@ -33,6 +34,7 @@ function AppContent() {
       case "/network": return "Mapeamento de Rede Médica";
       case "/alerts": return "Central de Avisos";
       case "/interview": return "Entrevista Mágica";
+      case "/finance": return "Controle Financeiro";
       default: return "Efraim";
     }
   };
@@ -62,6 +64,7 @@ function AppContent() {
             <Route path="/network" element={<NetworkSearch />} />
             <Route path="/alerts" element={<Alerts />} />
             <Route path="/interview" element={<AIInterview />} />
+            <Route path="/finance" element={<Finance />} />
           </Routes>
         </main>
       </div>

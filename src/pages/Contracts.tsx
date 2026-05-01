@@ -178,10 +178,10 @@ export default function Contracts() {
             <thead className="bg-slate-50">
               <tr>
                 <th className="px-6 py-4 text-[0.6875rem] uppercase tracking-widest font-bold text-slate-400">Cliente</th>
-                <th className="px-6 py-4 text-[0.6875rem] uppercase tracking-widest font-bold text-slate-400">Operadora</th>
-                <th className="px-6 py-3 text-left text-[0.6875rem] font-bold text-slate-500 uppercase tracking-widest">Início</th>
+                <th className="px-6 py-4 text-[0.6875rem] uppercase tracking-widest font-bold text-slate-400">Operadora / Produto</th>
+                <th className="px-6 py-3 text-left text-[0.6875rem] font-bold text-slate-500 uppercase tracking-widest">Vigência</th>
+                <th className="px-6 py-3 text-left text-[0.6875rem] font-bold text-slate-500 uppercase tracking-widest">Próx. Reajuste (12m)</th>
                 <th className="px-6 py-3 text-left text-[0.6875rem] font-bold text-slate-500 uppercase tracking-widest">Comissão (Líq.)</th>
-                <th className="px-6 py-3 text-left text-[0.6875rem] font-bold text-slate-500 uppercase tracking-widest">Status</th>
                 <th className="px-6 py-4"></th>
               </tr>
             </thead>
@@ -200,15 +200,35 @@ export default function Contracts() {
                     <p className="text-xs text-slate-400">{contract.type || 'PF'} • Docs: {contract.cnpj || '---'}</p>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-[10px] font-bold text-blue-700">
-                        {(contract.carrier || 'U').substring(0,2).toUpperCase()}
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-[10px] font-bold text-blue-700">
+                          {(contract.carrier || 'U').substring(0,2).toUpperCase()}
+                        </div>
+                        <span className="text-sm font-bold text-slate-700">{contract.carrier}</span>
                       </div>
-                      <span className="text-sm text-slate-700">{contract.carrier}</span>
+                      <span className="text-[10px] text-slate-400 ml-8">{contract.product || 'Plano de Saúde'}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <p className="text-sm text-slate-700">{new Date(contract.start_date).toLocaleDateString('pt-BR')}</p>
+                    <p className="text-[10px] text-slate-400 uppercase font-bold">Implantado</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    {(() => {
+                       const d = new Date(contract.start_date);
+                       d.setFullYear(d.getFullYear() + 1);
+                       const now = new Date();
+                       const isNear = d.getTime() - now.getTime() < 1000 * 60 * 60 * 24 * 60; // 60 dias
+                       return (
+                         <div className="flex flex-col gap-1">
+                           <span className={cn("text-sm font-bold", isNear ? "text-amber-600" : "text-slate-700")}>
+                             {d.toLocaleDateString('pt-BR')}
+                           </span>
+                           <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Aniversário de 1 ano</span>
+                         </div>
+                       );
+                    })()}
                   </td>
                   <td className="px-6 py-4">
                     {(() => {

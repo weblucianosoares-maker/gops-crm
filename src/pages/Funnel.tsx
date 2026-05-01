@@ -111,8 +111,60 @@ export default function Funnel() {
       error("Erro ao mover lead: " + supabaseError.message);
     } else {
       success("Lead movido!");
+      
+      // Automação: Se mover para "Plano Ativo", criar contrato
+      if (destination.droppableId === 'Plano Ativo') {
+        createContractFromLead(draggableId);
+      }
     }
     await fetchLeads();
+  };
+
+  const createContractFromLead = async (leadId: string) => {
+    try {
+      // 1. Buscar dados completos do lead
+      const { data: lead, error: leadErr } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('id', leadId)
+        .single();
+      
+      if (leadErr || !lead) throw new Error("Não foi possível carregar os dados do lead para gerar o contrato.");
+
+      // 2. Criar o Contrato
+      const { data: newC, error: contractErr } = await supabase.from('contracts').insert([{
+        client_name: lead.name,
+        cnpj: (lead.cnpj || lead.cpf || '').replace(/\D/g, ''),
+        carrier: lead.carrier || 'Não Informado',
+        product: lead.product || 'Não Informado',
+        lives: 1, // Padrão 1, o usuário pode ajustar depois
+        start_date: new Date().toISOString().split('T')[0],
+        monthly_fee: Number(lead.deal_value || lead.current_value || 0),
+        type: lead.lead_type || 'PF',
+        status: 'Ativo',
+        lead_id: lead.id
+      }]).select().single();
+
+      if (contractErr) throw contractErr;
+
+      // 3. Criar o Beneficiário Titular (o próprio Lead)
+      const { error: benErr } = await supabase.from('beneficiaries').insert([{
+        contract_id: newC.id,
+        lead_id: lead.id,
+        name: lead.name,
+        type: 'Titular',
+        birth_date: lead.birth_date || null,
+        cpf: (lead.cpf || lead.cnpj || '').replace(/\D/g, ''),
+        initials: lead.name.split(' ').filter(Boolean).map((n:any) => n[0]).join('').substring(0, 2).toUpperCase()
+      }]);
+
+      if (benErr) console.error("Erro ao criar beneficiário automático:", benErr);
+
+      success(`Contrato para ${lead.name} gerado com sucesso!`);
+    } catch (err: any) {
+      console.error("Erro na automação de contrato:", err);
+      error("Erro ao gerar contrato automático: " + err.message);
+    }
   };
   
   const updateInteractionStatus = async (leadId: string, newStatus: string) => {

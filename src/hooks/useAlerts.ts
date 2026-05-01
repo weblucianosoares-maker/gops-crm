@@ -21,10 +21,11 @@ export function useAlerts() {
 
   const fetchAlerts = async () => {
     try {
-      const [leadsRes, beneficiariesRes, remindersRes] = await Promise.all([
+      const [leadsRes, beneficiariesRes, remindersRes, contractsRes] = await Promise.all([
         supabase.from('leads').select('*'),
         supabase.from('beneficiaries').select('id, name, birth_date, lead_id'),
-        supabase.from('reminders').select('*, leads(id, name, phone, birth_date)').eq('status', 'pendente')
+        supabase.from('reminders').select('*, leads(id, name, phone, birth_date)').eq('status', 'pendente'),
+        supabase.from('contracts').select('*')
       ]);
 
       const now = new Date();
@@ -146,6 +147,32 @@ export function useAlerts() {
             typeLabel: 'Lembrete',
             statusLabel: diffDays === 0 ? 'Hoje' : diffDays < 0 ? 'Vencido' : 'A vencer'
           });
+        }
+      });
+
+      // 5. Contract Renewals (12 months after start_date)
+      contractsRes.data?.forEach((contract: any) => {
+        if (contract.start_date) {
+           const d = new Date(contract.start_date);
+           d.setFullYear(d.getFullYear() + 1); // 1 ano depois
+           const daysToRenewal = getDiffDays(d.toISOString());
+           
+           if (daysToRenewal !== null && daysToRenewal >= -30 && daysToRenewal <= 60) {
+              const lead = (leadsRes.data as any[])?.find((l: any)=>l.id===contract.lead_id);
+              newAlerts.push({
+                id: `renewal-contract-${contract.id}`,
+                type: 'contract',
+                title: `Reajuste: ${contract.client_name}`,
+                description: daysToRenewal === 0 ? "O contrato faz 12 meses HOJE! Acompanhe o reajuste." : daysToRenewal < 0 ? `Passou do aniversário de 12 meses!` : `Reajuste anual em ${daysToRenewal} dias.`,
+                date: d,
+                isToday: daysToRenewal === 0,
+                severity: daysToRenewal <= 30 ? 'urgent' : 'warning',
+                entityId: contract.lead_id || '',
+                leadData: lead,
+                typeLabel: 'Reajuste',
+                statusLabel: daysToRenewal === 0 ? 'Hoje' : 'Renovação'
+              });
+           }
         }
       });
 
