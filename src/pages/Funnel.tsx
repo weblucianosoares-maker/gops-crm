@@ -136,11 +136,13 @@ export default function Funnel() {
         client_name: lead.name,
         cnpj: (lead.cnpj || lead.cpf || '').replace(/\D/g, ''),
         carrier: lead.carrier || 'Não Informado',
+        product: lead.product || 'Não Informado',
         lives: 1, // Padrão 1, o usuário pode ajustar depois
         start_date: new Date().toISOString().split('T')[0],
         monthly_fee: Number(lead.deal_value || lead.current_value || 0),
         type: lead.lead_type || 'PF',
-        status: 'Ativo'
+        status: 'Ativo',
+        lead_id: lead.id
       }]).select().single();
 
       if (contractErr) throw contractErr;

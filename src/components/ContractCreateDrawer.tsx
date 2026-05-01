@@ -94,6 +94,7 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess }: ContractCre
         client_name: clientName,
         cnpj: cnpj.replace(/\D/g, ''),
         carrier: contract.carrier,
+        product: contract.product,
         lives: beneficiaries.length,
         start_date: contract.start_date,
         monthly_fee: contract.monthly_fee,
