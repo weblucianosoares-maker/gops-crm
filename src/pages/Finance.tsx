@@ -4,6 +4,7 @@ import { Icons } from "../components/Icons";
 import { formatCurrency, cn } from "../lib/utils";
 import { supabase } from "../lib/supabase";
 import { calculateNetCommission, getTier } from "../lib/commissionRules";
+import { useToast } from "../components/Toasts";
 
 export default function Finance() {
   const [contracts, setContracts] = useState<any[]>([]);
