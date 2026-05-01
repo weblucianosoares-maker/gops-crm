@@ -193,7 +193,11 @@ export default function Contracts() {
               {contracts.length > 0 ? contracts.map(contract => (
                 <tr 
                   key={contract.id} 
-                  onClick={() => setSelectedContract(contract)}
+                  onClick={() => {
+                    setSelectedContract(contract);
+                    setContractToEdit(contract);
+                    setIsDrawerOpen(true);
+                  }}
                   className={cn(
                     "cursor-pointer transition-colors",
                     selectedContract?.id === contract.id ? "bg-blue-50/50" : "hover:bg-slate-50"

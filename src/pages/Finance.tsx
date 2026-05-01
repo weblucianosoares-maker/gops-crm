@@ -11,19 +11,59 @@ export default function Finance() {
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth());
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { success, error: toastError } = useToast();
+
+  const fetchData = async () => {
+    setIsRefreshing(true);
+    const { data, error } = await supabase
+      .from('contracts')
+      .select('*')
+      .order('start_date', { ascending: false });
+    
+    if (!error) {
+      setContracts(data || []);
+    } else {
+      console.error("Erro ao buscar contratos:", error);
+    }
+    setLoading(false);
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
 
-  const fetchData = async () => {
-    const { data, error } = await supabase
+  const togglePaymentStatus = async (contractId: string, currentStatus: boolean) => {
+    // 1. Tenta atualizar no Supabase (caso a coluna is_paid exista)
+    const { error } = await supabase
       .from('contracts')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (!error) setContracts(data || []);
-    setLoading(false);
+      .update({ is_paid: !currentStatus })
+      .eq('id', contractId);
+
+    // 2. Independente do erro (caso a coluna não exista ainda), atualiza localmente
+    setContracts(prev => prev.map(c => 
+      c.id === contractId ? { ...c, is_paid: !currentStatus } : c
+    ));
+
+    // 3. Persistência de backup em localStorage
+    const paidList = JSON.parse(localStorage.getItem('efraim_paid_contracts') || '{}');
+    paidList[contractId] = !currentStatus;
+    localStorage.setItem('efraim_paid_contracts', JSON.stringify(paidList));
+
+    if (!error) success("Status de pagamento atualizado!");
   };
+
+  // Carregar status do localStorage ao montar (backup)
+  useEffect(() => {
+    if (contracts.length > 0) {
+      const paidList = JSON.parse(localStorage.getItem('efraim_paid_contracts') || '{}');
+      setContracts(prev => prev.map(c => ({
+        ...c,
+        is_paid: paidList[c.id] !== undefined ? paidList[c.id] : (c.is_paid || false)
+      })));
+    }
+  }, [loading]);
 
   const currentMonthData = useMemo(() => {
     const now = new Date();
@@ -85,6 +125,17 @@ export default function Finance() {
         </div>
         
         <div className="flex items-center gap-3 bg-white p-2 rounded-2xl border border-slate-100 shadow-sm">
+          <button 
+            onClick={fetchData}
+            disabled={isRefreshing}
+            className={cn(
+              "p-2 text-slate-400 hover:text-blue-600 transition-all",
+              isRefreshing ? "animate-spin text-blue-600" : ""
+            )}
+          >
+            <Icons.RefreshCw className="w-4 h-4" />
+          </button>
+          <div className="w-px h-4 bg-slate-200"></div>
           <select 
             value={filterMonth} 
             onChange={e => setFilterMonth(Number(e.target.value))}
@@ -213,12 +264,28 @@ export default function Finance() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex flex-col items-center gap-1">
-                       <span className="px-2 py-1 bg-amber-50 text-amber-600 rounded text-[9px] font-black uppercase tracking-widest border border-amber-100">Pendente</span>
-                       {c.carrier.toLowerCase().includes('united') && (
+                    <button 
+                      onClick={() => togglePaymentStatus(c.id, c.is_paid)}
+                      className={cn(
+                        "flex flex-col items-center gap-1 group transition-all",
+                        c.is_paid ? "text-emerald-600" : "text-amber-600"
+                      )}
+                    >
+                       <span className={cn(
+                         "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all",
+                         c.is_paid 
+                          ? "bg-emerald-50 border-emerald-200 group-hover:bg-emerald-100" 
+                          : "bg-amber-50 border-amber-200 group-hover:bg-amber-100"
+                       )}>
+                         {c.is_paid ? "Recebido" : "Pendente"}
+                       </span>
+                       {!c.is_paid && c.carrier.toLowerCase().includes('united') && (
                          <span className="text-[8px] font-bold text-blue-500 uppercase tracking-tighter">Antecipação Disp.</span>
                        )}
-                    </div>
+                       {c.is_paid && (
+                         <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-tighter">Caiu na Conta</span>
+                       )}
+                    </button>
                   </td>
                 </tr>
               ))}

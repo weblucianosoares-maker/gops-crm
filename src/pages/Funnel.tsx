@@ -129,34 +129,70 @@ export default function Funnel() {
         .eq('id', leadId)
         .single();
       
-      if (leadErr || !lead) throw new Error("Não foi possível carregar os dados do lead para gerar o contrato.");
+      if (leadErr || !lead) throw new Error("Não foi possível carregar os dados do lead.");
 
-      // 2. Criar o Contrato
-      const { data: newC, error: contractErr } = await supabase.from('contracts').insert([{
+      // 2. Verificar se já existe um contrato para este Lead (Anti-Duplicidade)
+      const { data: existingContract } = await supabase
+        .from('contracts')
+        .select('id')
+        .eq('lead_id', leadId)
+        .single();
+
+      const contractData = {
         client_name: lead.name,
         cnpj: (lead.cnpj || lead.cpf || '').replace(/\D/g, ''),
         carrier: lead.carrier || 'Não Informado',
         product: lead.product || 'Não Informado',
-        lives: 1, // Padrão 1, o usuário pode ajustar depois
+        lives: 1,
         start_date: new Date().toISOString().split('T')[0],
         monthly_fee: Number(lead.deal_value || lead.current_value || 0),
         type: lead.lead_type || 'PF',
         status: 'Ativo',
         lead_id: lead.id
-      }]).select().single();
+      };
 
-      if (contractErr) throw contractErr;
+      let contractId;
 
-      // 3. Criar o Beneficiário Titular (o próprio Lead)
-      const { error: benErr } = await supabase.from('beneficiaries').insert([{
-        contract_id: newC.id,
-        lead_id: lead.id,
-        name: lead.name,
-        type: 'Titular',
-        birth_date: lead.birth_date || null,
-        cpf: (lead.cpf || lead.cnpj || '').replace(/\D/g, ''),
-        initials: lead.name.split(' ').filter(Boolean).map((n:any) => n[0]).join('').substring(0, 2).toUpperCase()
-      }]);
+      if (existingContract) {
+        // Se já existe, apenas atualiza para garantir que os dados estão batendo
+        const { error: updateErr } = await supabase
+          .from('contracts')
+          .update(contractData)
+          .eq('id', existingContract.id);
+        
+        if (updateErr) throw updateErr;
+        contractId = existingContract.id;
+      } else {
+        // Se não existe, cria um novo
+        const { data: newC, error: contractErr } = await supabase
+          .from('contracts')
+          .insert([contractData])
+          .select()
+          .single();
+        
+        if (contractErr) throw contractErr;
+        contractId = newC.id;
+      }
+
+      // 3. Garantir que o Beneficiário Titular existe
+      const { data: existingBen } = await supabase
+        .from('beneficiaries')
+        .select('id')
+        .eq('contract_id', contractId)
+        .eq('type', 'Titular')
+        .single();
+
+      if (!existingBen) {
+        await supabase.from('beneficiaries').insert([{
+          contract_id: contractId,
+          lead_id: lead.id,
+          name: lead.name,
+          type: 'Titular',
+          birth_date: lead.birth_date || null,
+          cpf: (lead.cpf || lead.cnpj || '').replace(/\D/g, ''),
+          initials: lead.name.split(' ').filter(Boolean).map((n:any) => n[0]).join('').substring(0, 2).toUpperCase()
+        }]);
+      }
 
       if (benErr) console.error("Erro ao criar beneficiário automático:", benErr);
 
