@@ -1,3 +1,4 @@
+// v1.0.5 - Financeiro com proteção total de tipos
 import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Icons } from "../components/Icons";
@@ -242,8 +243,8 @@ export default function Finance() {
                     <p className="text-[10px] text-slate-400 font-bold uppercase">{String(c.product || 'Plano de Saúde')}</p>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-sm font-bold text-slate-700">{formatCurrency(c.monthly_fee)}</p>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase">{c.lives || 1} Vidas</p>
+                    <p className="text-sm font-bold text-slate-700">{formatCurrency(Number(c.monthly_fee) || 0)}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">{Number(c.lives || 1)} Vidas</p>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-1">

@@ -1,3 +1,4 @@
+// v1.0.5 - Dashboard com proteção total de tipos
 import React, { useEffect, useState, useMemo } from "react";
 import { 
   ResponsiveContainer, 
