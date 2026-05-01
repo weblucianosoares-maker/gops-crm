@@ -14,6 +14,7 @@ export default function Contracts() {
   const [selectedContract, setSelectedContract] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [contractToEdit, setContractToEdit] = useState<any>(null);
   const { alerts } = useAlerts();
  
   const contractAlerts = alerts.filter(a => a.type === 'contract' || a.type === 'expiry');
@@ -166,7 +167,10 @@ export default function Contracts() {
               />
             </div>
             <button 
-              onClick={() => setIsDrawerOpen(true)}
+              onClick={() => {
+                setContractToEdit(null);
+                setIsDrawerOpen(true);
+              }}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-blue-700 transition-colors shadow-md shadow-blue-100"
             >
               <Icons.Plus className="w-4 h-4" /> Novo Contrato
@@ -248,11 +252,18 @@ export default function Contracts() {
                     )}>{contract.status}</span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button className={cn(
-                      "p-2 rounded-full transition-colors",
-                      selectedContract?.id === contract.id ? "text-blue-600 bg-blue-100" : "text-slate-300 hover:text-blue-600 hover:bg-blue-50"
-                    )}>
-                      <Icons.Info className="w-5 h-5" />
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setContractToEdit(contract);
+                        setIsDrawerOpen(true);
+                      }}
+                      className={cn(
+                        "p-2 rounded-full transition-colors",
+                        selectedContract?.id === contract.id ? "text-blue-600 bg-blue-100" : "text-slate-300 hover:text-blue-600 hover:bg-blue-50"
+                      )}
+                    >
+                      <Icons.Edit className="w-5 h-5" />
                     </button>
                   </td>
                 </tr>
@@ -349,8 +360,12 @@ export default function Contracts() {
 
       <ContractCreateDrawer 
         isOpen={isDrawerOpen} 
-        onClose={() => setIsDrawerOpen(false)} 
+        onClose={() => {
+          setIsDrawerOpen(false);
+          setContractToEdit(null);
+        }} 
         onSuccess={fetchContractsData} 
+        editContract={contractToEdit}
       />
     </div>
   );

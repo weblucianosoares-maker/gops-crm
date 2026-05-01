@@ -17,9 +17,10 @@ interface ContractCreateDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  editContract?: any;
 }
 
-export function ContractCreateDrawer({ isOpen, onClose, onSuccess }: ContractCreateDrawerProps) {
+export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract }: ContractCreateDrawerProps) {
   const { leads, carriers, products } = useLeads();
   const { success, error } = useToast();
   const [isSaving, setIsSaving] = useState(false);
@@ -42,6 +43,54 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess }: ContractCre
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([
     { name: "", type: "Titular", birth_date: "", cpf: "" }
   ]);
+
+  useEffect(() => {
+    if (editContract) {
+      setContract({
+        lead_id: editContract.lead_id || "",
+        client_name: editContract.client_name || "",
+        cnpj: editContract.cnpj || "",
+        type: editContract.type || "PF",
+        carrier: editContract.carrier || "",
+        product: editContract.product || "",
+        lives: editContract.lives || 1,
+        monthly_fee: editContract.monthly_fee || 0,
+        start_date: editContract.start_date || new Date().toISOString().split('T')[0],
+        status: editContract.status || "Ativo"
+      });
+      fetchBeneficiaries(editContract.id);
+    } else {
+      setContract({
+        lead_id: "",
+        client_name: "",
+        cnpj: "",
+        type: "PF",
+        carrier: "",
+        product: "",
+        lives: 1,
+        monthly_fee: 0,
+        start_date: new Date().toISOString().split('T')[0],
+        status: "Ativo"
+      });
+      setBeneficiaries([{ name: "", type: "Titular", birth_date: "", cpf: "" }]);
+    }
+  }, [editContract, isOpen]);
+
+  const fetchBeneficiaries = async (contractId: string) => {
+    const { data, error: benErr } = await supabase
+      .from('beneficiaries')
+      .select('*')
+      .eq('contract_id', contractId);
+    
+    if (!benErr && data) {
+      setBeneficiaries(data.map(b => ({
+        name: b.name,
+        type: b.type,
+        birth_date: b.birth_date,
+        cpf: b.cpf
+      })));
+    }
+  };
 
   const filteredLeads = leads.filter(l => 
     l.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -72,9 +121,6 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess }: ContractCre
       let clientName = contract.client_name;
       let cnpj = contract.cnpj;
 
-      // Se for novo lead, precisamos criá-lo primeiro ou apenas asinar o nome?
-      // O usuário pediu "puxar existente OU cadastrar um do zero". 
-      // Vou criar um registro em 'leads' se for novo para manter todo o ecossistema conectado.
       if (isNewLead) {
         const { data: newL, error: leadErr } = await supabase.from('leads').insert([{
            name: clientName,
@@ -89,8 +135,7 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess }: ContractCre
         leadId = newL.id;
       }
 
-      // 1. Criar o Contrato
-      const { data: newC, error: contractErr } = await supabase.from('contracts').insert([{
+      const contractPayload = {
         client_name: clientName,
         cnpj: cnpj.replace(/\D/g, ''),
         carrier: contract.carrier,
@@ -99,20 +144,38 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess }: ContractCre
         start_date: contract.start_date,
         monthly_fee: contract.monthly_fee,
         type: contract.type,
-        status: contract.status
-      }]).select().single();
+        status: contract.status,
+        lead_id: leadId || null
+      };
 
-      if (contractErr) throw contractErr;
+      let currentContractId = editContract?.id;
 
-      // 2. Criar os Beneficiários
+      if (editContract) {
+        const { error: contractErr } = await supabase
+          .from('contracts')
+          .update(contractPayload)
+          .eq('id', editContract.id);
+        
+        if (contractErr) throw contractErr;
+      } else {
+        const { data: newC, error: contractErr } = await supabase.from('contracts').insert([contractPayload]).select().single();
+        if (contractErr) throw contractErr;
+        currentContractId = newC.id;
+      }
+
+      // 2. Criar/Atualizar os Beneficiários (Simples: remove e insere todos para garantir sincronia)
+      if (editContract) {
+        await supabase.from('beneficiaries').delete().eq('contract_id', editContract.id);
+      }
+
       if (beneficiaries.length > 0) {
         const beneficiariesToSave = beneficiaries.map(b => ({
-          contract_id: newC.id,
+          contract_id: currentContractId,
           lead_id: leadId || null,
           name: b.name,
           type: b.type,
           birth_date: b.birth_date || null,
-          cpf: b.cpf.replace(/\D/g, ''),
+          cpf: (b.cpf || '').replace(/\D/g, ''),
           initials: b.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
         }));
 
@@ -120,7 +183,7 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess }: ContractCre
         if (benErr) throw benErr;
       }
 
-      success("Contrato cadastrado com sucesso!");
+      success(editContract ? "Contrato atualizado com sucesso!" : "Contrato cadastrado com sucesso!");
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -167,7 +230,7 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess }: ContractCre
               <Icons.Contracts className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-slate-900 tracking-tight">Novo Contrato</h2>
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">{editContract ? "Editar Contrato" : "Novo Contrato"}</h2>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Gestão de Vidas & Vigência</p>
             </div>
           </div>
@@ -323,7 +386,7 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess }: ContractCre
              className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-[11px] tracking-[0.2em] shadow-xl hover:bg-blue-600 transition-all disabled:opacity-50 flex items-center justify-center gap-3"
            >
               {isSaving ? <Icons.Loader2 className="w-5 h-5 animate-spin" /> : <Icons.Save className="w-5 h-5" />}
-              {isSaving ? "Gravando Contrato..." : "Finalizar Cadastro de Contrato"}
+              {isSaving ? "Gravando Alterações..." : (editContract ? "Salvar Alterações" : "Finalizar Cadastro de Contrato")}
            </button>
         </div>
       </motion.div>
