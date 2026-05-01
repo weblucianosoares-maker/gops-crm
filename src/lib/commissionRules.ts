@@ -61,7 +61,7 @@ export const getTier = (vgv: number): TierConfig => {
 };
 
 export const calculateNetCommission = (carrierName: string, monthlyFee: number, tier: TierName, type: 'PF' | 'PJ' = 'PF', lives: number = 1) => {
-  // 1. Carregar Regras Configuradas (ou usar padrão)
+  // 1. Carregar Configurações de Bônus e Parcelas do localStorage
   let customRules = {
     pme: { first_parcel: 100, second_parcel: 100, bonus_per_life: 0, anticipation_allowed: true },
     adesao: { first_parcel: 100, bonus_on_first_paid: 0, bonus_per_life: 0 }
@@ -72,39 +72,66 @@ export const calculateNetCommission = (carrierName: string, monthlyFee: number, 
     if (saved) customRules = JSON.parse(saved);
   } catch (e) {}
 
-  // Encontra a operadora
+  // 2. Encontrar a Regra da Pedra para a Operadora
   const carrierKey = Object.keys(CARRIER_RE_RULES[tier]).find(k => 
     carrierName.toLowerCase().includes(k.toLowerCase())
   );
 
+  // Percentual total definido pela "Pedra" (ex: 200, 240, 300)
+  const totalPercentage = carrierKey ? CARRIER_RE_RULES[tier][carrierKey] : 100;
   const taxRate = carrierKey ? (CARRIER_TAXES[carrierKey] || 0) : 0;
   
-  // 2. Definir Percentuais e Bônus baseados no tipo de contrato
   let installments: number[] = [];
   let totalBonus = 0;
 
+  // 3. Distribuir o percentual da Pedra nas parcelas conforme o tipo
   if (type === 'PJ') {
-    // Regra PME: Geralmente 100% + 100%
-    installments = [customRules.pme.first_parcel / 100, customRules.pme.second_parcel / 100];
+    // Para PME, geralmente as duas primeiras são 100%
+    // Ex: 240% -> 100% (1ª), 100% (2ª), 40% (3ª)
+    let remaining = totalPercentage;
+    
+    // 1ª Parcela (usando base configurada ou 100%)
+    const p1 = Math.min(remaining, customRules.pme.first_parcel || 100);
+    installments.push(p1 / 100);
+    remaining -= p1;
+
+    // 2ª Parcela
+    const p2 = Math.min(remaining, customRules.pme.second_parcel || 100);
+    installments.push(p2 / 100);
+    remaining -= p2;
+
+    // 3ª Parcela (Sobra se houver, ex: Bradesco Ouro 240% -> sobra 40%)
+    if (remaining > 0) {
+      installments.push(remaining / 100);
+    }
+
     totalBonus = (customRules.pme.bonus_per_life || 0) * lives;
   } else {
-    // Regra Adesão: 100% + Bônus opcional
-    installments = [customRules.adesao.first_parcel / 100];
-    if (customRules.adesao.bonus_on_first_paid > 0) {
-      installments.push(customRules.adesao.bonus_on_first_paid / 100);
+    // Para Adesão
+    let remaining = totalPercentage;
+    
+    // Angariação
+    const p1 = Math.min(remaining, customRules.adesao.first_parcel || 100);
+    installments.push(p1 / 100);
+    remaining -= p1;
+
+    // Bônus/Resíduo
+    if (remaining > 0) {
+      installments.push(remaining / 100);
     }
+    
     totalBonus = (customRules.adesao.bonus_per_life || 0) * lives;
   }
 
-  // 3. Calcular Valores
-  const grossTotal = (monthlyFee * installments.reduce((a, b) => a + b, 0)) + totalBonus;
-  const netTotal = grossTotal * (1 - taxRate);
+  // 4. Calcular Valores Finais
+  const grossValue = (monthlyFee * (totalPercentage / 100)) + totalBonus;
+  const netValue = grossValue * (1 - taxRate);
 
   return {
-    gross: grossTotal,
-    net: netTotal,
-    taxAmount: grossTotal * taxRate,
-    percentage: (grossTotal / monthlyFee) * 100,
+    gross: grossValue,
+    net: netValue,
+    taxAmount: grossValue * taxRate,
+    percentage: totalPercentage,
     installments: installments.map(p => monthlyFee * p),
     bonus: totalBonus
   };
