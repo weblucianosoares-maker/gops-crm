@@ -603,32 +603,34 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                 <DetailField label="Categoria" value={lead.lead_type} selectOptions={['PF', 'PJ']} onChange={(v:any) => setLead({...lead, lead_type: v})} />
-                <div className={cn(lead.lead_type === 'PJ' ? "md:col-span-1" : "md:col-span-2")}>
+                <div className="md:col-span-2">
                    <DetailField label="Nome do Lead" value={lead.name} onChange={(v:any) => setLead({...lead, name: v})} />
                 </div>
-                {lead.lead_type === 'PJ' && (
-                  <div className="md:col-span-2">
-                    <DetailField label="Razão Social" value={lead.company_name} onChange={(v:any) => setLead({...lead, company_name: v})} />
-                  </div>
-                )}
-                <DetailField label="Apelido / Fantasia" value={lead.nickname} onChange={(v:any) => setLead({...lead, nickname: v})} />
-                <DetailField 
-                  label={lead.lead_type === 'PJ' ? "CNPJ" : "CPF"} 
-                  value={lead.lead_type === 'PJ' ? lead.cnpj : lead.cpf} 
-                  mask={lead.lead_type === 'PJ' ? formatCNPJ : formatCPF}
-                  onChange={(v:any) => lead.lead_type === 'PJ' ? handleCNPJChange(v) : setLead({...lead, cpf: v})} 
-                />
                 <DetailField label="WhatsApp Principal" value={lead.phone} mask={formatPhone} onChange={(v:any) => setLead({...lead, phone: v})} />
                 <DetailField label="Data Nascimento" type="date" value={lead.birth_date} onChange={(v:any) => setLead((prev:any) => ({...prev, birth_date: v || null}))} />
+                {lead.lead_type === 'PF' && (
+                  <DetailField 
+                    label="CPF" 
+                    value={lead.cpf} 
+                    mask={formatCPF}
+                    onChange={(v:any) => setLead({...lead, cpf: v})} 
+                  />
+                )}
               </div>
             </section>
 
             {/* DADOS DA EMPRESA (Somente PJ) */}
-            {lead.lead_type === 'PJ' && lead.cnpj && (
+            {lead.lead_type === 'PJ' && (
               <section className="bg-slate-50/50 p-8 rounded-[2.5rem] border border-slate-100 space-y-8">
                 <SectionHeader icon={Icons.Building2} title="Dados Técnicos da Empresa" colorClass="bg-blue-600 text-white" />
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <DetailField 
+                    label="CNPJ" 
+                    value={lead.cnpj} 
+                    mask={formatCNPJ}
+                    onChange={(v:any) => handleCNPJChange(v)} 
+                  />
                   <DetailField label="Razão Social" value={lead.company_name} onChange={(v:any) => setLead({...lead, company_name: v})} />
                   <DetailField label="Nome Fantasia" value={lead.nickname} onChange={(v:any) => setLead({...lead, nickname: v})} />
                   <DetailField label="Data de Abertura" type="date" value={lead.opening_date} onChange={(v:any) => setLead({...lead, opening_date: v})} />
