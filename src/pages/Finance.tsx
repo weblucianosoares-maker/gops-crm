@@ -91,7 +91,7 @@ export default function Finance() {
     
     const commissions = monthContracts.map(c => {
       const calc = calculateNetCommission(
-        c.carrier || '', 
+        String(c.carrier || ''), 
         Number(c.monthly_fee) || 0, 
         stone.name,
         c.type as any,
@@ -103,16 +103,20 @@ export default function Finance() {
       };
     });
 
-    const totalNet = commissions.reduce((acc, c) => acc + c.commission.net, 0);
+    const totalNet = commissions.reduce((acc, c) => acc + (Number(c.commission?.net) || 0), 0);
 
     return {
       totalVgv,
       totalNet,
-      stone,
+      stone: {
+        label: String(stone.label || 'Sem Grade'),
+        color: String(stone.color || 'slate'),
+        name: stone.name
+      },
       commissions,
       count: monthContracts.length
     };
-  }, [contracts]);
+  }, [contracts, filterMonth, filterYear]);
 
   if (loading) return <div className="p-8">Carregando...</div>;
 
