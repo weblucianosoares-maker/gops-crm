@@ -380,7 +380,8 @@ export default function Funnel() {
                                       const name = lead.name || "Sem Nome";
                                       const sourceMatch = name.match(/^\[(.*?)\]\s*(.*)$/);
                                       const displayName = sourceMatch ? sourceMatch[2] : name;
-                                      const sourceLabel = sourceMatch ? sourceMatch[1] : (lead.source || null);
+                                      const rawSource = sourceMatch ? sourceMatch[1] : (lead.source || null);
+                                      const sourceLabel = typeof rawSource === 'object' ? null : rawSource;
 
                                       return (
                                         <div className="space-y-1.5 mb-3">
