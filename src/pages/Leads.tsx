@@ -32,7 +32,7 @@ export default function Leads() {
   const [ufFilter, setUfFilter] = useState("Todos");
   const [statusFilter, setStatusFilter] = useState("Todos");
   const [blockingFilter, setBlockingFilter] = useState("Ativos");
-  const [importResult, setImportResult] = useState<{imported: number, duplicated: number} | null>(null);
+  const [importResult, setImportResult] = useState<{imported: number, duplicated: number, updated?: number} | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
@@ -210,11 +210,11 @@ export default function Leads() {
   const handleGoogleSync = () => {
     setIsSyncingGoogle(true);
     syncGoogleContacts(
-      (imported, duplicated) => {
+      (imported, updated) => {
         setIsSyncingGoogle(false);
-        setImportResult({ imported, duplicated });
+        setImportResult({ imported, duplicated: 0, updated });
         fetchLeads();
-        success(`Sincronização com Google concluída: ${imported} novos contatos.`);
+        success(`Sincronização com Google concluída: ${imported} novos, ${updated} atualizados.`);
       },
       (err) => {
         setIsSyncingGoogle(false);
@@ -424,14 +424,18 @@ export default function Leads() {
                   </p>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4 mt-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
                   <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl text-center shadow-sm">
                     <p className="text-3xl font-black text-emerald-600">{importResult.imported}</p>
-                    <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider mt-1">Novos Cadastros</p>
+                    <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider mt-1">Novos</p>
+                  </div>
+                  <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl text-center shadow-sm">
+                    <p className="text-3xl font-black text-blue-600">{importResult.updated || 0}</p>
+                    <p className="text-[10px] font-bold text-blue-800 uppercase tracking-wider mt-1">Atualizados</p>
                   </div>
                   <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-center shadow-sm">
                     <p className="text-3xl font-black text-slate-600">{importResult.duplicated}</p>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1">Já Existentes</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1">Existentes</p>
                   </div>
                 </div>
                 

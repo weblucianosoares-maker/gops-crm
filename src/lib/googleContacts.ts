@@ -111,34 +111,39 @@ async function fetchAndInportContacts(accessToken: string, onSuccess: (count: nu
     }
 
     const existingPhones = new Set(allExistingLeads.map(l => normalizePhone(l.phone)).filter(Boolean));
-    const existingEmails = new Set(allExistingLeads.map(l => l.email?.toLowerCase().trim()).filter(Boolean));
-    const existingNames = new Set(allExistingLeads.map(l => l.name?.toLowerCase().trim()).filter(Boolean));
+    const existingEmails = new Map(allExistingLeads.map(l => [l.email?.toLowerCase().trim(), l]).filter(([k]) => !!k));
+    const existingNames = new Map(allExistingLeads.map(l => [l.name?.toLowerCase().trim(), l]).filter(([k]) => !!k));
 
     let importedCount = 0;
+    let updatedCount = 0;
     let duplicatedCount = 0;
     const newLeads: any[] = [];
+    const leadsToUpdate: any[] = [];
 
     connections.forEach((person: any) => {
       // Extrair nome
       const name = (person.names?.[0]?.displayName || 'Sem Nome').trim();
       
-      // Extrair e-mail principal
-      const email = (person.emailAddresses?.[0]?.value || '').toLowerCase().trim();
+      // Extrair e-mails
+      const emails = (person.emailAddresses || []).map((e: any) => e.value?.toLowerCase().trim()).filter(Boolean);
+      const primaryEmail = emails[0] || '';
       
-      // Extrair telefone principal (normalizado)
-      const phone = normalizePhone(person.phoneNumbers?.[0]?.value || '');
+      // Extrair e selecionar o melhor telefone
+      const allPhoneNumbers = (person.phoneNumbers || []).map((p: any) => normalizePhone(p.value)).filter(Boolean);
       
-      if (!phone && !email) return; // Pular contatos sem contato
+      // Priorizar números com 11 dígitos (Celular BR) ou 10 dígitos (Fixo BR)
+      // Se tiver múltiplos, tentamos pegar o primeiro que tenha 11 dígitos
+      let selectedPhone = allPhoneNumbers.find((p: string) => p.length === 11) || allPhoneNumbers[0] || '';
+      let secondaryPhone = allPhoneNumbers.length > 1 ? (allPhoneNumbers.find((p: string) => p !== selectedPhone) || '') : '';
+      
+      if (!selectedPhone && !primaryEmail) return; 
 
-      // Determinar origem baseada em Labels do Google
-      let source = 'Google Contacts';
-      
-      // Checar duplicidade (por telefone, e-mail ou nome exato)
-      const isDuplicated = (phone && existingPhones.has(phone)) || 
-                          (email && existingEmails.has(email)) ||
-                          existingNames.has(name.toLowerCase().trim());
+      // Determinar se já existe um lead correspondente
+      const existingByEmail = emails.find((e: string) => existingEmails.has(e)) ? existingEmails.get(emails.find((e: string) => existingEmails.has(e))) : null;
+      const existingByName = existingNames.get(name.toLowerCase().trim());
+      const existingLead = existingByEmail || existingByName;
 
-      if (!isDuplicated) {
+      if (!existingLead) {
         // Iniciais para o avatar
         const parts = name.split(' ').filter(Boolean);
         let initials = 'SN';
@@ -150,9 +155,10 @@ async function fetchAndInportContacts(accessToken: string, onSuccess: (count: nu
 
         newLeads.push({
           name: sanitizeString(name),
-          email: sanitizeString(email) || '',
-          phone: phone || '',
-          source: sanitizeString(source),
+          email: sanitizeString(primaryEmail) || '',
+          phone: selectedPhone || '',
+          secondary_phone: secondaryPhone || '',
+          source: 'Google Contacts',
           initials: sanitizeString(initials),
           status: '',
           lead_type: 'PF',
@@ -160,27 +166,54 @@ async function fetchAndInportContacts(accessToken: string, onSuccess: (count: nu
           lastcontact: null
         });
       } else {
-        duplicatedCount++;
+        // Se já existe, verificamos se os dados mudaram e preparamos para UPDATE
+        const hasChanges = 
+          (selectedPhone && existingLead.phone !== selectedPhone) || 
+          (primaryEmail && existingLead.email !== primaryEmail) ||
+          (secondaryPhone && existingLead.secondary_phone !== secondaryPhone);
+
+        if (hasChanges) {
+          leadsToUpdate.push({
+            id: existingLead.id,
+            phone: selectedPhone || existingLead.phone,
+            secondary_phone: secondaryPhone || existingLead.secondary_phone,
+            email: primaryEmail || existingLead.email
+          });
+        } else {
+          duplicatedCount++;
+        }
       }
     });
 
+    // Inserir novos
     if (newLeads.length > 0) {
-      console.log(`Tentando inserir ${newLeads.length} novos leads...`);
+      console.log(`Inserindo ${newLeads.length} novos leads...`);
       const { data: insertedData, error } = await supabase.from('leads').insert(newLeads).select();
-      
-      if (error) {
-        console.error("Erro detalhado do Supabase:", error);
-        throw new Error(error.message);
-      }
-
+      if (error) throw new Error(error.message);
       if (insertedData) {
         importedCount = insertedData.length;
-        // Tentar validar WhatsApp em segundo plano
         batchValidateLeadsWhatsApp(insertedData.map(l => ({ id: l.id, phone: l.phone })));
       }
     }
 
-    onSuccess(importedCount, duplicatedCount);
+    // Atualizar existentes
+    if (leadsToUpdate.length > 0) {
+      console.log(`Atualizando ${leadsToUpdate.length} leads existentes...`);
+      for (const leadUpdate of leadsToUpdate) {
+        const { error } = await supabase
+          .from('leads')
+          .update({
+            phone: leadUpdate.phone,
+            secondary_phone: leadUpdate.secondary_phone,
+            email: leadUpdate.email
+          })
+          .eq('id', leadUpdate.id);
+        
+        if (!error) updatedCount++;
+      }
+    }
+
+    onSuccess(importedCount, updatedCount);
   } catch (err: any) {
     console.error("Erro ao buscar/inserir contatos:", err);
     onError(err);
