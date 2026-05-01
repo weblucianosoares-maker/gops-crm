@@ -26,6 +26,7 @@ export default function Finance() {
   };
 
   const currentMonthData = useMemo(() => {
+    const now = new Date();
     const currentMonth = filterMonth;
     const currentYear = filterYear;
 
