@@ -60,32 +60,52 @@ export const getTier = (vgv: number): TierConfig => {
   return [...TIERS].reverse().find(t => vgv >= t.minVgv) || TIERS[0];
 };
 
-export const calculateNetCommission = (carrierName: string, monthlyFee: number, tier: TierName) => {
-  // Encontra a operadora (normaliza nome para bater com a regra)
+export const calculateNetCommission = (carrierName: string, monthlyFee: number, tier: TierName, type: 'PF' | 'PJ' = 'PF', lives: number = 1) => {
+  // 1. Carregar Regras Configuradas (ou usar padrão)
+  let customRules = {
+    pme: { first_parcel: 100, second_parcel: 100, bonus_per_life: 0, anticipation_allowed: true },
+    adesao: { first_parcel: 100, bonus_on_first_paid: 0, bonus_per_life: 0 }
+  };
+  
+  try {
+    const saved = localStorage.getItem('efraim_commission_rules');
+    if (saved) customRules = JSON.parse(saved);
+  } catch (e) {}
+
+  // Encontra a operadora
   const carrierKey = Object.keys(CARRIER_RE_RULES[tier]).find(k => 
     carrierName.toLowerCase().includes(k.toLowerCase())
   );
 
-  if (!carrierKey) {
-    const fallbackGross = monthlyFee * 0.1;
-    return {
-      gross: fallbackGross,
-      net: fallbackGross,
-      taxAmount: 0,
-      percentage: 10
-    };
+  const taxRate = carrierKey ? (CARRIER_TAXES[carrierKey] || 0) : 0;
+  
+  // 2. Definir Percentuais e Bônus baseados no tipo de contrato
+  let installments: number[] = [];
+  let totalBonus = 0;
+
+  if (type === 'PJ') {
+    // Regra PME: Geralmente 100% + 100%
+    installments = [customRules.pme.first_parcel / 100, customRules.pme.second_parcel / 100];
+    totalBonus = (customRules.pme.bonus_per_life || 0) * lives;
+  } else {
+    // Regra Adesão: 100% + Bônus opcional
+    installments = [customRules.adesao.first_parcel / 100];
+    if (customRules.adesao.bonus_on_first_paid > 0) {
+      installments.push(customRules.adesao.bonus_on_first_paid / 100);
+    }
+    totalBonus = (customRules.adesao.bonus_per_life || 0) * lives;
   }
 
-  const basePercentage = CARRIER_RE_RULES[tier][carrierKey] / 100;
-  const grossValue = monthlyFee * basePercentage;
-  
-  const taxRate = CARRIER_TAXES[carrierKey] || 0;
-  const netValue = grossValue * (1 - taxRate);
+  // 3. Calcular Valores
+  const grossTotal = (monthlyFee * installments.reduce((a, b) => a + b, 0)) + totalBonus;
+  const netTotal = grossTotal * (1 - taxRate);
 
   return {
-    gross: grossValue,
-    net: netValue,
-    taxAmount: grossValue * taxRate,
-    percentage: CARRIER_RE_RULES[tier][carrierKey]
+    gross: grossTotal,
+    net: netTotal,
+    taxAmount: grossTotal * taxRate,
+    percentage: (grossTotal / monthlyFee) * 100,
+    installments: installments.map(p => monthlyFee * p),
+    bonus: totalBonus
   };
 };

@@ -1555,6 +1555,157 @@ function InteractionStatusesSettingsSection({ isOpen, onToggle }: { isOpen: bool
   );
 }
 
+// ─── Commission Settings Section ─────────────────────
+function CommissionSettingsSection({ isOpen, onToggle }: { isOpen: boolean, onToggle: () => void }) {
+  const { success } = useToast();
+  const [rules, setRules] = useState({
+    pme: { first_parcel: 100, second_parcel: 100, bonus_per_life: 0, anticipation_allowed: true },
+    adesao: { first_parcel: 100, bonus_on_first_paid: 0, bonus_per_life: 0 }
+  });
+
+  useEffect(() => {
+    const saved = localStorage.getItem('efraim_commission_rules');
+    if (saved) setRules(JSON.parse(saved));
+  }, []);
+
+  const handleSave = () => {
+    localStorage.setItem('efraim_commission_rules', JSON.stringify(rules));
+    success("Regras de comissão atualizadas!");
+  };
+
+  return (
+    <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <button 
+        onClick={onToggle}
+        className="w-full text-left p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50 hover:bg-slate-100/50 transition-colors group"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200">
+            <Icons.CreditCard className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="font-bold text-slate-900">Regras de Comissão</h2>
+            <p className="text-xs text-slate-500">Configure os percentuais de repasse por tipo de contrato</p>
+          </div>
+        </div>
+        <Icons.ChevronDown className={cn(
+          "w-5 h-5 text-slate-400 transition-transform duration-300",
+          isOpen ? "rotate-180" : ""
+        )} />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            <div className="p-8">
+              <div className="grid md:grid-cols-2 gap-10">
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-2 h-6 bg-blue-500 rounded-full"></div>
+                    <h3 className="font-black text-slate-900 uppercase text-xs tracking-widest">Contratos PME (Empresarial)</h3>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase ml-1">1ª Parcela (%)</label>
+                      <input 
+                        type="number" 
+                        value={rules.pme.first_parcel} 
+                        onChange={e => setRules({...rules, pme: {...rules.pme, first_parcel: Number(e.target.value)}})}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase ml-1">2ª Parcela (%)</label>
+                      <input 
+                        type="number" 
+                        value={rules.pme.second_parcel} 
+                        onChange={e => setRules({...rules, pme: {...rules.pme, second_parcel: Number(e.target.value)}})}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Bônus por Vida (R$)</label>
+                    <input 
+                      type="number" 
+                      value={rules.pme.bonus_per_life} 
+                      onChange={e => setRules({...rules, pme: {...rules.pme, bonus_per_life: Number(e.target.value)}})}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                    <input 
+                      type="checkbox" 
+                      checked={rules.pme.anticipation_allowed} 
+                      onChange={e => setRules({...rules, pme: {...rules.pme, anticipation_allowed: e.target.checked}})}
+                      className="w-5 h-5 rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label className="text-xs font-bold text-blue-700">Permitir Antecipação (United/Outras)</label>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-2 h-6 bg-purple-500 rounded-full"></div>
+                    <h3 className="font-black text-slate-900 uppercase text-xs tracking-widest">Contratos por Adesão</h3>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Taxa de Angariação (%)</label>
+                    <input 
+                      type="number" 
+                      value={rules.adesao.first_parcel} 
+                      onChange={e => setRules({...rules, adesao: {...rules.adesao, first_parcel: Number(e.target.value)}})}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-purple-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Bônus sobre 1º Boleto Pago (%)</label>
+                    <input 
+                      type="number" 
+                      value={rules.adesao.bonus_on_first_paid} 
+                      onChange={e => setRules({...rules, adesao: {...rules.adesao, bonus_on_first_paid: Number(e.target.value)}})}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-purple-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Bônus por Vida (R$)</label>
+                    <input 
+                      type="number" 
+                      value={rules.adesao.bonus_per_life} 
+                      onChange={e => setRules({...rules, adesao: {...rules.adesao, bonus_per_life: Number(e.target.value)}})}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-purple-500"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-10 flex justify-end">
+                <button 
+                  onClick={handleSave} 
+                  className="bg-blue-600 text-white px-10 py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 flex items-center gap-3"
+                >
+                  <Icons.Save className="w-4 h-4" /> Salvar Regras de Comissão
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
+  );
+}
+
 // ─── Main Settings Page ─────────────────────────────
 export default function Settings() {
   const { stages, fetchStages, loadingStages } = useLeads();
@@ -1910,6 +2061,12 @@ export default function Settings() {
       <ContactTypesSettingsSection 
         isOpen={activeSection === "contact_types"} 
         onToggle={() => toggleSection("contact_types")} 
+      />
+
+      {/* ── Section 4.5: Regras de Comissão ── */}
+      <CommissionSettingsSection 
+        isOpen={activeSection === "commissions"} 
+        onToggle={() => toggleSection("commissions")} 
       />
 
       {/* ── Section 5: Cargos Corporativos ── */}

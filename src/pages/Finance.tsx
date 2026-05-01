@@ -8,6 +8,8 @@ import { calculateNetCommission, getTier } from "../lib/commissionRules";
 export default function Finance() {
   const [contracts, setContracts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterMonth, setFilterMonth] = useState(new Date().getMonth());
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
     fetchData();
@@ -24,9 +26,8 @@ export default function Finance() {
   };
 
   const currentMonthData = useMemo(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    const currentMonth = filterMonth;
+    const currentYear = filterYear;
 
     // VGV do mês passado para determinar a Pedra (conforme regra do Contracts.tsx)
     const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -47,7 +48,13 @@ export default function Finance() {
     const totalVgv = monthContracts.reduce((acc, c) => acc + (Number(c.monthly_fee) || 0), 0);
     
     const commissions = monthContracts.map(c => {
-      const calc = calculateNetCommission(c.carrier || '', Number(c.monthly_fee) || 0, stone.name);
+      const calc = calculateNetCommission(
+        c.carrier || '', 
+        Number(c.monthly_fee) || 0, 
+        stone.name,
+        c.type as any,
+        Number(c.lives || 1)
+      );
       return {
         ...c,
         commission: calc
@@ -69,6 +76,36 @@ export default function Finance() {
 
   return (
     <div className="h-full overflow-y-auto custom-scrollbar p-8 space-y-8">
+      {/* Header with Filters */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Fluxo de Comissões</h1>
+          <p className="text-sm text-slate-500 font-medium mt-1">Acompanhamento de repasses e bônus por produção</p>
+        </div>
+        
+        <div className="flex items-center gap-3 bg-white p-2 rounded-2xl border border-slate-100 shadow-sm">
+          <select 
+            value={filterMonth} 
+            onChange={e => setFilterMonth(Number(e.target.value))}
+            className="bg-transparent border-none text-sm font-bold text-slate-700 outline-none px-3 py-1 cursor-pointer"
+          >
+            {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((m, i) => (
+              <option key={m} value={i}>{m}</option>
+            ))}
+          </select>
+          <div className="w-px h-4 bg-slate-200"></div>
+          <select 
+            value={filterYear} 
+            onChange={e => setFilterYear(Number(e.target.value))}
+            className="bg-transparent border-none text-sm font-bold text-slate-700 outline-none px-3 py-1 cursor-pointer"
+          >
+            {[2024, 2025, 2026].map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       {/* Finance Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
@@ -139,24 +176,47 @@ export default function Finance() {
                 <tr key={c.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4">
                     <p className="text-sm font-bold text-slate-900">{c.client_name}</p>
-                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-tight">Ref: {new Date(c.start_date).toLocaleDateString('pt-BR')}</p>
+                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-tight">
+                      Vigência: {new Date(c.start_date).toLocaleDateString('pt-BR')} • {c.type === 'PJ' ? 'PME' : 'Adesão'}
+                    </p>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                       <span className="text-xs font-bold text-slate-700">{c.carrier}</span>
+                    <p className="text-xs font-bold text-slate-700">{c.carrier}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">{c.product || 'Plano de Saúde'}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-sm font-bold text-slate-700">{formatCurrency(c.monthly_fee)}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">{c.lives || 1} Vidas</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 w-fit">{Math.round(c.commission.percentage)}% Total</span>
+                      {c.commission.bonus > 0 && (
+                        <span className="text-[9px] font-bold text-emerald-600">+{formatCurrency(c.commission.bonus)} Bônus</span>
+                      )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 font-bold text-slate-700 text-sm">{formatCurrency(c.monthly_fee)}</td>
                   <td className="px-6 py-4">
-                    <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">{c.commission.percentage}%</span>
+                    <div className="flex items-center gap-4">
+                       <div className="flex-1 min-w-[120px]">
+                          <p className="text-sm font-black text-slate-900">{formatCurrency(c.commission.net)}</p>
+                          <div className="flex gap-1.5 mt-1">
+                             {c.commission.installments.map((inst: number, i: number) => (
+                               <div key={i} className="flex flex-col items-center">
+                                  <span className="text-[8px] font-black text-slate-400 uppercase">{i+1}ª</span>
+                                  <span className="text-[10px] font-bold text-slate-600">{formatCurrency(inst)}</span>
+                               </div>
+                             ))}
+                          </div>
+                       </div>
+                    </div>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-sm font-black text-slate-900">{formatCurrency(c.commission.net)}</p>
-                    <p className="text-[9px] text-slate-400 uppercase font-bold">Impostos: {formatCurrency(c.commission.taxAmount)}</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex justify-center">
-                       <span className="px-2 py-1 bg-amber-50 text-amber-600 rounded text-[9px] font-black uppercase tracking-widest border border-amber-100">Aguardando</span>
+                    <div className="flex flex-col items-center gap-1">
+                       <span className="px-2 py-1 bg-amber-50 text-amber-600 rounded text-[9px] font-black uppercase tracking-widest border border-amber-100">Pendente</span>
+                       {c.carrier.toLowerCase().includes('united') && (
+                         <span className="text-[8px] font-bold text-blue-500 uppercase tracking-tighter">Antecipação Disp.</span>
+                       )}
                     </div>
                   </td>
                 </tr>
