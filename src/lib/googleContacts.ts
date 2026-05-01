@@ -93,7 +93,7 @@ async function fetchAndInportContacts(accessToken: string, onSuccess: (count: nu
     while (hasMore) {
       const { data, error } = await supabase
         .from('leads')
-        .select('name, email, phone')
+        .select('id, name, email, phone, secondary_phone')
         .range(from, to);
       
       if (error) {
@@ -110,9 +110,13 @@ async function fetchAndInportContacts(accessToken: string, onSuccess: (count: nu
       }
     }
 
-    const existingPhones = new Set(allExistingLeads.map(l => normalizePhone(l.phone)).filter(Boolean));
+    const normalizeForMatch = (str: string | undefined | null) => {
+      if (!str) return "";
+      return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    };
+
     const existingEmails = new Map(allExistingLeads.map(l => [l.email?.toLowerCase().trim(), l]).filter(([k]) => !!k));
-    const existingNames = new Map(allExistingLeads.map(l => [l.name?.toLowerCase().trim(), l]).filter(([k]) => !!k));
+    const existingNames = new Map(allExistingLeads.map(l => [normalizeForMatch(l.name), l]).filter(([k]) => !!k));
 
     let importedCount = 0;
     let updatedCount = 0;
@@ -132,7 +136,6 @@ async function fetchAndInportContacts(accessToken: string, onSuccess: (count: nu
       const allPhoneNumbers = (person.phoneNumbers || []).map((p: any) => normalizePhone(p.value)).filter(Boolean);
       
       // Priorizar números com 11 dígitos (Celular BR) ou 10 dígitos (Fixo BR)
-      // Se tiver múltiplos, tentamos pegar o primeiro que tenha 11 dígitos
       let selectedPhone = allPhoneNumbers.find((p: string) => p.length === 11) || allPhoneNumbers[0] || '';
       let secondaryPhone = allPhoneNumbers.length > 1 ? (allPhoneNumbers.find((p: string) => p !== selectedPhone) || '') : '';
       
@@ -140,7 +143,7 @@ async function fetchAndInportContacts(accessToken: string, onSuccess: (count: nu
 
       // Determinar se já existe um lead correspondente
       const existingByEmail = emails.find((e: string) => existingEmails.has(e)) ? existingEmails.get(emails.find((e: string) => existingEmails.has(e))) : null;
-      const existingByName = existingNames.get(name.toLowerCase().trim());
+      const existingByName = existingNames.get(normalizeForMatch(name));
       const existingLead = existingByEmail || existingByName;
 
       if (!existingLead) {
@@ -167,10 +170,14 @@ async function fetchAndInportContacts(accessToken: string, onSuccess: (count: nu
         });
       } else {
         // Se já existe, verificamos se os dados mudaram e preparamos para UPDATE
+        // IMPORTANTE: Normalizamos para comparar se realmente houve mudança significativa
+        const currentPhone = normalizePhone(existingLead.phone);
+        const currentSecondary = normalizePhone(existingLead.secondary_phone);
+        
         const hasChanges = 
-          (selectedPhone && existingLead.phone !== selectedPhone) || 
+          (selectedPhone && currentPhone !== selectedPhone) || 
           (primaryEmail && existingLead.email !== primaryEmail) ||
-          (secondaryPhone && existingLead.secondary_phone !== secondaryPhone);
+          (secondaryPhone && currentSecondary !== secondaryPhone);
 
         if (hasChanges) {
           leadsToUpdate.push({
