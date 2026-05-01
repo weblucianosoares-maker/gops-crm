@@ -249,12 +249,28 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
             address_city: data.municipio || prev.address_city,
             address_state: data.uf || prev.address_state,
             address_number: data.numero || prev.address_number,
-            cnae: data.cnae_fiscal ? `${data.cnae_fiscal}${data.cnae_fiscal_descricao ? ' - ' + data.cnae_fiscal_descricao : ''}` : (data.cnae_fiscal_descricao || prev.cnae),
+            cnae: data.cnae_fiscal ? data.cnae_fiscal.toString() : prev.cnae,
+            cnae_text: data.cnae_fiscal_descricao || prev.cnae_text,
+            cnae_secondary: data.cnaes_secundarios ? data.cnaes_secundarios.map((c: any) => `${c.codigo} - ${c.descricao}`).join('; ') : prev.cnae_secondary,
             opening_date: data.data_abertura || prev.opening_date,
-            email: data.email || prev.email,
-            phone: data.ddd_telefone_1 ? formatPhone(data.ddd_telefone_1) : prev.phone
+            resp_emp_email: data.email || prev.resp_emp_email,
+            resp_emp_phone: data.ddd_telefone_1 ? `${data.ddd_telefone_1}${data.telefone_1 || ''}` : prev.resp_emp_phone,
+            share_capital: data.capital_social || prev.share_capital,
+            company_size: data.porte || prev.company_size,
+            legal_nature: data.natureza_juridica || prev.legal_nature,
+            registration_status: data.descricao_situacao_cadastral || prev.registration_status,
+            registration_status_date: data.data_situacao_cadastral || prev.registration_status_date,
+            tax_regime: data.opcao_pelo_simples ? 'Simples Nacional' : (data.opcao_pelo_mei ? 'MEI' : 'Lucro Presumido/Real'),
+            simples_entry_date: data.data_opcao_pelo_simples || null,
+            simples_exit_date: data.data_exclusao_do_simples || null,
+            mei_entry_date: data.data_opcao_pelo_mei || null,
+            mei_exit_date: data.data_exclusao_do_mei || null,
+            partner_name: data.qsa?.[0]?.nome_socio || prev.partner_name,
+            qualification: data.qsa?.[0]?.qualificacao_socio || prev.qualification,
+            age_range: data.qsa?.[0]?.faixa_etaria || prev.age_range,
+            lead_type: 'PJ'
           }));
-          success("Dados do CNPJ carregados!");
+          success("Dados detalhados da empresa carregados!");
         }
       } catch (e) {
         console.error("Erro ao buscar CNPJ:", e);
@@ -518,6 +534,23 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       source: lead.source,
       lastcontact: lead.lastcontact,
       cnae: lead.cnae,
+      cnae_text: lead.cnae_text,
+      cnae_secondary: lead.cnae_secondary,
+      share_capital: lead.share_capital,
+      company_size: lead.company_size,
+      legal_nature: lead.legal_nature,
+      registration_status: lead.registration_status,
+      registration_status_date: lead.registration_status_date,
+      tax_regime: lead.tax_regime,
+      simples_entry_date: lead.simples_entry_date,
+      simples_exit_date: lead.simples_exit_date,
+      mei_entry_date: lead.mei_entry_date,
+      mei_exit_date: lead.mei_exit_date,
+      partner_name: lead.partner_name,
+      qualification: lead.qualification,
+      age_range: lead.age_range,
+      resp_emp_phone: lead.resp_emp_phone,
+      resp_emp_email: lead.resp_emp_email,
       opening_date: lead.opening_date || null,
       do_not_contact: lead.do_not_contact || false,
       profile_picture_url: lead.profile_picture_url
@@ -585,18 +618,72 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                   mask={lead.lead_type === 'PJ' ? formatCNPJ : formatCPF}
                   onChange={(v:any) => lead.lead_type === 'PJ' ? handleCNPJChange(v) : setLead({...lead, cpf: v})} 
                 />
+                <DetailField label="WhatsApp Principal" value={lead.phone} mask={formatPhone} onChange={(v:any) => setLead({...lead, phone: v})} />
                 <DetailField label="Data Nascimento" type="date" value={lead.birth_date} onChange={(v:any) => setLead((prev:any) => ({...prev, birth_date: v || null}))} />
-                {lead.lead_type === 'PJ' && (
-                  <>
-                    <DetailField label="CNAE" value={lead.cnae} onChange={(v:any) => setLead((prev:any) => ({...prev, cnae: v}))} />
-                    <DetailField label="Data Abertura" type="date" value={lead.opening_date} onChange={(v:any) => setLead((prev:any) => ({...prev, opening_date: v || null}))} />
-                    <div className="flex items-center gap-2 pt-6">
-                      {isSearchingCNPJ && <Icons.Loader2 className="w-4 h-4 animate-spin text-blue-500" />}
-                    </div>
-                  </>
-                )}
               </div>
             </section>
+
+            {/* DADOS DA EMPRESA (Somente PJ) */}
+            {lead.lead_type === 'PJ' && lead.cnpj && (
+              <section className="bg-slate-50/50 p-8 rounded-[2.5rem] border border-slate-100 space-y-8">
+                <SectionHeader icon={Icons.Building2} title="Dados Técnicos da Empresa" colorClass="bg-blue-600 text-white" />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <DetailField label="Razão Social" value={lead.company_name} onChange={(v:any) => setLead({...lead, company_name: v})} />
+                  <DetailField label="Nome Fantasia" value={lead.nickname} onChange={(v:any) => setLead({...lead, nickname: v})} />
+                  <DetailField label="Data de Abertura" type="date" value={lead.opening_date} onChange={(v:any) => setLead({...lead, opening_date: v})} />
+                  <DetailField label="Situação Cadastral" value={lead.registration_status} onChange={(v:any) => setLead({...lead, registration_status: v})} />
+                  <DetailField label="Capital Social" value={lead.share_capital?.toString()} mask={(v:any) => v ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v)) : ''} onChange={(v:any) => setLead({...lead, share_capital: Number(v)})} />
+                  <DetailField label="Porte" value={lead.company_size} onChange={(v:any) => setLead({...lead, company_size: v})} />
+                  <DetailField label="Natureza Jurídica" value={lead.legal_nature} onChange={(v:any) => setLead({...lead, legal_nature: v})} />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <DetailField label="CNAE Principal" value={`${lead.cnae || ''} - ${lead.cnae_text || ''}`} onChange={(v:any) => setLead({...lead, cnae_text: v})} />
+                  <DetailField label="CNAEs Secundários" value={lead.cnae_secondary} onChange={(v:any) => setLead({...lead, cnae_secondary: v})} />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-slate-200/50">
+                  <div className="md:col-span-3">
+                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-4">Sócios e Administradores</p>
+                  </div>
+                  <DetailField label="Sócio Principal" value={lead.partner_name} onChange={(v:any) => setLead({...lead, partner_name: v})} />
+                  <DetailField label="Qualificação" value={lead.qualification} onChange={(v:any) => setLead({...lead, qualification: v})} />
+                  <DetailField label="Faixa Etária" value={lead.age_range} onChange={(v:any) => setLead({...lead, age_range: v})} />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pt-4 border-t border-slate-200/50">
+                  <div className="md:col-span-4">
+                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-4">Tributação</p>
+                  </div>
+                  <DetailField label="Regime Tributário" value={lead.tax_regime} onChange={(v:any) => setLead({...lead, tax_regime: v})} />
+                  <DetailField label="Entrada Simples/MEI" type="date" value={lead.simples_entry_date || lead.mei_entry_date} onChange={(v:any) => setLead({...lead, simples_entry_date: v})} />
+                  <DetailField label="Saída Simples/MEI" type="date" value={lead.simples_exit_date || lead.mei_exit_date} onChange={(v:any) => setLead({...lead, simples_exit_date: v})} />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-200/50">
+                  <div className="md:col-span-2">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Contatos na Receita</p>
+                  </div>
+                  <DetailField label="Telefone Oficial" value={lead.resp_emp_phone} mask={formatPhone} onChange={(v:any) => setLead({...lead, resp_emp_phone: v})} />
+                  <DetailField label="E-mail Oficial" value={lead.resp_emp_email} onChange={(v:any) => setLead({...lead, resp_emp_email: v})} />
+                </div>
+
+                <div className="pt-4 border-t border-slate-200/50">
+                   <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-4">Endereço da Sede</p>
+                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                      <DetailField label="CEP Sede" value={lead.address_zip} mask={formatCEP} onChange={(v:any) => setLead({...lead, address_zip: v})} />
+                      <DetailField label="UF Sede" value={lead.address_state} onChange={(v:any) => setLead({...lead, address_state: v})} />
+                      <DetailField label="Cidade Sede" value={lead.address_city} onChange={(v:any) => setLead({...lead, address_city: v})} />
+                      <DetailField label="Bairro Sede" value={lead.address_neighborhood} onChange={(v:any) => setLead({...lead, address_neighborhood: v})} />
+                      <div className="md:col-span-3">
+                        <DetailField label="Logradouro Sede" value={lead.address_street} onChange={(v:any) => setLead({...lead, address_street: v})} />
+                      </div>
+                      <DetailField label="Nº Sede" value={lead.address_number} onChange={(v:any) => setLead({...lead, address_number: v})} />
+                   </div>
+                </div>
+              </section>
+            )}
 
             {/* CICLO DE VENDAS */}
             <section>
@@ -664,9 +751,8 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-10">
               <div className="space-y-6">
                 <SectionHeader icon={Icons.Phone} title="Contato" colorClass="bg-green-50 text-green-600" />
-                <DetailField label="WhatsApp Principal" value={lead.phone} mask={formatPhone} onChange={(v:any) => setLead({...lead, phone: v})} />
                 <DetailField label="Telefone Secundário" value={lead.secondary_phone} mask={formatPhone} onChange={(v:any) => setLead({...lead, secondary_phone: v})} />
-                <DetailField label="E-mail" value={lead.email} onChange={(v:any) => setLead({...lead, email: v})} />
+                <DetailField label="E-mail Pessoal/Lead" value={lead.email} onChange={(v:any) => setLead({...lead, email: v})} />
               </div>
               <div className="space-y-6">
                 <SectionHeader icon={Icons.MapPin} title="Localização" colorClass="bg-orange-50 text-orange-600" />
@@ -851,7 +937,13 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
   return (
     <div className="fixed inset-0 z-[200] overflow-hidden">
       <div onClick={onClose} className="absolute inset-0 bg-slate-900/95 backdrop-blur-md" />
-      <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} className="absolute right-0 top-0 h-[100dvh] w-full max-w-3xl bg-white shadow-2xl flex flex-col">
+      <motion.div 
+        initial={{ x: "100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "100%" }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+        className="fixed top-0 right-0 h-full w-full bg-white shadow-2xl z-[100] flex flex-col overflow-hidden"
+      >
         <div className="px-8 py-6 border-b flex justify-between items-center bg-slate-50/50">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white text-xl font-black overflow-hidden shadow-xl">
