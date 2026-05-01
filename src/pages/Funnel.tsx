@@ -142,6 +142,24 @@ export default function Funnel() {
     }
   };
 
+  const handleRemoveFromFunnel = async (e: React.MouseEvent, leadId: string, leadName: string) => {
+    e.stopPropagation();
+    const confirmed = window.confirm(`Deseja retirar "${leadName || "este lead"}" do funil de vendas? Ele continuará salvo na sua base de dados.`);
+    if (!confirmed) return;
+
+    const { error: supabaseError } = await supabase
+      .from('leads')
+      .update({ status: '' })
+      .eq('id', leadId);
+
+    if (!supabaseError) {
+      success("Lead retirado do funil.");
+      await fetchLeads();
+    } else {
+      error("Erro ao retirar do funil: " + supabaseError.message);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full w-full overflow-hidden">
       {/* Kanban Header */}
@@ -312,19 +330,21 @@ export default function Funnel() {
                                  >
                                     <div className="flex justify-between items-start mb-3">
                                       <div className="flex flex-col items-start gap-1">
-                                        <span className={cn(
-                                          "text-[10px] font-black px-2.5 py-1 rounded-lg",
-                                          (!lead.deal_value || Number(lead.deal_value) === 0) 
-                                            ? "bg-red-50 text-red-600" 
-                                            : "bg-blue-50 text-blue-600"
-                                        )}>
-                                          {formatCurrency(Number(lead.deal_value || lead.current_value || 0))}
-                                        </span>
-                                        {(!lead.deal_value || Number(lead.deal_value) === 0) && (
-                                          <span className="text-[7px] font-black uppercase text-red-500 tracking-widest ml-1">Potencial</span>
-                                        )}
+                                        <div className="flex items-center gap-1.5">
+                                          <span className={cn(
+                                            "text-[10px] font-black px-2.5 py-1 rounded-lg",
+                                            (!lead.deal_value || Number(lead.deal_value) === 0) 
+                                              ? "bg-red-50 text-red-600" 
+                                              : "bg-blue-50 text-blue-600"
+                                          )}>
+                                            {formatCurrency(Number(lead.deal_value || lead.current_value || 0))}
+                                          </span>
+                                          {(!lead.deal_value || Number(lead.deal_value) === 0) && (
+                                            <span className="text-[7px] font-black uppercase text-red-500 tracking-widest">Potencial</span>
+                                          )}
+                                        </div>
                                       </div>
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex items-center gap-1.5">
                                         {/* Contador de Dias na Etapa */}
                                         {(() => {
                                           const statusDate = lead.status_updated_at || lead.created_at;
@@ -346,17 +366,41 @@ export default function Funnel() {
                                           );
                                         })()}
 
-                                        <button onClick={(e) => handleDeleteLead(e, lead.id, lead.name)} className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100" title="Apagar Oportunidade"><Icons.Trash className="w-3.5 h-3.5" /></button>
-                                      <div className={cn(
-                                        "px-2 py-0.5 rounded-full text-[8px] font-black uppercase ring-2 ring-white shadow-sm shrink-0 transition-transform group-hover:scale-110",
-                                        lead.lead_type === 'PJ' ? "bg-indigo-600 text-white" : "bg-blue-600 text-white"
-                                      )}>
-                                        {lead.lead_type === 'PJ' ? 'PME' : 'PF'}
+                                        <div className={cn(
+                                          "px-2 py-0.5 rounded-full text-[8px] font-black uppercase ring-2 ring-white shadow-sm shrink-0 transition-transform group-hover:scale-110",
+                                          lead.lead_type === 'PJ' ? "bg-indigo-600 text-white" : "bg-blue-600 text-white"
+                                        )}>
+                                          {lead.lead_type === 'PJ' ? 'PME' : 'PF'}
+                                        </div>
                                       </div>
                                     </div>
-                                    </div>
                                     
-                                    <h4 className="font-bold text-slate-900 mb-1 group-hover:text-blue-700 transition-colors uppercase text-[11px] tracking-tight line-clamp-1 truncate">{lead.name || "Sem Nome"}</h4>
+                                    {/* Nome e Origem (Parsing inteligente) */}
+                                    {(() => {
+                                      const name = lead.name || "Sem Nome";
+                                      const sourceMatch = name.match(/^\[(.*?)\]\s*(.*)$/);
+                                      const displayName = sourceMatch ? sourceMatch[2] : name;
+                                      const sourceLabel = sourceMatch ? sourceMatch[1] : (lead.source || null);
+
+                                      return (
+                                        <div className="space-y-1.5 mb-3">
+                                          {sourceLabel && (
+                                            <span className="inline-block px-1.5 py-0.5 bg-slate-100 text-slate-500 text-[7px] font-black uppercase rounded tracking-wider border border-slate-200/50">
+                                              {sourceLabel}
+                                            </span>
+                                          )}
+                                          <h4 className="font-bold text-slate-900 group-hover:text-blue-700 transition-colors uppercase text-[11px] tracking-tight line-clamp-1 truncate leading-tight">
+                                            {displayName}
+                                          </h4>
+                                          {lead.phone && (
+                                            <div className="flex items-center gap-1 text-[9px] text-slate-400 font-bold">
+                                              <Icons.Phone className="w-2.5 h-2.5" />
+                                              {lead.phone.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3")}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })()}
                                     
                                     {/* Tags de Status & Temperatura */}
                                     <div className="mb-3 flex flex-wrap items-center gap-1.5 overflow-hidden">
@@ -370,7 +414,7 @@ export default function Funnel() {
                                           }}
                                           onClick={(e) => e.stopPropagation()}
                                           className={cn(
-                                            "text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border-0 cursor-pointer outline-none transition-all appearance-none text-center",
+                                            "text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border-0 cursor-pointer outline-none transition-all appearance-none text-center hover:scale-105 active:scale-95",
                                             interactionStatusOptions.find(o => o.value === (lead.interaction_status || 'Sem Status'))?.color || 'bg-slate-100 text-slate-500'
                                           )}
                                         >
@@ -398,15 +442,42 @@ export default function Funnel() {
                                       </div>
                                     </div>
                                     
-                                    <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold uppercase">
-                                      <Icons.Heart className="w-3.5 h-3.5 text-slate-400" />
-                                      <span className="truncate">{lead.carrier || "---"}</span>
+                                    <div className="flex items-center justify-between gap-1.5">
+                                      <div className="flex flex-col gap-0.5">
+                                        {lead.current_carrier && lead.current_carrier !== lead.carrier && (
+                                          <div className="flex items-center gap-1 text-[8px] text-slate-400 font-bold uppercase italic">
+                                            <span className="opacity-50">De:</span>
+                                            <span className="truncate max-w-[80px]">{lead.current_carrier}</span>
+                                          </div>
+                                        )}
+                                        <div className="flex items-center gap-1.5 text-[9px] text-slate-600 font-black uppercase tracking-tight">
+                                          <Icons.Heart className="w-3 h-3 text-blue-500" />
+                                          <span className="truncate">{lead.carrier || "Cotação em aberto"}</span>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                         <button 
+                                           onClick={(e) => handleRemoveFromFunnel(e, lead.id, lead.name)} 
+                                           className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all" 
+                                           title="Retirar do Funil (Arquivar)"
+                                         >
+                                           <Icons.Inbox className="w-3.5 h-3.5" />
+                                         </button>
+                                         <button 
+                                           onClick={(e) => handleDeleteLead(e, lead.id, lead.name)} 
+                                           className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" 
+                                           title="Apagar Oportunidade Permanentemente"
+                                         >
+                                           <Icons.Trash className="w-3.5 h-3.5" />
+                                         </button>
+                                      </div>
                                     </div>
 
-                                    {lead.last_contact && (
-                                      <div className="mt-4 pt-4 border-t border-slate-50 flex items-center justify-between">
+                                    {lead.lastcontact && (
+                                      <div className="mt-4 pt-3 border-t border-slate-50 flex items-center justify-between">
                                         <div className="flex items-center gap-1 text-[9px] text-slate-400 font-black uppercase tracking-tighter">
-                                          <Icons.History className="w-3 h-3" /> {lead.last_contact}
+                                          <Icons.History className="w-3 h-3" /> {lead.lastcontact}
                                         </div>
                                         <Icons.MessageSquare className="w-3.5 h-3.5 text-slate-200" />
                                       </div>
