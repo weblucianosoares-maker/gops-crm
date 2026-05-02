@@ -64,6 +64,7 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
     contract_number: "",
     accommodation: "Enfermaria",
     grace_periods: "",
+    grace_periods_data: {} as Record<string, string>,
     end_date: ""
   });
 
@@ -87,6 +88,7 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         contract_number: editContract.contract_number || "",
         accommodation: editContract.accommodation || "Enfermaria",
         grace_periods: editContract.grace_periods || "",
+        grace_periods_data: editContract.grace_periods_data || {},
         end_date: editContract.end_date || ""
       });
       setIsNewLead(!!editContract.client_name && !editContract.lead_id);
@@ -185,6 +187,7 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         contract_number: contract.contract_number,
         accommodation: contract.accommodation,
         grace_periods: contract.grace_periods,
+        grace_periods_data: contract.grace_periods_data,
         end_date: contract.end_date || null
       };
 
@@ -385,6 +388,64 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
                   />
                </div>
                <InputField label="Data Prevista de Encerramento" type="date" value={contract.end_date} onChange={(v:any) => setContract({...contract, end_date: v})} />
+            </div>
+
+            {/* TABELA DE CARÊNCIAS */}
+            <div className="mt-8 space-y-4">
+               <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-4">
+                  <div className="p-2 rounded-lg bg-indigo-100 text-indigo-700">
+                    <Icons.FileText className="w-4 h-4" />
+                  </div>
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Tabela de Carências (Prazos)</h4>
+               </div>
+
+               <div className="overflow-hidden border border-slate-200 rounded-2xl">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200">
+                        <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-slate-500 w-16 text-center">Alínea</th>
+                        <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-slate-500">Eventos</th>
+                        <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-blue-600">Carências</th>
+                        <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Ref. ANS (PME)</th>
+                        <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Ref. ANS (PF)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {[
+                        { a: 'A', e: 'Urgência e Emergência', pme: '24h', pf: '24h' },
+                        { a: 'B', e: 'Consultas, exames simples e pequenas cirurgias (porte zero)', pme: '30 dias', pf: '30 dias' },
+                        { a: 'C', e: 'Terapias Simples e Fisioterapias', pme: '180 dias', pf: '180 dias' },
+                        { a: 'D', e: 'Terapias especiais', pme: '180 dias', pf: '180 dias' },
+                        { a: 'E', e: 'Internações clínicas e/ou cirúrgicas (incl. psiquiátricas)', pme: '180 dias', pf: '180 dias' },
+                        { a: 'F', e: 'Partos a Termo', pme: '300 dias', pf: '300 dias' },
+                        { a: 'G', e: 'Exames especiais e cirurgias oftalmológicas', pme: '180 dias', pf: '180 dias' },
+                        { a: 'H', e: 'Cobertura Parcial Temporária (CPT)', pme: '24 meses', pf: '24 meses' },
+                      ].map((row) => (
+                        <tr key={row.a} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-4 py-3 text-[10px] font-black text-slate-400 text-center">{row.a}</td>
+                          <td className="px-4 py-3 text-[11px] font-bold text-slate-700 leading-tight">{row.e}</td>
+                          <td className="px-4 py-3">
+                             <input 
+                               type="text" 
+                               className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-[11px] font-black text-blue-600 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100/10"
+                               placeholder="Ex: 30 dias"
+                               value={contract.grace_periods_data?.[row.a] || ""}
+                               onChange={(e) => setContract({
+                                 ...contract, 
+                                 grace_periods_data: {
+                                   ...(contract.grace_periods_data || {}),
+                                   [row.a]: e.target.value
+                                 }
+                               })}
+                             />
+                          </td>
+                          <td className="px-4 py-3 text-[10px] font-bold text-slate-400 text-center uppercase tracking-tighter">{row.pme}</td>
+                          <td className="px-4 py-3 text-[10px] font-bold text-slate-400 text-center uppercase tracking-tighter">{row.pf}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+               </div>
             </div>
           </section>
 
