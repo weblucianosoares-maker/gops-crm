@@ -648,11 +648,33 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-slate-200/50">
                   <div className="md:col-span-3">
-                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-4">Sócios e Administradores</p>
+                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-4">Quadro Societário (QSA)</p>
+                    <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50/50 border-b border-slate-100">
+                            <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Sócio</th>
+                            <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Qualificação</th>
+                            <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Faixa Etária</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                          {(lead.partner_name || "").split("; ").map((name: string, i: number) => {
+                            const quals = (lead.qualification || "").split("; ");
+                            const ages = (lead.age_range || "").split("; ");
+                            if (!name && !quals[i]) return null;
+                            return (
+                              <tr key={i} className="hover:bg-blue-50/30 transition-colors">
+                                <td className="px-6 py-4 text-xs font-bold text-slate-700">{name || '-'}</td>
+                                <td className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase">{quals[i] || '-'}</td>
+                                <td className="px-6 py-4 text-[10px] font-bold text-slate-400">{ages[i] || '-'}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                  <DetailField label="Sócio Principal" value={lead.partner_name} onChange={(v:any) => setLead({...lead, partner_name: v})} />
-                  <DetailField label="Qualificação" value={lead.qualification} onChange={(v:any) => setLead({...lead, qualification: v})} />
-                  <DetailField label="Faixa Etária" value={lead.age_range} onChange={(v:any) => setLead({...lead, age_range: v})} />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pt-4 border-t border-slate-200/50">
