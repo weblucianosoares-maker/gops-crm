@@ -64,7 +64,7 @@ export default function Finance() {
       const paidList = JSON.parse(localStorage.getItem('efraim_paid_contracts') || '{}');
       setContracts(prev => prev.map(c => ({
         ...c,
-        is_paid: paidList[c.id] !== undefined ? paidList[c.id] : (c.is_paid || false)
+        is_paid: !!(paidList[c.id] !== undefined ? paidList[c.id] : (c.is_paid || false))
       })));
     }
   }, [loading]);
@@ -93,17 +93,25 @@ export default function Finance() {
     const totalVgv = monthContracts.reduce((acc, c) => acc + (Number(c.monthly_fee) || 0), 0);
     
     const commissions = monthContracts.map(c => {
-      const calc = calculateNetCommission(
-        String(c.carrier || ''), 
-        Number(c.monthly_fee) || 0, 
-        stone.name,
-        c.type as any,
-        Number(c.lives || 1)
-      );
-      return {
-        ...c,
-        commission: calc
-      };
+      try {
+        const calc = calculateNetCommission(
+          String(c.carrier || ''), 
+          Number(c.monthly_fee) || 0, 
+          stone.name,
+          c.type as any,
+          Number(c.lives || 1)
+        );
+        return {
+          ...c,
+          commission: calc
+        };
+      } catch (e) {
+        console.error("Erro no cálculo de comissão:", e);
+        return {
+          ...c,
+          commission: { net: 0, percentage: 0, bonus: 0, installments: [] }
+        };
+      }
     });
 
     const totalNet = commissions.reduce((acc, c) => acc + (Number(c.commission?.net) || 0), 0);

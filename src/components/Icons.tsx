@@ -60,10 +60,15 @@ import {
   Hospital,
   Sparkles,
   Send,
-  Inbox
+  Inbox,
+  RefreshCw,
+  TrendingDown
 } from "lucide-react";
 
 export const Icons = {
+  RefreshCw: RefreshCw,
+  TrendingUp: TrendingUp,
+  TrendingDown: TrendingDown,
   Dashboard: LayoutDashboard,
   Leads: Users,
   Funnel: Filter,
