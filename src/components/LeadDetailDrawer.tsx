@@ -552,6 +552,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       resp_emp_phone: lead.resp_emp_phone,
       resp_emp_email: lead.resp_emp_email,
       opening_date: lead.opening_date || null,
+      first_contact_date: lead.first_contact_date || null,
       do_not_contact: lead.do_not_contact || false,
       profile_picture_url: lead.profile_picture_url
     };
@@ -746,6 +747,27 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                   ]}
                   onChange={(v:any) => setLead({...lead, temperature: v})} 
                 />
+                <div className="md:col-span-3 pt-4 border-t border-slate-100 flex items-center justify-between">
+                   <div className="flex-1">
+                      <DetailField 
+                        label="Data do Primeiro Contato" 
+                        type="date" 
+                        value={lead.first_contact_date || new Date().toISOString().split('T')[0]} 
+                        onChange={(v:any) => setLead({...lead, first_contact_date: v})} 
+                      />
+                   </div>
+                   {lead.first_contact_date && (
+                     <div className="ml-6 px-6 py-3 bg-indigo-50 border border-indigo-100 rounded-2xl flex flex-col items-center min-w-[120px]">
+                        <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Ciclo de Venda</span>
+                        <div className="flex items-center gap-2">
+                           <Icons.Clock className="w-3 h-3 text-indigo-600" />
+                           <span className="text-lg font-black text-indigo-700">
+                             {Math.floor((new Date().getTime() - new Date(lead.first_contact_date).getTime()) / (1000 * 3600 * 24))} dias
+                           </span>
+                        </div>
+                     </div>
+                   )}
+                </div>
               </div>
             </section>
 
