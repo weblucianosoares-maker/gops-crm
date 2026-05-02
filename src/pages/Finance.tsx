@@ -285,8 +285,6 @@ export default function Finance() {
                        </div>
                     </div>
                   </td>
-v>
-                  </td>
                   <td className="px-6 py-4">
                     <button 
                       onClick={() => togglePaymentStatus(c.id, c.is_paid)}

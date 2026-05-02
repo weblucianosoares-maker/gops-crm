@@ -82,7 +82,6 @@ export const Icons = {
   Notifications: Bell,
   Bell: Bell,
   Settings: Settings,
-  TrendingUp: TrendingUp,
   Cake: Cake,
   More: MoreVertical,
   Search: Search,
