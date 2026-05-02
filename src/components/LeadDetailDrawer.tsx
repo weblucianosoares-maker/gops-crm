@@ -567,13 +567,6 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       resp_emp_email: lead.resp_emp_email,
       opening_date: lead.opening_date || null,
       first_contact_date: lead.first_contact_date || null,
-      company_zip: lead.company_zip,
-      company_street: lead.company_street,
-      company_number: lead.company_number,
-      company_neighborhood: lead.company_neighborhood,
-      company_city: lead.company_city,
-      company_state: lead.company_state,
-      company_complement: lead.company_complement,
       do_not_contact: lead.do_not_contact || false,
       profile_picture_url: lead.profile_picture_url
     };
