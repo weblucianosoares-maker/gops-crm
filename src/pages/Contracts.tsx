@@ -219,19 +219,21 @@ export default function Contracts() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-sm text-slate-700">{new Date(contract.start_date).toLocaleDateString('pt-BR')}</p>
+                    <p className="text-sm text-slate-700">
+                      {contract.start_date.split('-').reverse().join('/')}
+                    </p>
                     <p className="text-[10px] text-slate-400 uppercase font-bold">Implantado</p>
                   </td>
                   <td className="px-6 py-4">
                     {(() => {
-                       const d = new Date(contract.start_date);
-                       d.setFullYear(d.getFullYear() + 1);
+                       const [year, month, day] = contract.start_date.split('-');
+                       const d = new Date(Number(year) + 1, Number(month) - 1, Number(day));
                        const now = new Date();
                        const isNear = d.getTime() - now.getTime() < 1000 * 60 * 60 * 24 * 60; // 60 dias
                        return (
                          <div className="flex flex-col gap-1">
                            <span className={cn("text-sm font-bold", isNear ? "text-amber-600" : "text-slate-700")}>
-                             {d.toLocaleDateString('pt-BR')}
+                             {day}/{month}/{Number(year) + 1}
                            </span>
                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Aniversário de 1 ano</span>
                          </div>
