@@ -46,7 +46,7 @@ const CARRIER_RE_RULES: Record<TierName, Record<string, number>> = {
     'Amil': 250, 'Bradesco': 290, 'Assim': 250, 'Hapvida': 250, 'SulAmérica': 250, 'Porto Saúde': 250, 'Klini': 180, 'Unimed': 100, 'Cemeru': 100, 'Hsmed': 140, 'Integral': 220, 'Leve': 150, 'MédSênior': 125, 'Nova': 180
   },
   Rubi: {
-    'Amil': 260, 'Bradesco': 300, 'Assim': 260, 'Hapvida': 260, 'SulAmérica': 260, 'Porto Saúde': 260, 'Klini': 180, 'Unimed': 120, 'Cemeru': 100, 'Hsmed': 140, 'Integral': 240, 'Leve': 180, 'MédSênior': 125, 'Nova': 240
+    'Amil': 260, 'Bradesco': 300, 'Assim': 260, 'Hapvida': 260, 'SulAmérica': 260, 'Porto Saúde': 260, 'Klini': 180, 'Unimed': 120, 'Cemeru': 100, 'Hsmed': 140, 'Integral': 240, 'Leve': 100, 'MédSênior': 125, 'Nova': 240
   }
 };
 
@@ -123,16 +123,40 @@ export const calculateNetCommission = (carrierName: string, monthlyFee: number, 
     totalBonus = (customRules.adesao.bonus_per_life || 0) * lives;
   }
 
-  // 4. Calcular Valores Finais
+  // 4. Calcular Valores Finais e Parcelas Detalhadas
   const grossValue = (monthlyFee * (totalPercentage / 100)) + totalBonus;
   const netValue = grossValue * (1 - taxRate);
+
+  const detailedInstallments = installments.map((p, i) => {
+    let description = `${i + 1}ª Parcela`;
+    let isDirect = false;
+
+    if (type === 'PF' && i === 0) {
+      description = "Taxa Angariação (Direto)";
+      isDirect = true;
+    } else if (type === 'PJ' && i === 1 && carrierName.toLowerCase().includes('united')) {
+      description = "2ª Parcela (Antecipável)";
+    } else if (carrierName.toLowerCase().includes('leve')) {
+      description = "Repasse 100% Operadora";
+    }
+
+    return {
+      index: i + 1,
+      amount: monthlyFee * p,
+      netAmount: (monthlyFee * p) * (1 - taxRate),
+      description,
+      isDirect,
+      // Mês relativo ao início da vigência (0 = mês de início, 1 = mês seguinte, etc.)
+      relativeMonth: i 
+    };
+  });
 
   return {
     gross: grossValue,
     net: netValue,
     taxAmount: grossValue * taxRate,
     percentage: totalPercentage,
-    installments: installments.map(p => monthlyFee * p),
+    installments: detailedInstallments,
     bonus: totalBonus
   };
 };

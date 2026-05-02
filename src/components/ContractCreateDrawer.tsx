@@ -66,6 +66,7 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
     contract_duration: "12",
     grace_periods_data: {} as Record<string, string>,
     end_date: "",
+    sale_date: new Date().toISOString().split('T')[0],
     readjustment_percentage: 0,
     readjustment_new_value: 0
   });
@@ -92,6 +93,7 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         contract_duration: editContract.contract_duration || "12",
         grace_periods_data: editContract.grace_periods_data || {},
         end_date: editContract.end_date || "",
+        sale_date: editContract.sale_date || (editContract.start_date || new Date().toISOString().split('T')[0]),
         readjustment_percentage: editContract.readjustment_percentage || 0,
         readjustment_new_value: editContract.readjustment_new_value || 0
       });
@@ -216,6 +218,7 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         contract_duration: contract.contract_duration,
         grace_periods_data: contract.grace_periods_data,
         end_date: contract.end_date || null,
+        sale_date: contract.sale_date,
         readjustment_percentage: contract.readjustment_percentage,
         readjustment_new_value: contract.readjustment_new_value
       };
@@ -391,14 +394,14 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
                     ))}
                   </select>
                </div>
-               <InputField 
-                 label="Valor da Mensalidade (R$)" 
+               <InputField label="Valor da Mensalidade (R$)" 
                  required 
                  value={contract.monthly_fee ? Math.round(contract.monthly_fee * 100).toString() : ""} 
                  mask={formatCurrencyValue}
                  onChange={(v:any) => setContract({...contract, monthly_fee: parseCurrencyValue(v)})} 
                />
-               <InputField label="Data de Início" type="date" required value={contract.start_date} onChange={(v:any) => setContract({...contract, start_date: v})} />
+               <InputField label="Data da Venda" type="date" required value={contract.sale_date} onChange={(v:any) => setContract({...contract, sale_date: v})} />
+               <InputField label="Início da Vigência" type="date" required value={contract.start_date} onChange={(v:any) => setContract({...contract, start_date: v})} />
                <InputField label="Número do Contrato" value={contract.contract_number} onChange={(v:any) => setContract({...contract, contract_number: v})} />
                <div>
                   <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Acomodação</label>
