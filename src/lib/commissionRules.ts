@@ -77,9 +77,19 @@ export const calculateNetCommission = (carrierName: string, monthlyFee: number, 
     carrierName.toLowerCase().includes(k.toLowerCase())
   );
 
-  // Percentual total definido pela "Pedra" (ex: 200, 240, 300)
-  const totalPercentage = carrierKey ? CARRIER_RE_RULES[tier][carrierKey] : 100;
+  // Percentual total definido pela "Pedra"
+  let totalPercentage = carrierKey ? CARRIER_RE_RULES[tier][carrierKey] : 100;
   const taxRate = carrierKey ? (CARRIER_TAXES[carrierKey] || 0) : 0;
+
+  // AJUSTE LEVE SAÚDE (PF vs PME)
+  if (carrierName.toLowerCase().includes('leve')) {
+    if (type === 'PF') {
+      totalPercentage = 100; // PF/Adesão na Leve é geralmente 100% angariação
+    } else {
+      // PME na Leve segue a grade United (150% no Interno, etc.)
+      totalPercentage = carrierKey ? CARRIER_RE_RULES[tier][carrierKey] : 150;
+    }
+  }
   
   let installments: number[] = [];
   let totalBonus = 0;

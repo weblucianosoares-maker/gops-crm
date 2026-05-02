@@ -91,6 +91,24 @@ export default function Finance() {
     });
     const totalVgv = monthSales.reduce((acc, c) => acc + (Number(c.monthly_fee) || 0), 0);
 
+    // 2b. VGV PAGO do Mês (Para cálculo da Pedra Atual)
+    const totalVgvPaid = monthSales
+      .filter(c => c.is_paid)
+      .reduce((acc, c) => acc + (Number(c.monthly_fee) || 0), 0);
+
+    // Determinar a Pedra ATUAL baseada nas vendas PAGAS do próprio mês
+    const currentStone = getTier(totalVgvPaid);
+    const stoneIndex = TIERS.findIndex(t => t.name === currentStone.name);
+    const nextStone = TIERS[stoneIndex + 1] || null;
+
+    // Cálculo de ticket médio
+    const pfSales = monthSales.filter(c => c.type === 'PF');
+    const pmeSales = monthSales.filter(c => c.type === 'PJ');
+
+    const avgTicketTotal = monthSales.length > 0 ? totalVgv / monthSales.length : 0;
+    const avgTicketPf = pfSales.length > 0 ? pfSales.reduce((acc, c) => acc + (Number(c.monthly_fee) || 0), 0) / pfSales.length : 0;
+    const avgTicketPme = pmeSales.length > 0 ? pmeSales.reduce((acc, c) => acc + (Number(c.monthly_fee) || 0), 0) / pmeSales.length : 0;
+
     // 3. FLUXO DE CAIXA: Encontrar todas as parcelas que caem neste mês
     // Percorremos TODOS os contratos para ver quais parcelas vencem agora
     const upcomingCommissions: any[] = [];
@@ -101,7 +119,7 @@ export default function Finance() {
         const calc = calculateNetCommission(
           String(c.carrier || ''), 
           Number(c.monthly_fee) || 0, 
-          stone.name,
+          stone.name, // Usamos a pedra do mês passado para o repasse (regra United)
           c.type as any,
           Number(c.lives || 1)
         );
@@ -127,11 +145,20 @@ export default function Finance() {
 
     return {
       totalVgv,
+      totalVgvPaid,
       totalNet: totalNetFlow,
       stone: {
-        label: String(stone.label || 'Sem Grade'),
-        color: String(stone.color || 'slate'),
-        name: stone.name
+        current: currentStone,
+        next: nextStone,
+        vgvPaid: totalVgvPaid
+      },
+      stats: {
+        avgTicketTotal,
+        avgTicketPf,
+        avgTicketPme,
+        pfCount: pfSales.length,
+        pmeCount: pmeSales.length,
+        totalCount: monthSales.length
       },
       commissions: upcomingCommissions,
       count: monthSales.length
@@ -184,39 +211,77 @@ export default function Finance() {
       </div>
 
       {/* Finance Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">VGV Produzido (Mês Atual)</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Produção Total (VGV)</p>
           <div className="flex items-center justify-between">
             <h3 className="text-2xl font-black text-slate-900">{formatCurrency(currentMonthData.totalVgv)}</h3>
             <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
                <Icons.TrendingUp className="w-5 h-5" />
             </div>
           </div>
-          <p className="text-[10px] text-slate-500 mt-2 font-bold">{currentMonthData.count} novos contratos</p>
+          <div className="flex justify-between items-center mt-2">
+            <p className="text-[10px] text-slate-500 font-bold">{currentMonthData.count} contratos</p>
+            <p className="text-[10px] text-blue-600 font-black uppercase tracking-tight">T.M. {formatCurrency(currentMonthData.stats.avgTicketTotal)}</p>
+          </div>
         </div>
 
         <div className="bg-blue-600 p-6 rounded-2xl shadow-xl shadow-blue-100 text-white">
-          <p className="text-[10px] font-black uppercase tracking-widest text-blue-200 mb-2">Comissões a Receber (Líquido)</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-blue-200 mb-2">Recebimento (Fluxo de Caixa)</p>
           <div className="flex items-center justify-between">
             <h3 className="text-2xl font-black">{formatCurrency(currentMonthData.totalNet)}</h3>
             <div className="p-2 bg-blue-500 text-white rounded-lg">
                <Icons.CreditCard className="w-5 h-5" />
             </div>
           </div>
-          <p className="text-[10px] text-blue-100 mt-2 font-bold">Baseado na Grade {safe(currentMonthData.stone.label)}</p>
+          <p className="text-[10px] text-blue-100 mt-2 font-bold italic">Baseado em parcelas que caem este mês</p>
         </div>
 
-        <div className={cn("p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between", `bg-${currentMonthData.stone.color}-50`)}>
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Ticket Médio por Tipo</p>
+          <div className="space-y-3 mt-1">
+            <div className="flex justify-between items-center">
+               <span className="text-[10px] font-black text-slate-400 uppercase">PME</span>
+               <span className="text-sm font-bold text-slate-700">{formatCurrency(currentMonthData.stats.avgTicketPme)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+               <span className="text-[10px] font-black text-slate-400 uppercase">PF / ADESÃO</span>
+               <span className="text-sm font-bold text-slate-700">{formatCurrency(currentMonthData.stats.avgTicketPf)}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className={cn("p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between", `bg-${currentMonthData.stone.current.color}-50`)}>
            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Status da Grade</p>
-              <h3 className={cn("text-lg font-black uppercase tracking-tighter", `text-${currentMonthData.stone.color}-600`)}>{safe(currentMonthData.stone.label)}</h3>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Status da Grade Atual</p>
+              <h3 className={cn("text-lg font-black uppercase tracking-tighter", `text-${currentMonthData.stone.current.color}-600`)}>
+                {currentMonthData.stone.current.label}
+              </h3>
            </div>
-           <div className="flex items-center gap-2 mt-4">
-              <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                 <div className={cn("h-full transition-all duration-1000", `bg-${currentMonthData.stone.color}-500`)} style={{ width: '70%' }}></div>
+           
+           <div className="mt-4 space-y-2">
+              <div className="flex justify-between items-end">
+                 <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tight">
+                    {currentMonthData.stone.next 
+                      ? `Faltam ${formatCurrency(currentMonthData.stone.next.minVgv - currentMonthData.stone.vgvPaid)} para ${currentMonthData.stone.next.label}`
+                      : "Nível Máximo Alcançado!"
+                    }
+                 </p>
+                 <span className="text-[10px] font-black text-slate-700">
+                    {formatCurrency(currentMonthData.totalVgvPaid)}
+                 </span>
               </div>
-              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Meta Rubi</span>
+              <div className="h-2 bg-white/50 border border-black/5 rounded-full overflow-hidden">
+                 <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ 
+                      width: currentMonthData.stone.next 
+                        ? `${Math.min(100, (currentMonthData.stone.vgvPaid / currentMonthData.stone.next.minVgv) * 100)}%`
+                        : "100%" 
+                    }}
+                    className={cn("h-full", `bg-${currentMonthData.stone.current.color}-500`)}
+                 />
+              </div>
            </div>
         </div>
       </div>
