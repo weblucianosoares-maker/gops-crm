@@ -265,9 +265,9 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
             simples_exit_date: data.data_exclusao_do_simples || null,
             mei_entry_date: data.data_opcao_pelo_mei || null,
             mei_exit_date: data.data_exclusao_do_mei || null,
-            partner_name: data.qsa?.[0]?.nome_socio || prev.partner_name,
-            qualification: data.qsa?.[0]?.qualificacao_socio || prev.qualification,
-            age_range: data.qsa?.[0]?.faixa_etaria || prev.age_range,
+            partner_name: data.qsa?.map((s: any) => s.nome_socio).join('; ') || prev.partner_name,
+            qualification: data.qsa?.map((s: any) => s.qualificacao_socio).join('; ') || prev.qualification,
+            age_range: data.qsa?.map((s: any) => s.faixa_etaria).join('; ') || prev.age_range,
             lead_type: 'PJ'
           }));
           success("Dados detalhados da empresa carregados!");
