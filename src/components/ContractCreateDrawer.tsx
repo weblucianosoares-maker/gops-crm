@@ -65,7 +65,9 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
     accommodation: "Enfermaria",
     contract_duration: "12",
     grace_periods_data: {} as Record<string, string>,
-    end_date: ""
+    end_date: "",
+    readjustment_percentage: 0,
+    readjustment_new_value: 0
   });
 
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([
@@ -89,7 +91,9 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         accommodation: editContract.accommodation || "Enfermaria",
         contract_duration: editContract.contract_duration || "12",
         grace_periods_data: editContract.grace_periods_data || {},
-        end_date: editContract.end_date || ""
+        end_date: editContract.end_date || "",
+        readjustment_percentage: editContract.readjustment_percentage || 0,
+        readjustment_new_value: editContract.readjustment_new_value || 0
       });
       setIsNewLead(!!editContract.client_name && !editContract.lead_id);
       fetchBeneficiaries(editContract.id);
@@ -127,6 +131,15 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
       }
     }
   }, [contract.start_date, contract.contract_duration]);
+
+  useEffect(() => {
+    const percentage = Number(contract.readjustment_percentage) || 0;
+    const currentFee = Number(contract.monthly_fee) || 0;
+    const newValue = currentFee + (currentFee * (percentage / 100));
+    if (newValue !== contract.readjustment_new_value) {
+      setContract(prev => ({ ...prev, readjustment_new_value: newValue }));
+    }
+  }, [contract.readjustment_percentage, contract.monthly_fee]);
 
   const fetchBeneficiaries = async (contractId: string) => {
     const { data, error: benErr } = await supabase
@@ -202,7 +215,9 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         accommodation: contract.accommodation,
         contract_duration: contract.contract_duration,
         grace_periods_data: contract.grace_periods_data,
-        end_date: contract.end_date || null
+        end_date: contract.end_date || null,
+        readjustment_percentage: contract.readjustment_percentage,
+        readjustment_new_value: contract.readjustment_new_value
       };
 
       let currentContractId = editContract?.id;
@@ -413,6 +428,40 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
                     value={contract.end_date} 
                   />
                </div>
+            </div>
+
+            {/* GESTÃO DE REAJUSTE */}
+            <div className="mt-8 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 space-y-6">
+               <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-red-100 text-red-600">
+                    <Icons.TrendingUp className="w-4 h-4" />
+                  </div>
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Projeção de Reajuste (Gestão)</h4>
+               </div>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">Percentual de Reajuste (%)</label>
+                    <div className="relative">
+                      <input 
+                        type="number" 
+                        step="0.01"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900 outline-none focus:border-red-400 transition-all"
+                        placeholder="Ex: 15.5"
+                        value={contract.readjustment_percentage || ""}
+                        onChange={(e) => setContract({...contract, readjustment_percentage: Number(e.target.value)})}
+                      />
+                      <span className="absolute right-4 top-2.5 text-slate-400 font-bold text-sm">%</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">Novo Valor Estimado (R$)</label>
+                    <div className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-sm font-black text-red-600">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(contract.readjustment_new_value || 0)}
+                    </div>
+                  </div>
+               </div>
+               <p className="text-[9px] text-slate-400 font-medium italic">* Este campo é apenas informativo para controle interno do corretor.</p>
             </div>
 
             {/* TABELA DE CARÊNCIAS */}
