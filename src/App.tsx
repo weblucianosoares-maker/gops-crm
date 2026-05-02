@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
-import { cn } from "@/src/lib/utils";
+import { cn } from "./lib/utils";
 import { Sidebar, TopBar } from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Leads from "./pages/Leads";

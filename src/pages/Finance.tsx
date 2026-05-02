@@ -7,6 +7,8 @@ import { supabase } from "../lib/supabase";
 import { calculateNetCommission, getTier } from "../lib/commissionRules";
 import { useToast } from "../components/Toasts";
 
+const safe = (v: any) => (v && typeof v === 'object') ? '' : v;
+
 export default function Finance() {
   const [contracts, setContracts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -185,13 +187,13 @@ export default function Finance() {
                <Icons.CreditCard className="w-5 h-5" />
             </div>
           </div>
-          <p className="text-[10px] text-blue-100 mt-2 font-bold">Baseado na Grade {currentMonthData.stone.label}</p>
+          <p className="text-[10px] text-blue-100 mt-2 font-bold">Baseado na Grade {safe(currentMonthData.stone.label)}</p>
         </div>
 
         <div className={cn("p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between", `bg-${currentMonthData.stone.color}-50`)}>
            <div>
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Status da Grade</p>
-              <h3 className={cn("text-lg font-black uppercase tracking-tighter", `text-${currentMonthData.stone.color}-600`)}>{currentMonthData.stone.label}</h3>
+              <h3 className={cn("text-lg font-black uppercase tracking-tighter", `text-${currentMonthData.stone.color}-600`)}>{safe(currentMonthData.stone.label)}</h3>
            </div>
            <div className="flex items-center gap-2 mt-4">
               <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
@@ -233,14 +235,14 @@ export default function Finance() {
               {currentMonthData.commissions.map((c, idx) => (
                 <tr key={c.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4">
-                    <p className="text-sm font-bold text-slate-900">{String(c.client_name || '')}</p>
+                    <p className="text-sm font-bold text-slate-900">{safe(c.client_name)}</p>
                     <p className="text-[10px] text-slate-400 uppercase font-bold tracking-tight">
-                      Vigência: {new Date(c.start_date).toLocaleDateString('pt-BR')} • {c.type === 'PJ' ? 'PME' : 'Adesão'}
+                      Vigência: {new Date(c.start_date).toLocaleDateString('pt-BR')} • {safe(c.type) === 'PJ' ? 'PME' : 'Adesão'}
                     </p>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-xs font-bold text-slate-700">{String(c.carrier || '')}</p>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase">{String(c.product || 'Plano de Saúde')}</p>
+                    <p className="text-xs font-bold text-slate-700">{safe(c.carrier)}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">{safe(c.product || 'Plano de Saúde')}</p>
                   </td>
                   <td className="px-6 py-4">
                     <p className="text-sm font-bold text-slate-700">{formatCurrency(Number(c.monthly_fee) || 0)}</p>
