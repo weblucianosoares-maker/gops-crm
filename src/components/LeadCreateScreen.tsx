@@ -51,6 +51,20 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
    const [showSelection, setShowSelection] = useState(true);
    const [isSearchingCNPJ, setIsSearchingCNPJ] = useState(false);
    
+   const formatDateToISO = (dateStr: string) => {
+     if (!dateStr) return null;
+     const clean = dateStr.toString().trim();
+     if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) return clean;
+     if (/^\d{2}\/\d{2}\/\d{4}$/.test(clean)) {
+       const [d, m, y] = clean.split('/');
+       return `${y}-${m}-${d}`;
+     }
+     if (/^\d{8}$/.test(clean)) {
+       return `${clean.substring(0, 4)}-${clean.substring(4, 6)}-${clean.substring(6, 8)}`;
+     }
+     return clean;
+   };
+
    const [newLead, setNewLead] = useState({ 
      name: '', email: '', phone: '', secondary_phone: '', source: 'Manual', status: stages[0]?.name || 'Novo', contact_type: '',
      plan_type: 'Saúde' as 'Saúde' | 'Odonto' | 'Saúde + Odonto',
@@ -140,7 +154,7 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
             address_state: data.uf || prev.address_state,
             address_number: data.numero || prev.address_number,
             cnae: data.cnae_fiscal ? `${data.cnae_fiscal}${data.cnae_fiscal_descricao ? ' - ' + data.cnae_fiscal_descricao : ''}` : (data.cnae_fiscal_descricao || prev.cnae),
-            opening_date: data.data_abertura || prev.opening_date,
+            opening_date: formatDateToISO(data.data_abertura || data.abertura || data.data_inicio_atividade) || prev.opening_date,
             email: data.email || prev.email,
             phone: data.ddd_telefone_1 ? formatPhone(data.ddd_telefone_1) : prev.phone
           }));

@@ -228,6 +228,20 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
   const [isSavingReminder, setIsSavingReminder] = useState(false);
   const [isLoadingInsights, setIsLoadingInsights] = useState(false);
 
+  const formatDateToISO = (dateStr: string) => {
+    if (!dateStr) return null;
+    const clean = dateStr.toString().trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) return clean;
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(clean)) {
+      const [d, m, y] = clean.split('/');
+      return `${y}-${m}-${d}`;
+    }
+    if (/^\d{8}$/.test(clean)) {
+      return `${clean.substring(0, 4)}-${clean.substring(4, 6)}-${clean.substring(6, 8)}`;
+    }
+    return clean;
+  };
+
   const handleCNPJChange = async (cnpj: string) => {
     const formatted = formatCNPJ(cnpj);
     const cleanCNPJ = formatted.replace(/\D/g, "");
@@ -252,7 +266,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
             cnae: data.cnae_fiscal ? data.cnae_fiscal.toString() : prev.cnae,
             cnae_text: data.cnae_fiscal_descricao || prev.cnae_text,
             cnae_secondary: data.cnaes_secundarios ? data.cnaes_secundarios.map((c: any) => `${c.codigo} - ${c.descricao}`).join('; ') : prev.cnae_secondary,
-            opening_date: data.data_abertura || prev.opening_date,
+            opening_date: formatDateToISO(data.data_abertura || data.abertura || data.data_inicio_atividade) || prev.opening_date,
             resp_emp_email: data.email || prev.resp_emp_email,
             resp_emp_phone: data.ddd_telefone_1 ? `${data.ddd_telefone_1}${data.telefone_1 || ''}` : prev.resp_emp_phone,
             share_capital: data.capital_social || prev.share_capital,
