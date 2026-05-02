@@ -786,8 +786,6 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                     <DetailField label="E-mail Oficial" value={lead.resp_emp_email} onChange={(v:any) => setLead({...lead, resp_emp_email: v})} />
                   </div>
                 </div>
-
-                </div>
               </section>
             )}
 
