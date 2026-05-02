@@ -243,12 +243,12 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
             ...prev,
             company_name: data.razao_social || prev.company_name,
             nickname: data.nome_fantasia || prev.nickname,
-            address_zip: data.cep ? formatCEP(data.cep) : prev.address_zip,
-            address_street: data.logradouro || prev.address_street,
-            address_neighborhood: data.bairro || prev.address_neighborhood,
-            address_city: data.municipio || prev.address_city,
-            address_state: data.uf || prev.address_state,
-            address_number: data.numero || prev.address_number,
+            company_zip: data.cep ? formatCEP(data.cep) : prev.company_zip,
+            company_street: data.logradouro || prev.company_street,
+            company_neighborhood: data.bairro || prev.company_neighborhood,
+            company_city: data.municipio || prev.company_city,
+            company_state: data.uf || prev.company_state,
+            company_number: data.numero || prev.company_number,
             cnae: data.cnae_fiscal ? data.cnae_fiscal.toString() : prev.cnae,
             cnae_text: data.cnae_fiscal_descricao || prev.cnae_text,
             cnae_secondary: data.cnaes_secundarios ? data.cnaes_secundarios.map((c: any) => `${c.codigo} - ${c.descricao}`).join('; ') : prev.cnae_secondary,
@@ -553,6 +553,13 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       resp_emp_email: lead.resp_emp_email,
       opening_date: lead.opening_date || null,
       first_contact_date: lead.first_contact_date || null,
+      company_zip: lead.company_zip,
+      company_street: lead.company_street,
+      company_number: lead.company_number,
+      company_neighborhood: lead.company_neighborhood,
+      company_city: lead.company_city,
+      company_state: lead.company_state,
+      company_complement: lead.company_complement,
       do_not_contact: lead.do_not_contact || false,
       profile_picture_url: lead.profile_picture_url
     };
@@ -697,14 +704,14 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                 <div className="pt-4 border-t border-slate-200/50">
                    <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-4">Endereço da Sede</p>
                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                      <DetailField label="CEP Sede" value={lead.address_zip} mask={formatCEP} onChange={(v:any) => setLead({...lead, address_zip: v})} />
-                      <DetailField label="UF Sede" value={lead.address_state} onChange={(v:any) => setLead({...lead, address_state: v})} />
-                      <DetailField label="Cidade Sede" value={lead.address_city} onChange={(v:any) => setLead({...lead, address_city: v})} />
-                      <DetailField label="Bairro Sede" value={lead.address_neighborhood} onChange={(v:any) => setLead({...lead, address_neighborhood: v})} />
+                      <DetailField label="CEP Sede" value={lead.company_zip} mask={formatCEP} onChange={(v:any) => setLead({...lead, company_zip: v})} />
+                      <DetailField label="UF Sede" value={lead.company_state} onChange={(v:any) => setLead({...lead, company_state: v})} />
+                      <DetailField label="Cidade Sede" value={lead.company_city} onChange={(v:any) => setLead({...lead, company_city: v})} />
+                      <DetailField label="Bairro Sede" value={lead.company_neighborhood} onChange={(v:any) => setLead({...lead, company_neighborhood: v})} />
                       <div className="md:col-span-3">
-                        <DetailField label="Logradouro Sede" value={lead.address_street} onChange={(v:any) => setLead({...lead, address_street: v})} />
+                        <DetailField label="Logradouro Sede" value={lead.company_street} onChange={(v:any) => setLead({...lead, company_street: v})} />
                       </div>
-                      <DetailField label="Nº Sede" value={lead.address_number} onChange={(v:any) => setLead({...lead, address_number: v})} />
+                      <DetailField label="Nº Sede" value={lead.company_number} onChange={(v:any) => setLead({...lead, company_number: v})} />
                    </div>
                 </div>
               </section>
