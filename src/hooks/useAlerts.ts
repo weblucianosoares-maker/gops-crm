@@ -32,55 +32,76 @@ export function useAlerts() {
       now.setHours(0, 0, 0, 0);
       const newAlerts: AlertNotification[] = [];
 
-      // HELPER: Check if a date matches today (ignoring year)
-      const isEventToday = (dateStr: string) => {
-        if (!dateStr) return false;
-        const d = new Date(dateStr);
-        return d.getUTCDate() === now.getDate() && d.getUTCMonth() === now.getMonth();
+      const getLocalDate = (dateStr: string) => {
+        if (!dateStr) return null;
+        // Se a string for apenas YYYY-MM-DD, tratamos como data local para evitar shift de fuso
+        if (dateStr.length === 10) {
+          const [y, m, d] = dateStr.split('-').map(Number);
+          return new Date(y, m - 1, d);
+        }
+        return new Date(dateStr);
       };
 
-      // HELPER: Calculate diff days for specific dates (expiry)
       const getDiffDays = (dateStr: string) => {
-        if (!dateStr) return null;
-        const target = new Date(dateStr);
-        target.setHours(0,0,0,0);
-        return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const target = getLocalDate(dateStr);
+        if (!target) return null;
+        target.setHours(0, 0, 0, 0);
+        const diffTime = target.getTime() - now.getTime();
+        return Math.round(diffTime / (1000 * 60 * 60 * 24));
+      };
+
+      const getEventDateThisYear = (dateStr: string) => {
+        const d = getLocalDate(dateStr);
+        if (!d) return null;
+        return new Date(now.getFullYear(), d.getMonth(), d.getDate());
       };
 
       // 1. Lead Birthdays & Marriage & EXPIRY
       leadsRes.data?.forEach(lead => {
-        // Aniversário
-        if (isEventToday(lead.birth_date)) {
-          newAlerts.push({
-            id: `bday-lead-${lead.id}`,
-            type: 'birthday',
-            title: `Aniversário: ${lead.name}`,
-            description: `Parabenize o cliente titular hoje!`,
-            date: new Date(lead.birth_date),
-            isToday: true,
-            severity: 'urgent',
-            entityId: lead.id,
-            leadData: lead,
-            typeLabel: 'Aniversário',
-            statusLabel: 'Hoje'
-          });
+        // Aniversário Lead
+        if (lead.birth_date) {
+          const bday = getEventDateThisYear(lead.birth_date);
+          if (bday) {
+            const diff = Math.round((bday.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+            if (diff >= -1 && diff <= 1) { // Ontem, Hoje ou Amanhã
+              newAlerts.push({
+                id: `bday-lead-${lead.id}`,
+                type: 'birthday',
+                title: `Aniversário: ${lead.name}`,
+                description: diff === 0 ? `Parabenize o cliente titular hoje!` : diff < 0 ? `O aniversário foi ontem!` : `O aniversário é amanhã!`,
+                date: bday,
+                isToday: diff === 0,
+                severity: diff === 0 ? 'urgent' : 'info',
+                entityId: lead.id,
+                leadData: lead,
+                typeLabel: 'Aniversário',
+                statusLabel: diff === 0 ? 'Hoje' : diff < 0 ? 'Ontem' : 'Amanhã'
+              });
+            }
+          }
         }
         
         // Bodas
-        if (isEventToday(lead.marriage_date)) {
-          newAlerts.push({
-            id: `marr-lead-${lead.id}`,
-            type: 'marriage',
-            title: `Bodas: ${lead.name}`,
-            description: `Aniversário de casamento do cliente hoje!`,
-            date: new Date(lead.marriage_date),
-            isToday: true,
-            severity: 'info',
-            entityId: lead.id,
-            leadData: lead,
-            typeLabel: 'Bodas',
-            statusLabel: 'Hoje'
-          });
+        if (lead.marriage_date) {
+          const mday = getEventDateThisYear(lead.marriage_date);
+          if (mday) {
+            const diff = Math.round((mday.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+            if (diff >= -1 && diff <= 1) {
+              newAlerts.push({
+                id: `marr-lead-${lead.id}`,
+                type: 'marriage',
+                title: `Bodas: ${lead.name}`,
+                description: diff === 0 ? `Aniversário de casamento do cliente hoje!` : diff < 0 ? `As bodas foram ontem!` : `As bodas são amanhã!`,
+                date: mday,
+                isToday: diff === 0,
+                severity: 'info',
+                entityId: lead.id,
+                leadData: lead,
+                typeLabel: 'Bodas',
+                statusLabel: diff === 0 ? 'Hoje' : diff < 0 ? 'Ontem' : 'Amanhã'
+              });
+            }
+          }
         }
 
         // VENCIMENTO DE CONTRATO (Alterado para 90 dias de antecedência)
@@ -107,22 +128,26 @@ export function useAlerts() {
 
       // 2. Dependent Birthdays
       beneficiariesRes.data?.forEach(dep => {
-        if (isEventToday(dep.birth_date)) {
-          const lead = (leadsRes.data as any[])?.find((l: any)=>l.id===dep.lead_id);
-          if (lead) {
-            newAlerts.push({
-            id: `bday-dep-${dep.id}`,
-            type: 'birthday',
-            title: `Aniversário: ${dep.name}`,
-            description: `Dependente de ${lead?.name || 'Cliente'} faz anos hoje!`,
-            date: new Date(dep.birth_date),
-            isToday: true,
-            severity: 'urgent',
-            entityId: dep.lead_id || '',
-            leadData: lead,
-            typeLabel: 'Aniversário',
-            statusLabel: 'Hoje'
-          });
+        if (dep.birth_date) {
+          const bday = getEventDateThisYear(dep.birth_date);
+          if (bday) {
+            const diff = Math.round((bday.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+            if (diff >= -1 && diff <= 1) {
+              const lead = (leadsRes.data as any[])?.find((l: any)=>l.id===dep.lead_id);
+              newAlerts.push({
+                id: `bday-dep-${dep.id}`,
+                type: 'birthday',
+                title: `Aniversário: ${dep.name}`,
+                description: diff === 0 ? `Dependente de ${lead?.name || 'Cliente'} faz anos hoje!` : `Aniversário do dependente foi ontem!`,
+                date: bday,
+                isToday: diff === 0,
+                severity: diff === 0 ? 'urgent' : 'info',
+                entityId: dep.lead_id || '',
+                leadData: lead,
+                typeLabel: 'Aniversário',
+                statusLabel: diff === 0 ? 'Hoje' : diff < 0 ? 'Ontem' : 'Amanhã'
+              });
+            }
           }
         }
       });

@@ -174,7 +174,9 @@ function GlobalAlertBar() {
                  <span className={cn(
                     "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-white/10 text-slate-300 border border-white/5",
                     current.statusLabel === 'Vencido' ? "text-red-400 border-red-400/20 bg-red-400/5" : 
-                    current.statusLabel === 'Hoje' ? "text-amber-400 border-amber-400/20 bg-amber-400/5" : ""
+                    current.statusLabel === 'Hoje' ? "text-amber-400 border-amber-400/20 bg-amber-400/5" : 
+                    current.statusLabel === 'Ontem' ? "text-slate-400 border-slate-400/20 bg-slate-400/5" :
+                    current.statusLabel === 'Amanhã' ? "text-blue-400 border-blue-400/20 bg-blue-400/5" : ""
                  )}>
                    {current.statusLabel}
                  </span>
