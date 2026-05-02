@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icons } from "./Icons";
-import { cn, formatCPF, formatCNPJ } from "../lib/utils";
+import { cn, formatCPF, formatCNPJ, formatCurrencyValue, parseCurrencyValue } from "../lib/utils";
 import { supabase } from "../lib/supabase";
 import { useLeads } from "../lib/leadsContext";
 import { useToast } from "./Toasts";
@@ -12,6 +12,29 @@ interface Beneficiary {
   birth_date: string;
   cpf: string;
 }
+
+const InputField = ({ label, value, onChange, placeholder, type = "text", mask, required = false }: any) => (
+  <div className="space-y-1">
+    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">{label}</label>
+    <input 
+      type={type}
+      required={required}
+      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:bg-white focus:ring-4 focus:ring-blue-100/10 focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
+      placeholder={placeholder}
+      value={mask ? mask(value) : (value || '')}
+      onChange={e => onChange(e.target.value)}
+    />
+  </div>
+);
+
+const SectionHeader = ({ icon: Icon, title, colorClass }: any) => (
+  <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
+    <div className={cn("p-2 rounded-lg", colorClass)}>
+      <Icon className="w-4 h-4" />
+    </div>
+    <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">{title}</h4>
+  </div>
+);
 
 interface ContractCreateDrawerProps {
   isOpen: boolean;
@@ -79,7 +102,11 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         lives: 1,
         monthly_fee: 0,
         start_date: new Date().toISOString().split('T')[0],
-        status: "Ativo"
+        status: "Ativo",
+        contract_number: "",
+        accommodation: "Enfermaria",
+        grace_periods: "",
+        end_date: ""
       });
       setBeneficiaries([{ name: "", type: "Titular", birth_date: "", cpf: "" }]);
     }
@@ -176,7 +203,6 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         currentContractId = newC.id;
       }
 
-      // 2. Criar/Atualizar os Beneficiários (Simples: remove e insere todos para garantir sincronia)
       if (editContract) {
         await supabase.from('beneficiaries').delete().eq('contract_id', editContract.id);
       }
@@ -205,29 +231,6 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
       setIsSaving(false);
     }
   };
-
-  const SectionHeader = ({ icon: Icon, title, colorClass }: any) => (
-    <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
-      <div className={cn("p-2 rounded-lg", colorClass)}>
-        <Icon className="w-4 h-4" />
-      </div>
-      <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">{title}</h4>
-    </div>
-  );
-
-  const InputField = ({ label, value, onChange, placeholder, type = "text", mask, required = false }: any) => (
-    <div className="space-y-1">
-      <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">{label}</label>
-      <input 
-        type={type}
-        required={required}
-        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:bg-white focus:ring-4 focus:ring-blue-100/10 focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
-        placeholder={placeholder}
-        value={mask ? mask(value) : (value || '')}
-        onChange={e => onChange(e.target.value)}
-      />
-    </div>
-  );
 
   if (!isOpen) return null;
 
@@ -356,7 +359,13 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
                     ))}
                   </select>
                </div>
-               <InputField label="Valor da Mensalidade (R$)" type="number" required value={contract.monthly_fee} onChange={(v:any) => setContract({...contract, monthly_fee: Number(v)})} />
+               <InputField 
+                 label="Valor da Mensalidade (R$)" 
+                 required 
+                 value={contract.monthly_fee ? Math.round(contract.monthly_fee * 100).toString() : ""} 
+                 mask={formatCurrencyValue}
+                 onChange={(v:any) => setContract({...contract, monthly_fee: parseCurrencyValue(v)})} 
+               />
                <InputField label="Data de Início" type="date" required value={contract.start_date} onChange={(v:any) => setContract({...contract, start_date: v})} />
                <InputField label="Número do Contrato" value={contract.contract_number} onChange={(v:any) => setContract({...contract, contract_number: v})} />
                <div>
