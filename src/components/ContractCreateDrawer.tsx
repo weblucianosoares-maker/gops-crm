@@ -37,7 +37,11 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
     lives: 1,
     monthly_fee: 0,
     start_date: new Date().toISOString().split('T')[0],
-    status: "Ativo"
+    status: "Ativo",
+    contract_number: "",
+    accommodation: "Enfermaria",
+    grace_periods: "",
+    end_date: ""
   });
 
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([
@@ -56,8 +60,13 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         lives: editContract.lives || 1,
         monthly_fee: editContract.monthly_fee || 0,
         start_date: editContract.start_date || new Date().toISOString().split('T')[0],
-        status: editContract.status || "Ativo"
+        status: editContract.status || "Ativo",
+        contract_number: editContract.contract_number || "",
+        accommodation: editContract.accommodation || "Enfermaria",
+        grace_periods: editContract.grace_periods || "",
+        end_date: editContract.end_date || ""
       });
+      setIsNewLead(!!editContract.client_name && !editContract.lead_id);
       fetchBeneficiaries(editContract.id);
     } else {
       setContract({
@@ -145,7 +154,11 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         monthly_fee: contract.monthly_fee,
         type: contract.type,
         status: contract.status,
-        lead_id: leadId || null
+        lead_id: leadId || null,
+        contract_number: contract.contract_number,
+        accommodation: contract.accommodation,
+        grace_periods: contract.grace_periods,
+        end_date: contract.end_date || null
       };
 
       let currentContractId = editContract?.id;
@@ -244,67 +257,81 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
           <section>
             <SectionHeader icon={Icons.Users} title="Dados do Cliente" colorClass="bg-blue-100 text-blue-700" />
             <div className="space-y-6">
-              <div className="flex gap-4 p-1 bg-slate-100 rounded-2xl">
-                 <button type="button" onClick={() => setIsNewLead(false)} className={cn("flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", !isNewLead ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700")}>Lead Existente</button>
-                 <button type="button" onClick={() => setIsNewLead(true)} className={cn("flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", isNewLead ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700")}>Novo Cliente (Avulso)</button>
-              </div>
-
-              {isNewLead ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
-                   <div className="md:col-span-2">
-                      <InputField label="Razão Social / Nome Completo" required value={contract.client_name} onChange={(v:any) => setContract({...contract, client_name: v})} />
-                   </div>
-                   <InputField label={contract.type === 'PJ' ? "CNPJ" : "CPF"} required value={contract.cnpj} mask={contract.type === 'PJ' ? formatCNPJ : formatCPF} onChange={(v:any) => setContract({...contract, cnpj: v})} />
-                   <div>
-                      <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">Perfil</label>
-                      <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700" value={contract.type} onChange={e => setContract({...contract, type: e.target.value})}>
-                        <option value="PF">Pessoa Física (PF)</option>
-                        <option value="PJ">Corporativo (PME)</option>
-                      </select>
-                   </div>
+              {editContract ? (
+                <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-black uppercase text-blue-400 tracking-widest mb-1">Cliente Vinculado</p>
+                    <p className="text-sm font-black text-blue-900">{contract.client_name}</p>
+                  </div>
+                  <div className="p-2 bg-white rounded-lg text-blue-600 shadow-sm">
+                    <Icons.CheckCircle className="w-5 h-5" />
+                  </div>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="relative">
-                    <Icons.Search className="w-4 h-4 absolute left-3 top-3.5 text-slate-400" />
-                    <input 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 outline-none focus:bg-white text-sm font-bold" 
-                      placeholder="Pesquisar por nome ou documento..."
-                      value={searchTerm}
-                      onChange={e => setSearchTerm(e.target.value)}
-                    />
+                <>
+                  <div className="flex gap-4 p-1 bg-slate-100 rounded-2xl">
+                    <button type="button" onClick={() => setIsNewLead(false)} className={cn("flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", !isNewLead ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700")}>Lead Existente</button>
+                    <button type="button" onClick={() => setIsNewLead(true)} className={cn("flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", isNewLead ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700")}>Novo Cliente (Avulso)</button>
                   </div>
-                  <div className="max-h-[150px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                    {filteredLeads.map(l => (
-                      <button 
-                        key={l.id} 
-                        type="button"
-                        onClick={() => {
-                           setContract({
-                             ...contract, 
-                             lead_id: l.id, 
-                             client_name: l.name, 
-                             cnpj: l.lead_type === 'PJ' ? (l.cnpj || "") : (l.cpf || ""),
-                             type: l.lead_type || 'PF'
-                           });
-                           success(`Cliente ${l.name} selecionado!`);
-                           setSearchTerm("");
-                        }}
-                        className={cn("w-full p-3 rounded-xl text-left border flex items-center justify-between transition-all group", 
-                          contract.lead_id === l.id ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-100" : "bg-white border-slate-100 hover:border-blue-200")
-                        }
-                      >
-                         <div>
-                            <p className="text-[11px] font-black uppercase tracking-tight group-hover:translate-x-1 transition-transform">{l.name}</p>
-                            <p className={cn("text-[8px] font-bold uppercase mt-0.5", contract.lead_id === l.id ? "text-blue-100" : "text-slate-400")}>
-                               {l.lead_type || 'PF'} • {l.cnpj || l.cpf || "Sem doc"}
-                            </p>
-                         </div>
-                         {contract.lead_id === l.id && <Icons.CheckCircle className="w-4 h-4" />}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+
+                  {isNewLead ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
+                       <div className="md:col-span-2">
+                          <InputField label="Razão Social / Nome Completo" required value={contract.client_name} onChange={(v:any) => setContract({...contract, client_name: v})} />
+                       </div>
+                       <InputField label={contract.type === 'PJ' ? "CNPJ" : "CPF"} required value={contract.cnpj} mask={contract.type === 'PJ' ? formatCNPJ : formatCPF} onChange={(v:any) => setContract({...contract, cnpj: v})} />
+                       <div>
+                          <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">Perfil</label>
+                          <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700" value={contract.type} onChange={e => setContract({...contract, type: e.target.value})}>
+                            <option value="PF">Pessoa Física (PF)</option>
+                            <option value="PJ">Corporativo (PME)</option>
+                          </select>
+                       </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="relative">
+                        <Icons.Search className="w-4 h-4 absolute left-3 top-3.5 text-slate-400" />
+                        <input 
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 outline-none focus:bg-white text-sm font-bold" 
+                          placeholder="Pesquisar por nome ou documento..."
+                          value={searchTerm}
+                          onChange={e => setSearchTerm(e.target.value)}
+                        />
+                      </div>
+                      <div className="max-h-[150px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                        {filteredLeads.map(l => (
+                          <button 
+                            key={l.id} 
+                            type="button"
+                            onClick={() => {
+                               setContract({
+                                 ...contract, 
+                                 lead_id: l.id, 
+                                 client_name: l.name, 
+                                 cnpj: l.lead_type === 'PJ' ? (l.cnpj || "") : (l.cpf || ""),
+                                 type: l.lead_type || 'PF'
+                               });
+                               success(`Cliente ${l.name} selecionado!`);
+                               setSearchTerm("");
+                            }}
+                            className={cn("w-full p-3 rounded-xl text-left border flex items-center justify-between transition-all group", 
+                              contract.lead_id === l.id ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-100" : "bg-white border-slate-100 hover:border-blue-200")
+                            }
+                          >
+                             <div>
+                                <p className="text-[11px] font-black uppercase tracking-tight group-hover:translate-x-1 transition-transform">{l.name}</p>
+                                <p className={cn("text-[8px] font-bold uppercase mt-0.5", contract.lead_id === l.id ? "text-blue-100" : "text-slate-400")}>
+                                   {l.lead_type || 'PF'} • {l.cnpj || l.cpf || "Sem doc"}
+                                </p>
+                             </div>
+                             {contract.lead_id === l.id && <Icons.CheckCircle className="w-4 h-4" />}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </section>
@@ -331,6 +358,24 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
                </div>
                <InputField label="Valor da Mensalidade (R$)" type="number" required value={contract.monthly_fee} onChange={(v:any) => setContract({...contract, monthly_fee: Number(v)})} />
                <InputField label="Data de Início" type="date" required value={contract.start_date} onChange={(v:any) => setContract({...contract, start_date: v})} />
+               <InputField label="Número do Contrato" value={contract.contract_number} onChange={(v:any) => setContract({...contract, contract_number: v})} />
+               <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Acomodação</label>
+                  <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700" value={contract.accommodation} onChange={e => setContract({...contract, accommodation: e.target.value})}>
+                    <option value="Enfermaria">Enfermaria</option>
+                    <option value="Apartamento">Apartamento</option>
+                  </select>
+               </div>
+               <div className="md:col-span-2">
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Carências a Cumprir</label>
+                  <textarea 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:bg-white text-sm font-bold text-slate-900 min-h-[80px]"
+                    placeholder="Ex: 24h urgência, 30 dias consultas..."
+                    value={contract.grace_periods}
+                    onChange={e => setContract({...contract, grace_periods: e.target.value})}
+                  />
+               </div>
+               <InputField label="Data Prevista de Encerramento" type="date" value={contract.end_date} onChange={(v:any) => setContract({...contract, end_date: v})} />
             </div>
           </section>
 
