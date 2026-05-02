@@ -633,10 +633,10 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                 </div>
                 <div className="md:col-span-3 lg:col-span-2">
                   <DetailField 
-                    label={lead.lead_type === 'PJ' ? "CNPJ" : "CPF"} 
-                    value={lead.lead_type === 'PJ' ? lead.cnpj : lead.cpf} 
-                    mask={lead.lead_type === 'PJ' ? formatCNPJ : formatCPF}
-                    onChange={(v:any) => lead.lead_type === 'PJ' ? handleCNPJChange(v) : setLead({...lead, cpf: v})} 
+                    label="CPF" 
+                    value={lead.cpf} 
+                    mask={formatCPF}
+                    onChange={(v:any) => setLead({...lead, cpf: v})} 
                   />
                 </div>
                 <div className="md:col-span-3 lg:col-span-3">
