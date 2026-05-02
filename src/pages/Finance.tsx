@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Icons } from "../components/Icons";
 import { formatCurrency, cn } from "../lib/utils";
 import { supabase } from "../lib/supabase";
-import { calculateNetCommission, getTier } from "../lib/commissionRules";
+import { calculateNetCommission, getTier, TIERS } from "../lib/commissionRules";
 import { useToast } from "../components/Toasts";
 
 const safe = (v: any) => (v && typeof v === 'object') ? '' : v;
