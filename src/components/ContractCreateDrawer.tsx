@@ -63,7 +63,7 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
     status: "Ativo",
     contract_number: "",
     accommodation: "Enfermaria",
-    grace_periods: "",
+    contract_duration: "12",
     grace_periods_data: {} as Record<string, string>,
     end_date: ""
   });
@@ -87,7 +87,7 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         status: editContract.status || "Ativo",
         contract_number: editContract.contract_number || "",
         accommodation: editContract.accommodation || "Enfermaria",
-        grace_periods: editContract.grace_periods || "",
+        contract_duration: editContract.contract_duration || "12",
         grace_periods_data: editContract.grace_periods_data || {},
         end_date: editContract.end_date || ""
       });
@@ -113,6 +113,20 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
       setBeneficiaries([{ name: "", type: "Titular", birth_date: "", cpf: "" }]);
     }
   }, [editContract, isOpen]);
+
+  useEffect(() => {
+    if (contract.start_date && contract.contract_duration) {
+      const start = new Date(contract.start_date);
+      if (!isNaN(start.getTime())) {
+        const end = new Date(start);
+        end.setMonth(end.getMonth() + parseInt(contract.contract_duration));
+        const formattedEnd = end.toISOString().split('T')[0];
+        if (formattedEnd !== contract.end_date) {
+          setContract(prev => ({ ...prev, end_date: formattedEnd }));
+        }
+      }
+    }
+  }, [contract.start_date, contract.contract_duration]);
 
   const fetchBeneficiaries = async (contractId: string) => {
     const { data, error: benErr } = await supabase
@@ -186,7 +200,7 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         lead_id: leadId || null,
         contract_number: contract.contract_number,
         accommodation: contract.accommodation,
-        grace_periods: contract.grace_periods,
+        contract_duration: contract.contract_duration,
         grace_periods_data: contract.grace_periods_data,
         end_date: contract.end_date || null
       };
@@ -378,16 +392,27 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
                     <option value="Apartamento">Apartamento</option>
                   </select>
                </div>
-               <div className="md:col-span-2">
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Carências a Cumprir</label>
-                  <textarea 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:bg-white text-sm font-bold text-slate-900 min-h-[80px]"
-                    placeholder="Ex: 24h urgência, 30 dias consultas..."
-                    value={contract.grace_periods}
-                    onChange={e => setContract({...contract, grace_periods: e.target.value})}
+               <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Tempo de Contrato</label>
+                  <select 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700" 
+                    value={contract.contract_duration} 
+                    onChange={e => setContract({...contract, contract_duration: e.target.value})}
+                  >
+                    <option value="12">12 Meses</option>
+                    <option value="24">24 Meses</option>
+                    <option value="36">36 Meses</option>
+                  </select>
+               </div>
+               <div className="space-y-1">
+                  <label className="block text-[9px] font-black text-blue-600 uppercase tracking-wider ml-1">Data de Encerramento (Auto)</label>
+                  <input 
+                    type="date" 
+                    readOnly
+                    className="w-full bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5 text-sm font-black text-blue-700 outline-none cursor-not-allowed"
+                    value={contract.end_date} 
                   />
                </div>
-               <InputField label="Data Prevista de Encerramento" type="date" value={contract.end_date} onChange={(v:any) => setContract({...contract, end_date: v})} />
             </div>
 
             {/* TABELA DE CARÊNCIAS */}
