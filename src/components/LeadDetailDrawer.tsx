@@ -787,31 +787,6 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-200/50">
-                   <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-4">Endereço da Sede</p>
-                   <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-5">
-                      <div className="md:col-span-2 lg:col-span-2">
-                        <DetailField label="CEP Sede" value={lead.company_zip} mask={formatCEP} onChange={(v:any) => setLead({...lead, company_zip: v})} />
-                      </div>
-                      <div className="md:col-span-1 lg:col-span-1">
-                        <DetailField label="UF Sede" value={lead.company_state} onChange={(v:any) => setLead({...lead, company_state: v})} />
-                      </div>
-                      <div className="md:col-span-3 lg:col-span-3">
-                        <DetailField label="Cidade Sede" value={lead.company_city} onChange={(v:any) => setLead({...lead, company_city: v})} />
-                      </div>
-                      <div className="md:col-span-3 lg:col-span-3">
-                        <DetailField label="Bairro Sede" value={lead.company_neighborhood} onChange={(v:any) => setLead({...lead, company_neighborhood: v})} />
-                      </div>
-                      <div className="md:col-span-2 lg:col-span-3">
-                        <DetailField label="Nº Sede" value={lead.company_number} onChange={(v:any) => setLead({...lead, company_number: v})} />
-                      </div>
-                      <div className="md:col-span-6 lg:col-span-6">
-                        <DetailField label="Logradouro Sede" value={lead.company_street} onChange={(v:any) => setLead({...lead, company_street: v})} />
-                      </div>
-                      <div className="md:col-span-6 lg:col-span-6">
-                        <DetailField label="Complemento Sede" value={lead.company_complement} onChange={(v:any) => setLead({...lead, company_complement: v})} />
-                      </div>
-                   </div>
                 </div>
               </section>
             )}
