@@ -609,21 +609,73 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                   )}>Não realizar contato</span>
                 </label>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                <DetailField label="Categoria" value={lead.lead_type} selectOptions={['PF', 'PJ']} onChange={(v:any) => setLead({...lead, lead_type: v})} />
-                <div className="md:col-span-2">
-                   <DetailField label="Nome do Lead" value={lead.name} onChange={(v:any) => setLead({...lead, name: v})} />
+              <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-4">
+                {/* LINHA 1 */}
+                <div className="md:col-span-2 lg:col-span-1">
+                  <DetailField label="Categoria" value={lead.lead_type} selectOptions={['PF', 'PJ']} onChange={(v:any) => setLead({...lead, lead_type: v})} />
                 </div>
-                <DetailField label="WhatsApp Principal" value={lead.phone} mask={formatPhone} onChange={(v:any) => setLead({...lead, phone: v})} />
-                <DetailField label="Data Nascimento" type="date" value={lead.birth_date} onChange={(v:any) => setLead((prev:any) => ({...prev, birth_date: v || null}))} />
-                {lead.lead_type === 'PF' && (
+                <div className="md:col-span-4 lg:col-span-4">
+                  <DetailField label="Nome do Lead" value={lead.name} onChange={(v:any) => setLead({...lead, name: v})} />
+                </div>
+                <div className="md:col-span-3 lg:col-span-2">
                   <DetailField 
-                    label="CPF" 
-                    value={lead.cpf} 
-                    mask={formatCPF}
-                    onChange={(v:any) => setLead({...lead, cpf: v})} 
+                    label={lead.lead_type === 'PJ' ? "CNPJ" : "CPF"} 
+                    value={lead.lead_type === 'PJ' ? lead.cnpj : lead.cpf} 
+                    mask={lead.lead_type === 'PJ' ? formatCNPJ : formatCPF}
+                    onChange={(v:any) => lead.lead_type === 'PJ' ? handleCNPJChange(v) : setLead({...lead, cpf: v})} 
                   />
-                )}
+                </div>
+                <div className="md:col-span-3 lg:col-span-3">
+                  <DetailField label="WhatsApp Principal" value={lead.phone} mask={formatPhone} onChange={(v:any) => setLead({...lead, phone: v})} />
+                </div>
+                <div className="md:col-span-3 lg:col-span-2">
+                  <DetailField label="Data Nascimento" type="date" value={lead.birth_date} onChange={(v:any) => setLead((prev:any) => ({...prev, birth_date: v || null}))} />
+                </div>
+
+                {/* LINHA 2 */}
+                <div className="md:col-span-3 lg:col-span-3">
+                  <DetailField label="E-mail" value={lead.email} onChange={(v:any) => setLead({...lead, email: v})} />
+                </div>
+                <div className="md:col-span-3 lg:col-span-2">
+                  <DetailField label="Tel. Secundário" value={lead.secondary_phone} mask={formatPhone} onChange={(v:any) => setLead({...lead, secondary_phone: v})} />
+                </div>
+                <div className="md:col-span-2 lg:col-span-1">
+                  <DetailField label="CEP" value={lead.address_zip} mask={formatCEP} onChange={handleCEPChange} />
+                </div>
+                <div className="md:col-span-3 lg:col-span-2">
+                  <DetailField label="Cidade" value={lead.address_city} onChange={(v:any) => setLead({...lead, address_city: v})} />
+                </div>
+                <div className="md:col-span-1 lg:col-span-1">
+                  <DetailField label="UF" value={lead.address_state} onChange={(v:any) => setLead({...lead, address_state: v})} />
+                </div>
+                <div className="md:col-span-3 lg:col-span-2">
+                  <DetailField label="1º Contato" type="date" value={lead.first_contact_date || new Date().toISOString().split('T')[0]} onChange={(v:any) => setLead({...lead, first_contact_date: v})} />
+                </div>
+                <div className="md:col-span-3 lg:col-span-1">
+                   <div className="space-y-1">
+                      <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">Ciclo</label>
+                      <div className="h-[42px] px-3 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center gap-1.5">
+                         <Icons.Clock className="w-3 h-3 text-indigo-600" />
+                         <span className="text-xs font-black text-indigo-700">
+                           {lead.first_contact_date ? `${Math.floor((new Date().getTime() - new Date(lead.first_contact_date).getTime()) / (1000 * 3600 * 24))}d` : '-'}
+                         </span>
+                      </div>
+                   </div>
+                </div>
+
+                {/* LINHA 3 */}
+                <div className="md:col-span-4 lg:col-span-4">
+                  <DetailField label="Logradouro" value={lead.address_street} onChange={(v:any) => setLead({...lead, address_street: v})} />
+                </div>
+                <div className="md:col-span-2 lg:col-span-1">
+                  <DetailField label="Nº" value={lead.address_number} onChange={(v:any) => setLead({...lead, address_number: v})} />
+                </div>
+                <div className="md:col-span-3 lg:col-span-3">
+                  <DetailField label="Bairro" value={lead.address_neighborhood} onChange={(v:any) => setLead({...lead, address_neighborhood: v})} />
+                </div>
+                <div className="md:col-span-3 lg:col-span-4">
+                  <DetailField label="Complemento" value={lead.address_complement} onChange={(v:any) => setLead({...lead, address_complement: v})} />
+                </div>
               </div>
             </section>
 
@@ -631,21 +683,37 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
             {lead.lead_type === 'PJ' && (
               <section className="bg-slate-50/50 p-8 rounded-[2.5rem] border border-slate-100 space-y-8">
                 <SectionHeader icon={Icons.Building2} title="Dados Técnicos da Empresa" colorClass="bg-blue-600 text-white" />
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <DetailField 
-                    label="CNPJ" 
-                    value={lead.cnpj} 
-                    mask={formatCNPJ}
-                    onChange={(v:any) => handleCNPJChange(v)} 
-                  />
-                  <DetailField label="Razão Social" value={lead.company_name} onChange={(v:any) => setLead({...lead, company_name: v})} />
-                  <DetailField label="Nome Fantasia" value={lead.nickname} onChange={(v:any) => setLead({...lead, nickname: v})} />
-                  <DetailField label="Data de Abertura" type="date" value={lead.opening_date} onChange={(v:any) => setLead({...lead, opening_date: v})} />
-                  <DetailField label="Situação Cadastral" value={lead.registration_status} onChange={(v:any) => setLead({...lead, registration_status: v})} />
-                  <DetailField label="Capital Social" value={lead.share_capital?.toString()} mask={(v:any) => v ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v)) : ''} onChange={(v:any) => setLead({...lead, share_capital: Number(v)})} />
-                  <DetailField label="Porte" value={lead.company_size} onChange={(v:any) => setLead({...lead, company_size: v})} />
-                  <DetailField label="Natureza Jurídica" value={lead.legal_nature} onChange={(v:any) => setLead({...lead, legal_nature: v})} />
+                <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-5">
+                  <div className="md:col-span-2 lg:col-span-2">
+                    <DetailField 
+                      label="CNPJ" 
+                      value={lead.cnpj} 
+                      mask={formatCNPJ}
+                      onChange={(v:any) => handleCNPJChange(v)} 
+                    />
+                  </div>
+                  <div className="md:col-span-4 lg:col-span-5">
+                    <DetailField label="Razão Social" value={lead.company_name} onChange={(v:any) => setLead({...lead, company_name: v})} />
+                  </div>
+                  <div className="md:col-span-4 lg:col-span-5">
+                    <DetailField label="Nome Fantasia" value={lead.nickname} onChange={(v:any) => setLead({...lead, nickname: v})} />
+                  </div>
+
+                  <div className="md:col-span-2 lg:col-span-2">
+                    <DetailField label="Data de Abertura" type="date" value={lead.opening_date} onChange={(v:any) => setLead({...lead, opening_date: v})} />
+                  </div>
+                  <div className="md:col-span-2 lg:col-span-3">
+                    <DetailField label="Situação Cadastral" value={lead.registration_status} onChange={(v:any) => setLead({...lead, registration_status: v})} />
+                  </div>
+                  <div className="md:col-span-2 lg:col-span-2">
+                    <DetailField label="Capital Social" value={lead.share_capital?.toString()} mask={(v:any) => v ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v)) : ''} onChange={(v:any) => setLead({...lead, share_capital: Number(v)})} />
+                  </div>
+                  <div className="md:col-span-2 lg:col-span-2">
+                    <DetailField label="Porte" value={lead.company_size} onChange={(v:any) => setLead({...lead, company_size: v})} />
+                  </div>
+                  <div className="md:col-span-4 lg:col-span-3">
+                    <DetailField label="Natureza Jurídica" value={lead.legal_nature} onChange={(v:any) => setLead({...lead, legal_nature: v})} />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -684,34 +752,51 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pt-4 border-t border-slate-200/50">
-                  <div className="md:col-span-4">
-                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-4">Tributação</p>
+                <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-5 pt-4 border-t border-slate-200/50">
+                  <div className="md:col-span-6 lg:col-span-12">
+                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-2">Tributação e Contatos Oficiais</p>
                   </div>
-                  <DetailField label="Regime Tributário" value={lead.tax_regime} onChange={(v:any) => setLead({...lead, tax_regime: v})} />
-                  <DetailField label="Entrada Simples/MEI" type="date" value={lead.simples_entry_date || lead.mei_entry_date} onChange={(v:any) => setLead({...lead, simples_entry_date: v})} />
-                  <DetailField label="Saída Simples/MEI" type="date" value={lead.simples_exit_date || lead.mei_exit_date} onChange={(v:any) => setLead({...lead, simples_exit_date: v})} />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-200/50">
-                  <div className="md:col-span-2">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Contatos na Receita</p>
+                  <div className="md:col-span-3 lg:col-span-2">
+                    <DetailField label="Regime Tributário" value={lead.tax_regime} onChange={(v:any) => setLead({...lead, tax_regime: v})} />
                   </div>
-                  <DetailField label="Telefone Oficial" value={lead.resp_emp_phone} mask={formatPhone} onChange={(v:any) => setLead({...lead, resp_emp_phone: v})} />
-                  <DetailField label="E-mail Oficial" value={lead.resp_emp_email} onChange={(v:any) => setLead({...lead, resp_emp_email: v})} />
+                  <div className="md:col-span-3 lg:col-span-2">
+                    <DetailField label="Entrada Simples/MEI" type="date" value={lead.simples_entry_date || lead.mei_entry_date} onChange={(v:any) => setLead({...lead, simples_entry_date: v})} />
+                  </div>
+                  <div className="md:col-span-3 lg:col-span-2">
+                    <DetailField label="Saída Simples/MEI" type="date" value={lead.simples_exit_date || lead.mei_exit_date} onChange={(v:any) => setLead({...lead, simples_exit_date: v})} />
+                  </div>
+                  <div className="md:col-span-3 lg:col-span-2">
+                    <DetailField label="Telefone Oficial" value={lead.resp_emp_phone} mask={formatPhone} onChange={(v:any) => setLead({...lead, resp_emp_phone: v})} />
+                  </div>
+                  <div className="md:col-span-6 lg:col-span-4">
+                    <DetailField label="E-mail Oficial" value={lead.resp_emp_email} onChange={(v:any) => setLead({...lead, resp_emp_email: v})} />
+                  </div>
                 </div>
 
                 <div className="pt-4 border-t border-slate-200/50">
                    <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-4">Endereço da Sede</p>
-                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                      <DetailField label="CEP Sede" value={lead.company_zip} mask={formatCEP} onChange={(v:any) => setLead({...lead, company_zip: v})} />
-                      <DetailField label="UF Sede" value={lead.company_state} onChange={(v:any) => setLead({...lead, company_state: v})} />
-                      <DetailField label="Cidade Sede" value={lead.company_city} onChange={(v:any) => setLead({...lead, company_city: v})} />
-                      <DetailField label="Bairro Sede" value={lead.company_neighborhood} onChange={(v:any) => setLead({...lead, company_neighborhood: v})} />
-                      <div className="md:col-span-3">
+                   <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-5">
+                      <div className="md:col-span-2 lg:col-span-2">
+                        <DetailField label="CEP Sede" value={lead.company_zip} mask={formatCEP} onChange={(v:any) => setLead({...lead, company_zip: v})} />
+                      </div>
+                      <div className="md:col-span-1 lg:col-span-1">
+                        <DetailField label="UF Sede" value={lead.company_state} onChange={(v:any) => setLead({...lead, company_state: v})} />
+                      </div>
+                      <div className="md:col-span-3 lg:col-span-3">
+                        <DetailField label="Cidade Sede" value={lead.company_city} onChange={(v:any) => setLead({...lead, company_city: v})} />
+                      </div>
+                      <div className="md:col-span-3 lg:col-span-3">
+                        <DetailField label="Bairro Sede" value={lead.company_neighborhood} onChange={(v:any) => setLead({...lead, company_neighborhood: v})} />
+                      </div>
+                      <div className="md:col-span-2 lg:col-span-3">
+                        <DetailField label="Nº Sede" value={lead.company_number} onChange={(v:any) => setLead({...lead, company_number: v})} />
+                      </div>
+                      <div className="md:col-span-6 lg:col-span-6">
                         <DetailField label="Logradouro Sede" value={lead.company_street} onChange={(v:any) => setLead({...lead, company_street: v})} />
                       </div>
-                      <DetailField label="Nº Sede" value={lead.company_number} onChange={(v:any) => setLead({...lead, company_number: v})} />
+                      <div className="md:col-span-6 lg:col-span-6">
+                        <DetailField label="Complemento Sede" value={lead.company_complement} onChange={(v:any) => setLead({...lead, company_complement: v})} />
+                      </div>
                    </div>
                 </div>
               </section>
@@ -776,50 +861,6 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                   ]}
                   onChange={(v:any) => setLead({...lead, temperature: v})} 
                 />
-                <div className="md:col-span-3 pt-4 border-t border-slate-100 flex items-center justify-between">
-                   <div className="flex-1">
-                      <DetailField 
-                        label="Data do Primeiro Contato" 
-                        type="date" 
-                        value={lead.first_contact_date || new Date().toISOString().split('T')[0]} 
-                        onChange={(v:any) => setLead({...lead, first_contact_date: v})} 
-                      />
-                   </div>
-                   {lead.first_contact_date && (
-                     <div className="ml-6 px-6 py-3 bg-indigo-50 border border-indigo-100 rounded-2xl flex flex-col items-center min-w-[120px]">
-                        <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Ciclo de Venda</span>
-                        <div className="flex items-center gap-2">
-                           <Icons.Clock className="w-3 h-3 text-indigo-600" />
-                           <span className="text-lg font-black text-indigo-700">
-                             {Math.floor((new Date().getTime() - new Date(lead.first_contact_date).getTime()) / (1000 * 3600 * 24))} dias
-                           </span>
-                        </div>
-                     </div>
-                   )}
-                </div>
-              </div>
-            </section>
-
-            {/* CONTATO */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-              <div className="space-y-6">
-                <SectionHeader icon={Icons.Phone} title="Contato" colorClass="bg-green-50 text-green-600" />
-                <DetailField label="Telefone Secundário" value={lead.secondary_phone} mask={formatPhone} onChange={(v:any) => setLead({...lead, secondary_phone: v})} />
-                <DetailField label="E-mail Pessoal/Lead" value={lead.email} onChange={(v:any) => setLead({...lead, email: v})} />
-              </div>
-              <div className="space-y-6">
-                <SectionHeader icon={Icons.MapPin} title="Localização" colorClass="bg-orange-50 text-orange-600" />
-                <div className="grid grid-cols-2 gap-4">
-                  <DetailField label="CEP" value={lead.address_zip} mask={formatCEP} onChange={handleCEPChange} />
-                  <DetailField label="Estado (UF)" value={lead.address_state} onChange={(v:any) => setLead({...lead, address_state: v})} />
-                </div>
-                <DetailField label="Cidade" value={lead.address_city} onChange={(v:any) => setLead({...lead, address_city: v})} />
-                <DetailField label="Logradouro" value={lead.address_street} onChange={(v:any) => setLead({...lead, address_street: v})} />
-                <div className="grid grid-cols-2 gap-4">
-                  <DetailField label="Número" value={lead.address_number} onChange={(v:any) => setLead({...lead, address_number: v})} />
-                  <DetailField label="Bairro" value={lead.address_neighborhood} onChange={(v:any) => setLead({...lead, address_neighborhood: v})} />
-                </div>
-                <DetailField label="Complemento" value={lead.address_complement} onChange={(v:any) => setLead({...lead, address_complement: v})} />
               </div>
             </section>
 
