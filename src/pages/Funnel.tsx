@@ -256,52 +256,50 @@ export default function Funnel() {
           <div className="flex items-start gap-6">
             <div>
               <div className="flex flex-col">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Oportunidades Ativas</span>
-                <div className="flex flex-col gap-0.5 mt-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-700">{activeCount} no total</span>
-                    <span className="text-xs font-bold text-blue-600">{formatCurrency(totalValue)}</span>
-                  </div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Oportunidades</span>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-sm font-bold text-slate-700">{activeCount}</span>
+                  <span className="text-sm font-bold text-blue-600 truncate max-w-[100px]">{formatCurrency(totalValue)}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="flex-1 px-8 hidden xl:flex items-center gap-10">
-            <div className="flex flex-col gap-1 pr-6 border-r border-slate-100">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1">Pipeline de Vendas</span>
-              <div className="flex items-center gap-6">
+          <div className="flex-1 px-4 md:px-8 flex items-center gap-4 md:gap-10 overflow-x-auto no-scrollbar">
+            <div className="flex flex-col gap-1 pr-4 md:pr-6 border-r border-slate-100 shrink-0">
+              <span className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-0.5 md:mb-1">Pipeline</span>
+              <div className="flex items-center gap-4 md:gap-6">
                 <div className="flex flex-col">
-                   <div className="flex items-center gap-1.5 mb-0.5">
+                   <div className="flex items-center gap-1 mb-0.5">
                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Enviadas</span>
+                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Enviadas</span>
                    </div>
-                   <span className="text-xs font-black text-slate-700">{formatCurrency(stats.quotesSent)}</span>
+                   <span className="text-[10px] md:text-xs font-black text-slate-700">{formatCurrency(stats.quotesSent)}</span>
                 </div>
                 <div className="flex flex-col">
-                   <div className="flex items-center gap-1.5 mb-0.5">
+                   <div className="flex items-center gap-1 mb-0.5">
                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Aprovadas</span>
+                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Aprovadas</span>
                    </div>
-                   <span className="text-xs font-black text-emerald-600">{formatCurrency(stats.quotesApproved)}</span>
+                   <span className="text-[10px] md:text-xs font-black text-emerald-600">{formatCurrency(stats.quotesApproved)}</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-col gap-1">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1">Status Operacional</span>
-              <div className="flex items-center gap-8">
+            <div className="flex flex-col gap-1 shrink-0">
+              <span className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-0.5 md:mb-1">Status</span>
+              <div className="flex items-center gap-4 md:gap-8">
                 <div className="flex flex-col">
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">Na Operadora</span>
-                  <span className="text-[11px] font-black text-slate-700">{formatCurrency(stats.inCarrier)}</span>
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">Na Op</span>
+                  <span className="text-[10px] md:text-[11px] font-black text-slate-700">{formatCurrency(stats.inCarrier)}</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">Contrato Liberado</span>
-                  <span className="text-[11px] font-black text-emerald-700">{formatCurrency(stats.contractReleased)}</span>
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">Liberado</span>
+                  <span className="text-[10px] md:text-[11px] font-black text-emerald-700">{formatCurrency(stats.contractReleased)}</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">Implantação Ativa</span>
-                  <span className="text-[11px] font-black text-blue-700">{formatCurrency(stats.activeDeployment)}</span>
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">Ativo</span>
+                  <span className="text-[10px] md:text-[11px] font-black text-blue-700">{formatCurrency(stats.activeDeployment)}</span>
                 </div>
               </div>
             </div>
@@ -309,16 +307,17 @@ export default function Funnel() {
           <div className="flex items-center gap-3">
             <button 
               onClick={() => setIsAIInterviewOpen(true)}
-              className="group flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-blue-600 text-sm font-bold rounded-xl hover:bg-blue-50 transition-all shadow-sm hover:border-blue-300"
+              className="group flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-white border border-slate-200 text-blue-600 text-xs md:text-sm font-bold rounded-xl hover:bg-blue-50 transition-all shadow-sm hover:border-blue-300"
             >
-              <Icons.Sparkles className="w-4 h-4 animate-pulse group-hover:rotate-12 transition-transform" /> 
-              Novo Lead com IA
+              <Icons.Sparkles className="w-4 h-4 animate-pulse group-hover:rotate-12 transition-transform shrink-0" /> 
+              <span className="hidden sm:inline">Novo Lead com IA</span>
+              <span className="sm:hidden">IA</span>
             </button>
             <button 
               onClick={() => setIsSelectionModalOpen(true)}
-              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white text-sm font-black uppercase tracking-widest rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 active:scale-95"
+              className="flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 bg-blue-600 text-white text-xs md:text-sm font-black uppercase tracking-widest rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 active:scale-95 shrink-0"
             >
-              <Icons.Plus className="w-4 h-4" /> Nova Oportunidade
+              <Icons.Plus className="w-4 h-4 shrink-0" /> <span className="hidden sm:inline">Nova Oportunidade</span><span className="sm:hidden">Novo</span>
             </button>
           </div>
         </div>
@@ -411,7 +410,7 @@ export default function Funnel() {
                                    layoutId={`card-${lead.id}`}
                                    onClick={() => setSelectedLead(lead)}
                                    className={cn(
-                                     "bg-white rounded-xl p-5 shadow-sm border group cursor-pointer transition-all",
+                                     "bg-white rounded-xl p-3 md:p-5 shadow-sm border group cursor-pointer transition-all",
                                      snapshot.isDragging ? "shadow-2xl border-blue-600 ring-4 ring-blue-500/10 rotate-1 scale-105" : "border-slate-100 hover:shadow-md shadow-sm", col.color.replace('bg-', 'hover:border-') + "/30",
                                      !snapshot.isDragging && "hover:-translate-y-1"
                                    )}

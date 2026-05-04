@@ -257,21 +257,21 @@ export default function Dashboard() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
-      className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden group"
+      className="bg-white p-3 md:p-4 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden group"
     >
       <div className="relative z-10">
-        <div className="flex items-center gap-2 mb-2">
-          <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center", 
+        <div className="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2">
+          <div className={cn("w-6 h-6 md:w-7 md:h-7 rounded-lg flex items-center justify-center", 
             color === 'blue' ? "bg-blue-50 text-blue-600" :
             color === 'emerald' ? "bg-emerald-50 text-emerald-600" :
             color === 'amber' ? "bg-amber-50 text-amber-600" :
             color === 'sky' ? "bg-sky-50 text-sky-600" : "bg-indigo-50 text-indigo-600"
           )}>
-            <Icon className="w-4 h-4" />
+            <Icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
           </div>
-          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">{label}</span>
+          <span className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">{label}</span>
         </div>
-        <h3 className="text-lg font-black text-slate-900 truncate">{formatCurrency(value)}</h3>
+        <h3 className="text-sm md:text-lg font-black text-slate-900 truncate">{formatCurrency(value)}</h3>
       </div>
       <div className={cn("absolute -right-4 -bottom-4 w-12 h-12 rounded-full blur-xl opacity-20",
         color === 'blue' ? "bg-blue-400" :
@@ -290,15 +290,15 @@ export default function Dashboard() {
   </div>;
 
   return (
-    <div className="h-full overflow-y-auto overflow-x-hidden custom-scrollbar p-6 space-y-8">
+    <div className="h-full overflow-y-auto overflow-x-hidden custom-scrollbar p-4 md:p-6 space-y-6 md:space-y-8">
       {/* Summary Metrics - Fixed One Row Layout */}
       {/* Summary Metrics - Fixed One Row Layout */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3 xl:gap-4">
+      <section className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3 xl:gap-4">
         {/* Row 1/2 Toggle */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm col-span-1 xl:col-span-2 relative overflow-hidden group"
+          className="bg-white p-4 md:p-5 rounded-xl border border-slate-100 shadow-sm col-span-2 md:col-span-1 lg:col-span-1 xl:col-span-2 relative overflow-hidden group"
         >
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-3">
@@ -505,11 +505,11 @@ export default function Dashboard() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: idx * 0.1 }}
-                  className="p-4 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between group hover:border-blue-200 transition-all cursor-default overflow-hidden"
+                  className="p-3 md:p-4 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between group hover:border-blue-200 transition-all cursor-default overflow-hidden"
                 >
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
                     <div className={cn(
-                      "w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black shadow-sm",
+                      "w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center text-sm md:text-lg font-black shadow-sm shrink-0",
                       event.type === 'Aniversário' ? "bg-blue-100 text-blue-600" :
                       event.type === 'Aniv. Dependente' ? "bg-pink-100 text-pink-600" :
                       event.type === 'Aniv. Casamento' ? "bg-rose-100 text-rose-600" : 
@@ -518,11 +518,11 @@ export default function Dashboard() {
                       {event.date.getDate()}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-black text-slate-900 truncate">{event.name}</p>
+                      <p className="text-xs md:text-sm font-black text-slate-900 truncate leading-tight">{event.name}</p>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black uppercase text-slate-400">{event.type}</span>
+                        <span className="text-[8px] md:text-[10px] font-black uppercase text-slate-400">{event.type}</span>
                         {event.parentName && (
-                          <span className="text-[9px] font-medium text-slate-400 truncate opacity-70">({event.parentName})</span>
+                          <span className="text-[8px] font-medium text-slate-400 truncate opacity-70">({event.parentName})</span>
                         )}
                       </div>
                     </div>

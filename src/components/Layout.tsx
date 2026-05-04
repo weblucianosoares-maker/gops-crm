@@ -182,17 +182,17 @@ function GlobalAlertBar() {
                  </span>
                </div>
 
-               <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
-                 <div className="flex items-center gap-2 md:gap-3 pr-2 md:pr-4 border-r border-white/10 shrink-0">
-                    <div className="flex flex-col items-start">
-                       <p className="text-[9px] md:text-[11px] font-black tracking-widest group-hover:text-amber-400 transition-colors uppercase whitespace-nowrap">{String(current.title || '')}</p>
-                       <p className="text-[7px] md:text-[8px] font-bold text-slate-500 uppercase tracking-tighter">
-                         Data: {new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(current.date)}
-                       </p>
-                    </div>
-                 </div>
-                 <p className="text-[10px] font-bold text-slate-400 group-hover:text-slate-100 transition-colors truncate max-w-lg hidden md:block italic tracking-tight">{String(current.description || '')}</p>
-               </div>
+                <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+                  <div className="flex items-center gap-2 md:gap-3 pr-2 md:pr-4 border-r border-white/10 shrink-0">
+                     <div className="flex flex-col items-start">
+                        <p className="text-[9px] md:text-[11px] font-black tracking-widest group-hover:text-amber-400 transition-colors uppercase whitespace-nowrap">{String(current.title || '')}</p>
+                        <p className="text-[7px] md:text-[8px] font-bold text-slate-500 uppercase tracking-tighter">
+                          Data: {new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(current.date)}
+                        </p>
+                     </div>
+                  </div>
+                  <p className="text-[9px] md:text-[10px] font-bold text-slate-400 group-hover:text-slate-100 transition-colors truncate max-w-[120px] md:max-w-lg italic tracking-tight">{String(current.description || '')}</p>
+                </div>
 
                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <span className="text-[9px] font-black uppercase tracking-tighter text-blue-400">Ver Ficha</span>
@@ -227,9 +227,9 @@ function BrokerProfileBadge() {
 
   return (
     <>
-      <div className="text-right hidden sm:block">
-        <p className="text-sm font-black text-blue-900">{name}</p>
-        <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest">{role}</p>
+      <div className="text-right hidden min-[400px]:block">
+        <p className="text-[11px] md:text-sm font-black text-blue-900 leading-tight">{name}</p>
+        <p className="text-[8px] md:text-[9px] text-slate-400 uppercase font-black tracking-widest">{role}</p>
       </div>
       <div className="w-10 h-10 rounded-xl bg-blue-100 border-2 border-white shadow-sm flex items-center justify-center text-blue-700 font-bold text-xs overflow-hidden">
         {avatarUrl ? (
@@ -264,7 +264,7 @@ export function TopBar({ title, onMenuClick }: { title: string; onMenuClick?: ()
             <button className="md:hidden text-slate-500 hover:text-blue-700" onClick={onMenuClick}>
               <Icons.Menu className="w-5 h-5" />
             </button>
-            <h2 className="text-lg md:text-xl font-bold text-blue-900 truncate max-w-[150px] md:max-w-none">{title}</h2>
+            <h2 className="text-lg md:text-xl font-bold text-blue-900 truncate max-w-[200px] md:max-w-none">{title}</h2>
             {title === "Visão Geral" && (
               <span className="text-[10px] md:text-xs font-medium text-slate-400 mt-1 ml-2 hidden md:block">
                 {new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date())}
