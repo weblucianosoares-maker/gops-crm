@@ -68,7 +68,9 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
     end_date: "",
     sale_date: new Date().toISOString().split('T')[0],
     readjustment_percentage: 0,
-    readjustment_new_value: 0
+    readjustment_new_value: 0,
+    previous_plan_name: "",
+    previous_plan_value: 0
   });
 
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([
@@ -95,7 +97,9 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         end_date: editContract.end_date || "",
         sale_date: editContract.sale_date || (editContract.start_date || new Date().toISOString().split('T')[0]),
         readjustment_percentage: editContract.readjustment_percentage || 0,
-        readjustment_new_value: editContract.readjustment_new_value || 0
+        readjustment_new_value: editContract.readjustment_new_value || 0,
+        previous_plan_name: editContract.previous_plan_name || "",
+        previous_plan_value: editContract.previous_plan_value || 0
       });
       setIsNewLead(!!editContract.client_name && !editContract.lead_id);
       fetchBeneficiaries(editContract.id);
@@ -114,7 +118,9 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         contract_number: "",
         accommodation: "Enfermaria",
         grace_periods: "",
-        end_date: ""
+        end_date: "",
+        previous_plan_name: "",
+        previous_plan_value: 0
       });
       setBeneficiaries([{ name: "", type: "Titular", birth_date: "", cpf: "" }]);
     }
@@ -220,7 +226,9 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         end_date: contract.end_date || null,
         sale_date: contract.sale_date,
         readjustment_percentage: contract.readjustment_percentage,
-        readjustment_new_value: contract.readjustment_new_value
+        readjustment_new_value: contract.readjustment_new_value,
+        previous_plan_name: contract.previous_plan_name,
+        previous_plan_value: contract.previous_plan_value
       };
 
       let currentContractId = editContract?.id;
@@ -431,6 +439,54 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
                     value={contract.end_date} 
                   />
                </div>
+            </div>
+
+            {/* PLANO ANTERIOR & ECONOMIA */}
+            <div className="mt-8 p-6 bg-emerald-50/50 rounded-[2rem] border border-emerald-100 space-y-6">
+               <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-100 text-emerald-700">
+                    <Icons.TrendingDown className="w-4 h-4" />
+                  </div>
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-emerald-600">Comparativo: Plano Anterior</h4>
+               </div>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <InputField 
+                    label="Operadora / Plano Anterior" 
+                    value={contract.previous_plan_name} 
+                    onChange={(v:any) => setContract({...contract, previous_plan_name: v})} 
+                  />
+                  <InputField 
+                    label="Valor Plano Anterior (R$)" 
+                    value={contract.previous_plan_value ? Math.round(contract.previous_plan_value * 100).toString() : ""} 
+                    mask={formatCurrencyValue}
+                    onChange={(v:any) => setContract({...contract, previous_plan_value: parseCurrencyValue(v)})} 
+                  />
+               </div>
+
+               {/* Cards de Economia */}
+               {contract.previous_plan_value > 0 && contract.monthly_fee > 0 && (
+                 <div className="grid grid-cols-3 gap-3 animate-in fade-in slide-in-from-bottom-2">
+                   <div className="bg-white p-3 rounded-2xl border border-emerald-100 text-center">
+                     <p className="text-[8px] font-black text-emerald-400 uppercase tracking-tighter mb-1">Redução</p>
+                     <p className="text-sm font-black text-emerald-600">
+                       {Math.max(0, Math.round(((contract.previous_plan_value - contract.monthly_fee) / contract.previous_plan_value) * 100))}%
+                     </p>
+                   </div>
+                   <div className="bg-white p-3 rounded-2xl border border-emerald-100 text-center">
+                     <p className="text-[8px] font-black text-emerald-400 uppercase tracking-tighter mb-1">Mensal</p>
+                     <p className="text-sm font-black text-emerald-600">
+                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Math.max(0, contract.previous_plan_value - contract.monthly_fee))}
+                     </p>
+                   </div>
+                   <div className="bg-white p-3 rounded-2xl border border-emerald-100 text-center shadow-sm">
+                     <p className="text-[8px] font-black text-emerald-400 uppercase tracking-tighter mb-1">12 Meses</p>
+                     <p className="text-sm font-black text-emerald-600">
+                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Math.max(0, (contract.previous_plan_value - contract.monthly_fee) * 12))}
+                     </p>
+                   </div>
+                 </div>
+               )}
             </div>
 
             {/* GESTÃO DE REAJUSTE */}

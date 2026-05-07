@@ -212,8 +212,9 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
   const [history, setHistory] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [activeTab, setActiveTab] = useState<'details' | 'chat' | 'interview' | 'history' | 'alerts'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'chat' | 'interview' | 'history' | 'alerts' | 'contracts'>('details');
   const [reminders, setReminders] = useState<any[]>([]);
+  const [contracts, setContracts] = useState<any[]>([]);
   const [loadingChat, setLoadingChat] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [noteContent, setNoteContent] = useState("");
@@ -330,6 +331,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
         }
       }
       fetchReminders(initialLead.id);
+      fetchContracts(initialLead.id);
     }
   }, [initialLead]);
 
@@ -491,6 +493,11 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
   const fetchReminders = async (id: string) => {
     const { data } = await supabase.from('reminders').select('*').eq('lead_id', id).order('due_date', { ascending: false });
     setReminders(data || []);
+  };
+
+  const fetchContracts = async (leadId: string) => {
+    const { data } = await supabase.from('contracts').select('*').eq('lead_id', leadId).order('created_at', { ascending: false });
+    setContracts(data || []);
   };
 
   const handleResolveReminder = async (remId: string) => {
@@ -987,6 +994,98 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
             </div>
           </div>
         );
+      case 'contracts':
+        return (
+          <div className="p-8 space-y-8 bg-slate-50 min-h-full pb-24">
+            <SectionHeader icon={Icons.Contracts} title="Contratos do Cliente" colorClass="bg-blue-100 text-blue-700" />
+            
+            {contracts.length === 0 ? (
+              <div className="text-center py-20 bg-white rounded-[2.5rem] border border-dashed border-slate-200">
+                <Icons.Contracts className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Nenhum contrato ativo encontrado</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {contracts.map(contract => {
+                  const prevValue = Number(contract.previous_plan_value) || 0;
+                  const currentValue = Number(contract.monthly_fee) || 0;
+                  const monthlySavings = Math.max(0, prevValue - currentValue);
+                  const reductionPercent = prevValue > 0 ? Math.round((monthlySavings / prevValue) * 100) : 0;
+
+                  return (
+                    <div key={contract.id} className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-sm space-y-8">
+                      {/* Header do Contrato */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 font-black">
+                            {(contract.carrier || 'U').substring(0,2).toUpperCase()}
+                          </div>
+                          <div>
+                            <h5 className="text-lg font-black text-slate-900">{contract.carrier}</h5>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{contract.product || 'Plano de Saúde'}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs font-black text-slate-900">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(currentValue)}</p>
+                          <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest mt-1">Mensalidade Atual</p>
+                        </div>
+                      </div>
+
+                      {/* Comparativo com Plano Anterior */}
+                      <div className="p-6 bg-emerald-50 rounded-3xl border border-emerald-100/50 space-y-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Icons.TrendingDown className="w-4 h-4 text-emerald-600" />
+                            <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Entrega de Economia</span>
+                          </div>
+                          <div className="px-3 py-1 bg-emerald-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm">
+                            -{reductionPercent}% de Redução
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-emerald-100">
+                            <p className="text-[8px] font-black text-emerald-400 uppercase tracking-tighter mb-1">Plano Anterior</p>
+                            <p className="text-xs font-black text-slate-700 truncate">{contract.previous_plan_name || 'Não Informado'}</p>
+                            <p className="text-sm font-black text-slate-900 mt-1">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(prevValue)}</p>
+                          </div>
+                          <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-emerald-100 shadow-sm">
+                            <p className="text-[8px] font-black text-emerald-400 uppercase tracking-tighter mb-1">Economia Mensal</p>
+                            <p className="text-lg font-black text-emerald-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlySavings)}</p>
+                          </div>
+                          <div className="bg-emerald-600 p-4 rounded-2xl shadow-lg shadow-emerald-100">
+                            <p className="text-[8px] font-black text-emerald-100 uppercase tracking-tighter mb-1">Economia em 12 Meses</p>
+                            <p className="text-lg font-black text-white">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlySavings * 12)}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Info Adicional */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Vigência</p>
+                          <p className="text-xs font-bold text-slate-700">{contract.start_date ? new Date(contract.start_date).toLocaleDateString() : '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Contrato</p>
+                          <p className="text-xs font-bold text-slate-700">{contract.contract_number || '---'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Vidas</p>
+                          <p className="text-xs font-bold text-slate-700">{contract.lives || 0} Vidas</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
+                          <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-[9px] font-black uppercase">{contract.status}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
       case 'interview':
         return (
           <div className="h-full bg-white relative overflow-hidden">
@@ -1049,9 +1148,9 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
         </div>
 
         <div className="flex px-8 border-b bg-white shadow-sm shrink-0">
-          {['details', 'chat', 'interview', 'history', 'alerts'].map((tab: any) => (
+          {['details', 'chat', 'contracts', 'interview', 'history', 'alerts'].map((tab: any) => (
             <button key={tab} onClick={() => setActiveTab(tab)} className={cn("px-6 py-5 text-[10px] font-black uppercase tracking-widest transition-all border-b-2", activeTab === tab ? "border-blue-600 text-blue-600" : "border-transparent text-slate-400")}>
-              {tab === 'details' ? 'Ficha' : tab === 'chat' ? 'Chat' : tab === 'interview' ? 'Entrevista IA' : tab === 'history' ? 'Histórico' : 'Avisos'}
+              {tab === 'details' ? 'Ficha' : tab === 'chat' ? 'Chat' : tab === 'contracts' ? 'Contratos' : tab === 'interview' ? 'Entrevista IA' : tab === 'history' ? 'Histórico' : 'Avisos'}
             </button>
           ))}
         </div>
