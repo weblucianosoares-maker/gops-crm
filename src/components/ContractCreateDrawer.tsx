@@ -280,7 +280,7 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
   return (
     <div className="fixed inset-0 z-[100] overflow-hidden">
       <div onClick={onClose} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
-      <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} className="absolute right-0 top-0 h-[100dvh] w-full max-w-2xl bg-white shadow-2xl flex flex-col">
+      <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} className="absolute right-0 top-0 h-[100dvh] w-full max-w-5xl bg-white shadow-2xl flex flex-col">
         
         {/* Header */}
         <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
