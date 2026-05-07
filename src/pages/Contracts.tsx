@@ -244,6 +244,13 @@ export default function Contracts() {
             <p className="text-[0.6875rem] uppercase tracking-widest text-blue-200 mb-2">Valor de Contratos Fechados</p>
             <h3 className="text-4xl font-extrabold tracking-tight">{formatCurrency(totalFechados)}</h3>
             <p className="text-blue-200 text-xs mt-2">{filteredContracts.length} contrato{filteredContracts.length !== 1 ? 's' : ''} no período</p>
+            <p className="text-blue-300 text-[9px] font-black uppercase tracking-widest mt-1">
+              {selectedPeriod === 'mês' ? `Mês Atual · ${new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}` :
+               selectedPeriod === 'trimestre' ? `${['T1','T2','T3','T4'][Math.floor(new Date().getMonth()/3)]} · ${new Date().getFullYear()}` :
+               selectedPeriod === 'semestre' ? `${new Date().getMonth() < 6 ? '1º Semestre' : '2º Semestre'} · ${new Date().getFullYear()}` :
+               selectedPeriod === 'ano' ? `Ano ${new Date().getFullYear()}` :
+               `${customStart.split('-').reverse().join('/')} → ${customEnd.split('-').reverse().join('/')}`}
+            </p>
           </div>
           <div className="mt-6 relative z-10">
             <div className="flex justify-between items-center mb-2">
@@ -292,6 +299,7 @@ export default function Contracts() {
                 <th className="px-6 py-4 text-[0.6875rem] uppercase tracking-widest font-bold text-slate-400 text-center">Vidas</th>
                 <th className="px-6 py-3 text-left text-[0.6875rem] font-bold text-slate-500 uppercase tracking-widest">Vigência</th>
                 <th className="px-6 py-3 text-left text-[0.6875rem] font-bold text-slate-500 uppercase tracking-widest">Próx. Reajuste (12m)</th>
+                <th className="px-6 py-3 text-left text-[0.6875rem] font-bold text-slate-500 uppercase tracking-widest">Valor Contrato</th>
                 <th className="px-6 py-3 text-left text-[0.6875rem] font-bold text-slate-500 uppercase tracking-widest">Comissão (Líq.)</th>
                 <th className="px-6 py-4"></th>
               </tr>
@@ -371,6 +379,14 @@ export default function Contracts() {
                        );
                     })()}
                   </td>
+                  {/* Valor do Contrato (mensalidade) */}
+                  <td className="px-6 py-4">
+                    <div>
+                      <p className="text-sm font-bold text-emerald-700">{formatCurrency(Number(contract.monthly_fee) || 0)}</p>
+                      <p className="text-[10px] text-slate-400 uppercase font-bold">Mensalidade</p>
+                    </div>
+                  </td>
+                  {/* Comissão Líquida */}
                   <td className="px-6 py-4">
                     {(() => {
                       const calc = calculateNetCommission(
