@@ -139,7 +139,44 @@ export default function Contracts() {
 
   if (loading) return <div className="p-8">Carregando...</div>;
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar p-8 space-y-8">
+    <div className="h-full overflow-y-auto custom-scrollbar p-8 space-y-6">
+      {/* Page Header + Period Filter */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/60 p-4 rounded-2xl border border-slate-100 backdrop-blur-sm">
+        <div>
+          <h2 className="text-xl font-black text-slate-900 tracking-tight">Gestão de Contratos</h2>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{filteredContracts.length} contratos no período</p>
+        </div>
+        {/* Period Filter */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+            {(['mês', 'trimestre', 'semestre', 'ano', 'custom'] as const).map(p => (
+              <button
+                key={p}
+                onClick={() => setSelectedPeriod(p)}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
+                  selectedPeriod === p
+                    ? "bg-white text-blue-600 shadow-sm border border-slate-200"
+                    : "text-slate-400 hover:text-slate-600"
+                )}
+              >
+                {p === 'custom' ? 'Personalizado' : p}
+              </button>
+            ))}
+          </div>
+          {selectedPeriod === 'custom' && (
+            <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-xl">
+              <span className="text-[9px] font-black text-slate-400 uppercase pl-1">De:</span>
+              <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)}
+                className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-700 outline-none focus:ring-1 focus:ring-blue-400" />
+              <span className="text-[9px] font-black text-slate-400 uppercase">Até:</span>
+              <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
+                className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-700 outline-none focus:ring-1 focus:ring-blue-400" />
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Bento Stats Grid & Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Upcoming Renewals (Real Data) */}
@@ -197,72 +234,26 @@ export default function Contracts() {
         </div>
       </div>
 
-      {/* Period Selector + Table */}
+      {/* Table Section */}
       <section className="bg-white rounded-xl overflow-hidden shadow-sm border border-slate-100">
-        {/* Header + Filter */}
-        <div className="p-6 flex flex-col gap-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <h3 className="text-lg font-bold text-blue-900">Contratos Ativos</h3>
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={async () => {
-                  if (window.confirm("⚠️ ATENÇÃO: Isso apagará TODOS os contratos. Deseja continuar?")) {
-                    try {
-                      await supabase.from('beneficiaries').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                      await supabase.from('financial_history').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                      await supabase.from('contracts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                      fetchContractsData();
-                    } catch (err) { console.error(err); }
-                  }
-                }}
-                className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm font-bold border border-red-100 hover:bg-red-100 transition-colors"
-              >
-                ⚠️ Limpar Dados Fictícios
-              </button>
-              <div className="relative">
-                <Icons.Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-                <input 
-                  className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-lg text-sm focus:ring-2 focus:ring-blue-100 w-56"
-                  placeholder="Buscar cliente..."
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <button 
-                onClick={() => { setContractToEdit(null); setIsDrawerOpen(true); }}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-blue-700 transition-colors shadow-md shadow-blue-100"
-              >
-                <Icons.Plus className="w-4 h-4" /> Novo Contrato
-              </button>
+        <div className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <h3 className="text-base font-black text-blue-900">Contratos Ativos</h3>
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <Icons.Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+              <input 
+                className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 w-56"
+                placeholder="Buscar cliente..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+              />
             </div>
-          </div>
-
-          {/* Period Filter */}
-          <div className="flex flex-wrap items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-100 w-fit">
-            {(['mês', 'trimestre', 'semestre', 'ano', 'custom'] as const).map(p => (
-              <button
-                key={p}
-                onClick={() => setSelectedPeriod(p)}
-                className={cn(
-                  "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                  selectedPeriod === p
-                    ? "bg-white text-blue-600 shadow-sm border border-slate-200"
-                    : "text-slate-400 hover:text-slate-600"
-                )}
-              >
-                {p === 'custom' ? 'Personalizado' : p}
-              </button>
-            ))}
-            {selectedPeriod === 'custom' && (
-              <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-                <span className="text-[9px] font-black text-slate-400 uppercase">De:</span>
-                <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)}
-                  className="bg-white border border-slate-200 rounded px-2 py-1 text-[10px] font-bold text-slate-700 outline-none focus:ring-1 focus:ring-blue-400" />
-                <span className="text-[9px] font-black text-slate-400 uppercase">Até:</span>
-                <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
-                  className="bg-white border border-slate-200 rounded px-2 py-1 text-[10px] font-bold text-slate-700 outline-none focus:ring-1 focus:ring-blue-400" />
-              </div>
-            )}
+            <button 
+              onClick={() => { setContractToEdit(null); setIsDrawerOpen(true); }}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-blue-700 transition-colors shadow-md shadow-blue-100"
+            >
+              <Icons.Plus className="w-4 h-4" /> Novo Contrato
+            </button>
           </div>
         </div>
         <div className="overflow-x-auto">
