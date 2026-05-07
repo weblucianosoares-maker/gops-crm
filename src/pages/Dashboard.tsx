@@ -28,7 +28,9 @@ export default function Dashboard() {
   const [birthdaysMonth, setBirthdaysMonth] = useState(0);
   const [birthdaysWeek, setBirthdaysWeek] = useState(0);
   const [birthdaysDay, setBirthdaysDay] = useState(0);
-  const [selectedPeriod, setSelectedPeriod] = useState<'mês' | 'trimestre' | 'semestre' | 'ano'>('mês');
+  const [selectedPeriod, setSelectedPeriod] = useState<'mês' | 'trimestre' | 'semestre' | 'ano' | 'custom'>('mês');
+  const [customStartDate, setCustomStartDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
+  const [customEndDate, setCustomEndDate] = useState(new Date().toISOString().split('T')[0]);
 
   const getStartDate = (period: string) => {
     const d = new Date();
@@ -63,7 +65,10 @@ export default function Dashboard() {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
-    const periodStartDate = getStartDate(selectedPeriod);
+    
+    const periodStartDate = selectedPeriod === 'custom' ? new Date(customStartDate) : getStartDate(selectedPeriod);
+    const periodEndDate = selectedPeriod === 'custom' ? new Date(customEndDate) : new Date();
+    periodEndDate.setHours(23, 59, 59, 999);
     
     // Mês Anterior para definir a Pedra
     const lastMonthDate = new Date(currentYear, currentMonth - 1, 1);
@@ -89,7 +94,7 @@ export default function Dashboard() {
     const totalVgvPaid = contracts
       .filter(c => {
         const d = new Date(c.sale_date || c.start_date);
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear && c.is_paid;
+        return d >= periodStartDate && d <= periodEndDate && c.is_paid;
       })
       .reduce((acc, c) => acc + (Number(c.monthly_fee) || 0), 0);
 
@@ -121,7 +126,7 @@ export default function Dashboard() {
       .filter(l => {
         if (l.status !== 'Cotação Enviada') return false;
         const d = new Date(l.updated_at || l.created_at);
-        return d >= periodStartDate;
+        return d >= periodStartDate && d <= periodEndDate;
       })
       .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
 
@@ -129,7 +134,7 @@ export default function Dashboard() {
       .filter(l => {
         if (l.status !== 'Proposta Operadora') return false;
         const d = new Date(l.updated_at || l.created_at);
-        return d >= periodStartDate;
+        return d >= periodStartDate && d <= periodEndDate;
       })
       .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
 
@@ -137,7 +142,7 @@ export default function Dashboard() {
       .filter(l => {
         if (l.status !== 'Contrato') return false;
         const d = new Date(l.updated_at || l.created_at);
-        return d >= periodStartDate;
+        return d >= periodStartDate && d <= periodEndDate;
       })
       .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
 
@@ -145,7 +150,7 @@ export default function Dashboard() {
       .filter(l => {
         if (l.status !== 'Plano Ativo') return false;
         const d = new Date(l.updated_at || l.created_at);
-        return d >= periodStartDate;
+        return d >= periodStartDate && d <= periodEndDate;
       })
       .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
 
@@ -155,7 +160,7 @@ export default function Dashboard() {
       .filter(l => {
         if (!['Contrato', 'Plano Ativo'].includes(l.status || '')) return false;
         const d = new Date(l.updated_at || l.created_at);
-        return d >= periodStartDate;
+        return d >= periodStartDate && d <= periodEndDate;
       })
       .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
     
@@ -283,7 +288,7 @@ export default function Dashboard() {
     if (leads.length > 0 && stages.length > 0) {
       fetchDashboardData();
     }
-  }, [leads, stages, selectedPeriod]);
+  }, [leads, stages, selectedPeriod, customStartDate, customEndDate]);
 
   const MetricCard = ({ label, value, color, icon: Icon, delay }: any) => (
     <motion.div 
@@ -336,8 +341,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 bg-slate-100/50 p-1 rounded-xl border border-slate-200/50">
-          {(['mês', 'trimestre', 'semestre', 'ano'] as const).map((p) => (
+        <div className="flex flex-wrap items-center gap-2 bg-slate-100/50 p-1 rounded-xl border border-slate-200/50">
+          {(['mês', 'trimestre', 'semestre', 'ano', 'custom'] as const).map((p) => (
             <button
               key={p}
               onClick={() => setSelectedPeriod(p)}
@@ -348,9 +353,32 @@ export default function Dashboard() {
                   : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
               )}
             >
-              {p}
+              {p === 'custom' ? 'Personalizado' : p}
             </button>
           ))}
+          
+          {selectedPeriod === 'custom' && (
+            <div className="flex items-center gap-2 ml-2 px-2 border-l border-slate-200">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] font-black text-slate-400 uppercase">De:</span>
+                <input 
+                  type="date" 
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  className="bg-white border border-slate-200 rounded px-2 py-1 text-[10px] font-bold text-slate-700 outline-none focus:ring-1 focus:ring-blue-400"
+                />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] font-black text-slate-400 uppercase">Até:</span>
+                <input 
+                  type="date" 
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  className="bg-white border border-slate-200 rounded px-2 py-1 text-[10px] font-bold text-slate-700 outline-none focus:ring-1 focus:ring-blue-400"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
