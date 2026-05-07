@@ -72,7 +72,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
     previous_plan_name: "",
     previous_plan_value: 0,
     modality: "PME",
-    administrator: ""
+    administrator: "",
+    first_contact_date: ""
   });
 
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([
@@ -103,7 +104,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         previous_plan_name: editContract.previous_plan_name || "",
         previous_plan_value: editContract.previous_plan_value || 0,
         modality: editContract.modality || "PME",
-        administrator: editContract.administrator || ""
+        administrator: editContract.administrator || "",
+        first_contact_date: editContract.first_contact_date || ""
       });
       setIsNewLead(!!editContract.client_name && !editContract.lead_id);
       fetchBeneficiaries(editContract.id);
@@ -126,7 +128,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         previous_plan_name: "",
         previous_plan_value: 0,
         modality: "PME",
-        administrator: ""
+        administrator: "",
+        first_contact_date: ""
       });
       setBeneficiaries([{ name: "", type: "Titular", birth_date: "", cpf: "" }]);
     }
@@ -236,7 +239,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         previous_plan_name: contract.previous_plan_name,
         previous_plan_value: contract.previous_plan_value,
         modality: contract.modality,
-        administrator: contract.administrator
+        administrator: contract.administrator,
+        first_contact_date: contract.first_contact_date || null
       };
 
       let currentContractId = editContract?.id;
@@ -359,12 +363,14 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
                             key={l.id} 
                             type="button"
                             onClick={() => {
+                               const leadCreatedAt = l.created_at ? new Date(l.created_at).toISOString().split('T')[0] : "";
                                setContract({
                                  ...contract, 
                                  lead_id: l.id, 
                                  client_name: l.name, 
                                  cnpj: l.lead_type === 'PJ' ? (l.cnpj || "") : (l.cpf || ""),
-                                 type: l.lead_type || 'PF'
+                                 type: l.lead_type || 'PF',
+                                 first_contact_date: leadCreatedAt
                                });
                                success(`Cliente ${l.name} selecionado!`);
                                setSearchTerm("");
@@ -428,9 +434,54 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
                  mask={formatCurrencyValue}
                  onChange={(v:any) => setContract({...contract, monthly_fee: parseCurrencyValue(v)})} 
                />
-               <InputField label="Data da Venda" type="date" required value={contract.sale_date} onChange={(v:any) => setContract({...contract, sale_date: v})} />
+               <InputField label="Data do Pagamento / Taxa de Adesão" type="date" required value={contract.sale_date} onChange={(v:any) => setContract({...contract, sale_date: v})} />
                <InputField label="Início da Vigência" type="date" required value={contract.start_date} onChange={(v:any) => setContract({...contract, start_date: v})} />
                <InputField label="Número do Contrato" value={contract.contract_number} onChange={(v:any) => setContract({...contract, contract_number: v})} />
+
+               {/* Sales Cycle Block */}
+               <div className="space-y-1">
+                 <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">Data do Primeiro Contato</label>
+                 <input 
+                   type="date" 
+                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:bg-white focus:ring-4 focus:ring-blue-100/10 focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
+                   value={contract.first_contact_date || ""}
+                   onChange={e => setContract({...contract, first_contact_date: e.target.value})}
+                 />
+                 <p className="text-[8px] text-slate-400 ml-1">Auto-preenchido ao selecionar o lead. Editável se necessário.</p>
+               </div>
+
+               {/* Sales Cycle Read-only */}
+               {(() => {
+                 const d1 = contract.first_contact_date ? new Date(contract.first_contact_date) : null;
+                 const d2 = contract.sale_date ? new Date(contract.sale_date) : null;
+                 const days = d1 && d2 && !isNaN(d1.getTime()) && !isNaN(d2.getTime()) 
+                   ? Math.max(0, Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)))
+                   : null;
+                 return (
+                   <div className="space-y-1">
+                     <label className="block text-[9px] font-black text-blue-600 uppercase tracking-wider ml-1">Ciclo de Vendas (dias)</label>
+                     <div className={cn(
+                       "flex items-center gap-3 px-4 py-2.5 rounded-xl border font-black text-base",
+                       days === null ? "bg-slate-50 border-slate-200 text-slate-300" :
+                       days <= 7 ? "bg-emerald-50 border-emerald-100 text-emerald-700" :
+                       days <= 30 ? "bg-amber-50 border-amber-100 text-amber-700" :
+                       "bg-red-50 border-red-100 text-red-700"
+                     )}>
+                       <Icons.Clock className="w-4 h-4 opacity-60" />
+                       {days === null ? (
+                         <span className="text-sm font-bold text-slate-400">Defina as datas acima</span>
+                       ) : (
+                         <>
+                           <span>{days} dias</span>
+                           <span className="text-[9px] font-black uppercase tracking-widest opacity-60">
+                             {days <= 7 ? '🚀 Ciclo Rápido' : days <= 30 ? '✅ Ciclo Normal' : '⚠️ Ciclo Longo'}
+                           </span>
+                         </>
+                       )}
+                     </div>
+                   </div>
+                 );
+               })()}
                <div>
                   <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Acomodação</label>
                   <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700" value={contract.accommodation} onChange={e => setContract({...contract, accommodation: e.target.value})}>
