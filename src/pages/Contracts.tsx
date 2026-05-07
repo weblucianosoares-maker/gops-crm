@@ -15,6 +15,10 @@ export default function Contracts() {
   const [loading, setLoading] = useState(true);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [contractToEdit, setContractToEdit] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedPeriod, setSelectedPeriod] = useState<'mês' | 'trimestre' | 'semestre' | 'ano' | 'custom'>('mês');
+  const [customStart, setCustomStart] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
+  const [customEnd, setCustomEnd] = useState(new Date().toISOString().split('T')[0]);
   const { alerts } = useAlerts();
  
   const contractAlerts = alerts.filter(a => a.type === 'contract' || a.type === 'expiry');
@@ -35,22 +39,60 @@ export default function Contracts() {
     
     return getTier(vgv);
   }, [contracts]);
-  
-  const totalCommissions = useMemo(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
 
+  const getPeriodDates = () => {
+    const now = new Date();
+    now.setHours(23, 59, 59, 999);
+    if (selectedPeriod === 'custom') {
+      const s = new Date(customStart); s.setHours(0,0,0,0);
+      const e = new Date(customEnd); e.setHours(23,59,59,999);
+      return { start: s, end: e };
+    }
+    const start = new Date();
+    start.setHours(0,0,0,0);
+    if (selectedPeriod === 'mês') start.setDate(1);
+    else if (selectedPeriod === 'trimestre') start.setMonth(Math.floor(start.getMonth()/3)*3, 1);
+    else if (selectedPeriod === 'semestre') start.setMonth(Math.floor(start.getMonth()/6)*6, 1);
+    else if (selectedPeriod === 'ano') start.setMonth(0, 1);
+    return { start, end: now };
+  };
+
+  // Valor de contratos fechados no período
+  const totalFechados = useMemo(() => {
+    const { start, end } = getPeriodDates();
     return contracts
       .filter(c => {
-        const d = new Date(c.start_date);
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        const d = new Date(c.sale_date || c.start_date);
+        return d >= start && d <= end;
+      })
+      .reduce((acc, c) => acc + (Number(c.monthly_fee) || 0), 0);
+  }, [contracts, selectedPeriod, customStart, customEnd]);
+
+  // Contratos filtrados por período (para a tabela)
+  const filteredContracts = useMemo(() => {
+    const { start, end } = getPeriodDates();
+    return contracts.filter(c => {
+      const d = new Date(c.sale_date || c.start_date);
+      const matchesPeriod = d >= start && d <= end;
+      const matchesSearch = !searchTerm || 
+        c.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.carrier?.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesPeriod && matchesSearch;
+    });
+  }, [contracts, selectedPeriod, customStart, customEnd, searchTerm]);
+
+  const totalCommissions = useMemo(() => {
+    const { start, end } = getPeriodDates();
+    return contracts
+      .filter(c => {
+        const d = new Date(c.sale_date || c.start_date);
+        return d >= start && d <= end;
       })
       .reduce((acc, c) => {
         const calculation = calculateNetCommission(c.carrier || '', Number(c.monthly_fee) || 0, stoneData.name, c.type || 'PF', c.lives || 1, c.modality || 'PME');
         return acc + calculation.net;
       }, 0);
-  }, [contracts, stoneData]);
+  }, [contracts, stoneData, selectedPeriod, customStart, customEnd]);
 
   const activeBeneficiaries = useMemo(() => {
     if (!selectedContract) return [];
@@ -112,21 +154,22 @@ export default function Contracts() {
           </div>
         </div>
 
-        {/* Commission Summary (Real Data) */}
+        {/* Valor de Contratos Fechados */}
         <div className="lg:col-span-4 bg-blue-700 text-white p-6 rounded-xl flex flex-col justify-between overflow-hidden relative shadow-xl shadow-blue-200">
           <div className="relative z-10">
-            <p className="text-[0.6875rem] uppercase tracking-widest text-blue-200 mb-2">Comissões Acumuladas</p>
-            <h3 className="text-4xl font-extrabold tracking-tight">{formatCurrency(totalCommissions)}</h3>
+            <p className="text-[0.6875rem] uppercase tracking-widest text-blue-200 mb-2">Valor de Contratos Fechados</p>
+            <h3 className="text-4xl font-extrabold tracking-tight">{formatCurrency(totalFechados)}</h3>
+            <p className="text-blue-200 text-xs mt-2">{filteredContracts.length} contrato{filteredContracts.length !== 1 ? 's' : ''} no período</p>
           </div>
-          <div className="mt-8 relative z-10">
+          <div className="mt-6 relative z-10">
             <div className="flex justify-between items-center mb-2">
               <span className="text-xs">Meta Mensal (R$ 20k)</span>
-              <span className="text-xs font-bold">{Math.round((totalCommissions / 20000) * 100)}%</span>
+              <span className="text-xs font-bold">{Math.round((totalFechados / 20000) * 100)}%</span>
             </div>
             <div className="w-full h-1.5 bg-blue-800 rounded-full overflow-hidden">
               <div 
                 className="bg-green-400 h-full transition-all duration-1000" 
-                style={{ width: `${Math.min((totalCommissions / 20000) * 100, 100)}%` }} 
+                style={{ width: `${Math.min((totalFechados / 20000) * 100, 100)}%` }} 
               />
             </div>
           </div>
@@ -134,47 +177,72 @@ export default function Contracts() {
         </div>
       </div>
 
-      {/* Contracts Table */}
+      {/* Period Selector + Table */}
       <section className="bg-white rounded-xl overflow-hidden shadow-sm border border-slate-100">
-        <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h3 className="text-lg font-bold text-blue-900">Contratos Ativos</h3>
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={async () => {
-                if (window.confirm("⚠️ ATENÇÃO: Isso apagará TODOS os contratos, beneficiários e histórico financeiro atuais. Deseja continuar?")) {
-                  try {
-                    await supabase.from('beneficiaries').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                    await supabase.from('financial_history').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                    await supabase.from('contracts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                    alert("Dados fictícios removidos com sucesso! Atualizando...");
-                    fetchContractsData();
-                  } catch (err) {
-                    console.error("Erro no reset:", err);
-                    alert("Falha ao limpar dados. Verifique o console.");
+        {/* Header + Filter */}
+        <div className="p-6 flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <h3 className="text-lg font-bold text-blue-900">Contratos Ativos</h3>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={async () => {
+                  if (window.confirm("⚠️ ATENÇÃO: Isso apagará TODOS os contratos. Deseja continuar?")) {
+                    try {
+                      await supabase.from('beneficiaries').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                      await supabase.from('financial_history').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                      await supabase.from('contracts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                      fetchContractsData();
+                    } catch (err) { console.error(err); }
                   }
-                }
-              }}
-              className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm font-bold border border-red-100 hover:bg-red-100 transition-colors"
-            >
-              ⚠️ Limpar Dados Fictícios
-            </button>
-            
-            <div className="relative">
-              <Icons.Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-              <input 
-                className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-lg text-sm focus:ring-2 focus:ring-blue-100 w-64" 
-                placeholder="Buscar cliente..." 
-              />
+                }}
+                className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm font-bold border border-red-100 hover:bg-red-100 transition-colors"
+              >
+                ⚠️ Limpar Dados Fictícios
+              </button>
+              <div className="relative">
+                <Icons.Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                <input 
+                  className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-lg text-sm focus:ring-2 focus:ring-blue-100 w-56"
+                  placeholder="Buscar cliente..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <button 
+                onClick={() => { setContractToEdit(null); setIsDrawerOpen(true); }}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-blue-700 transition-colors shadow-md shadow-blue-100"
+              >
+                <Icons.Plus className="w-4 h-4" /> Novo Contrato
+              </button>
             </div>
-            <button 
-              onClick={() => {
-                setContractToEdit(null);
-                setIsDrawerOpen(true);
-              }}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-blue-700 transition-colors shadow-md shadow-blue-100"
-            >
-              <Icons.Plus className="w-4 h-4" /> Novo Contrato
-            </button>
+          </div>
+
+          {/* Period Filter */}
+          <div className="flex flex-wrap items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-100 w-fit">
+            {(['mês', 'trimestre', 'semestre', 'ano', 'custom'] as const).map(p => (
+              <button
+                key={p}
+                onClick={() => setSelectedPeriod(p)}
+                className={cn(
+                  "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                  selectedPeriod === p
+                    ? "bg-white text-blue-600 shadow-sm border border-slate-200"
+                    : "text-slate-400 hover:text-slate-600"
+                )}
+              >
+                {p === 'custom' ? 'Personalizado' : p}
+              </button>
+            ))}
+            {selectedPeriod === 'custom' && (
+              <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
+                <span className="text-[9px] font-black text-slate-400 uppercase">De:</span>
+                <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)}
+                  className="bg-white border border-slate-200 rounded px-2 py-1 text-[10px] font-bold text-slate-700 outline-none focus:ring-1 focus:ring-blue-400" />
+                <span className="text-[9px] font-black text-slate-400 uppercase">Até:</span>
+                <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
+                  className="bg-white border border-slate-200 rounded px-2 py-1 text-[10px] font-bold text-slate-700 outline-none focus:ring-1 focus:ring-blue-400" />
+              </div>
+            )}
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -191,7 +259,7 @@ export default function Contracts() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {contracts.length > 0 ? contracts.map(contract => (
+              {filteredContracts.length > 0 ? filteredContracts.map(contract => (
                 <tr 
                   key={contract.id} 
                   onClick={() => {
@@ -307,7 +375,9 @@ export default function Contracts() {
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-20 text-center text-slate-400 uppercase text-[10px] font-black tracking-widest italic">Nenhum contrato ativo encontrado</td>
+                  <td colSpan={6} className="px-6 py-20 text-center text-slate-400 uppercase text-[10px] font-black tracking-widest italic">
+                    {contracts.length === 0 ? 'Nenhum contrato cadastrado' : 'Nenhum contrato no período selecionado'}
+                  </td>
                 </tr>
               )}
             </tbody>
