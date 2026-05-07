@@ -40,59 +40,79 @@ export default function Contracts() {
     return getTier(vgv);
   }, [contracts]);
 
-  const getPeriodDates = () => {
+  // Parse de data seguro contra fuso horário (evita UTC shift)
+  const parseLocalDate = (dateStr: string) => {
+    if (!dateStr) return new Date(0);
+    // "2026-05-02" → new Date(2026, 4, 2) — local, sem desvio UTC
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  };
+
+  // Data de início do período selecionado (memoized com deps corretas)
+  const periodDates = useMemo(() => {
     const now = new Date();
     now.setHours(23, 59, 59, 999);
+
     if (selectedPeriod === 'custom') {
-      const s = new Date(customStart); s.setHours(0,0,0,0);
-      const e = new Date(customEnd); e.setHours(23,59,59,999);
+      const s = parseLocalDate(customStart);
+      s.setHours(0, 0, 0, 0);
+      const e = parseLocalDate(customEnd);
+      e.setHours(23, 59, 59, 999);
       return { start: s, end: e };
     }
+
     const start = new Date();
-    start.setHours(0,0,0,0);
-    if (selectedPeriod === 'mês') start.setDate(1);
-    else if (selectedPeriod === 'trimestre') start.setMonth(Math.floor(start.getMonth()/3)*3, 1);
-    else if (selectedPeriod === 'semestre') start.setMonth(Math.floor(start.getMonth()/6)*6, 1);
-    else if (selectedPeriod === 'ano') start.setMonth(0, 1);
+    start.setHours(0, 0, 0, 0);
+
+    if (selectedPeriod === 'mês') {
+      start.setDate(1);
+    } else if (selectedPeriod === 'trimestre') {
+      start.setMonth(Math.floor(start.getMonth() / 3) * 3, 1);
+    } else if (selectedPeriod === 'semestre') {
+      start.setMonth(Math.floor(start.getMonth() / 6) * 6, 1);
+    } else if (selectedPeriod === 'ano') {
+      start.setMonth(0, 1);
+    }
+
     return { start, end: now };
-  };
+  }, [selectedPeriod, customStart, customEnd]);
 
   // Valor de contratos fechados no período
   const totalFechados = useMemo(() => {
-    const { start, end } = getPeriodDates();
+    const { start, end } = periodDates;
     return contracts
       .filter(c => {
-        const d = new Date(c.sale_date || c.start_date);
+        const d = parseLocalDate(c.sale_date || c.start_date);
         return d >= start && d <= end;
       })
       .reduce((acc, c) => acc + (Number(c.monthly_fee) || 0), 0);
-  }, [contracts, selectedPeriod, customStart, customEnd]);
+  }, [contracts, periodDates]);
 
-  // Contratos filtrados por período (para a tabela)
+  // Contratos filtrados por período + busca (para a tabela)
   const filteredContracts = useMemo(() => {
-    const { start, end } = getPeriodDates();
+    const { start, end } = periodDates;
     return contracts.filter(c => {
-      const d = new Date(c.sale_date || c.start_date);
+      const d = parseLocalDate(c.sale_date || c.start_date);
       const matchesPeriod = d >= start && d <= end;
-      const matchesSearch = !searchTerm || 
+      const matchesSearch = !searchTerm ||
         c.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.carrier?.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesPeriod && matchesSearch;
     });
-  }, [contracts, selectedPeriod, customStart, customEnd, searchTerm]);
+  }, [contracts, periodDates, searchTerm]);
 
   const totalCommissions = useMemo(() => {
-    const { start, end } = getPeriodDates();
+    const { start, end } = periodDates;
     return contracts
       .filter(c => {
-        const d = new Date(c.sale_date || c.start_date);
+        const d = parseLocalDate(c.sale_date || c.start_date);
         return d >= start && d <= end;
       })
       .reduce((acc, c) => {
         const calculation = calculateNetCommission(c.carrier || '', Number(c.monthly_fee) || 0, stoneData.name, c.type || 'PF', c.lives || 1, c.modality || 'PME');
         return acc + calculation.net;
       }, 0);
-  }, [contracts, stoneData, selectedPeriod, customStart, customEnd]);
+  }, [contracts, stoneData, periodDates]);
 
   const activeBeneficiaries = useMemo(() => {
     if (!selectedContract) return [];
