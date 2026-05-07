@@ -17,6 +17,10 @@ export default function Contracts() {
   const [contractToEdit, setContractToEdit] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPeriod, setSelectedPeriod] = useState<'mês' | 'trimestre' | 'semestre' | 'ano' | 'custom'>('mês');
+  // Datas temporárias (enquanto o usuário edita no modo personalizado)
+  const [pendingStart, setPendingStart] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
+  const [pendingEnd, setPendingEnd] = useState(new Date().toISOString().split('T')[0]);
+  // Datas aplicadas (só atualizam ao clicar OK)
   const [customStart, setCustomStart] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
   const [customEnd, setCustomEnd] = useState(new Date().toISOString().split('T')[0]);
   const { alerts } = useAlerts();
@@ -48,10 +52,9 @@ export default function Contracts() {
     return new Date(y, m - 1, d);
   };
 
-  // Data de início do período selecionado (memoized com deps corretas)
+  // Data de início e fim do período selecionado (memoized com deps corretas)
   const periodDates = useMemo(() => {
     const now = new Date();
-    now.setHours(23, 59, 59, 999);
 
     if (selectedPeriod === 'custom') {
       const s = parseLocalDate(customStart);
@@ -61,20 +64,30 @@ export default function Contracts() {
       return { start: s, end: e };
     }
 
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
+    // Período pré-definido: calcular início E fim corretos do período
+    const y = now.getFullYear();
+    const m = now.getMonth(); // 0-indexed
+
+    let start: Date;
+    let end: Date;
 
     if (selectedPeriod === 'mês') {
-      start.setDate(1);
+      start = new Date(y, m, 1, 0, 0, 0, 0);
+      end = new Date(y, m + 1, 0, 23, 59, 59, 999); // último dia do mês
     } else if (selectedPeriod === 'trimestre') {
-      start.setMonth(Math.floor(start.getMonth() / 3) * 3, 1);
+      const q = Math.floor(m / 3);
+      start = new Date(y, q * 3, 1, 0, 0, 0, 0);
+      end = new Date(y, q * 3 + 3, 0, 23, 59, 59, 999);
     } else if (selectedPeriod === 'semestre') {
-      start.setMonth(Math.floor(start.getMonth() / 6) * 6, 1);
-    } else if (selectedPeriod === 'ano') {
-      start.setMonth(0, 1);
+      const h = Math.floor(m / 6);
+      start = new Date(y, h * 6, 1, 0, 0, 0, 0);
+      end = new Date(y, h * 6 + 6, 0, 23, 59, 59, 999);
+    } else { // ano
+      start = new Date(y, 0, 1, 0, 0, 0, 0);
+      end = new Date(y, 11, 31, 23, 59, 59, 999);
     }
 
-    return { start, end: now };
+    return { start, end };
   }, [selectedPeriod, customStart, customEnd]);
 
   // Valor de contratos fechados no período
@@ -167,11 +180,25 @@ export default function Contracts() {
           {selectedPeriod === 'custom' && (
             <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-xl">
               <span className="text-[9px] font-black text-slate-400 uppercase pl-1">De:</span>
-              <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)}
-                className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-700 outline-none focus:ring-1 focus:ring-blue-400" />
+              <input
+                type="date"
+                value={pendingStart}
+                onChange={e => setPendingStart(e.target.value)}
+                className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-700 outline-none focus:ring-1 focus:ring-blue-400"
+              />
               <span className="text-[9px] font-black text-slate-400 uppercase">Até:</span>
-              <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
-                className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-700 outline-none focus:ring-1 focus:ring-blue-400" />
+              <input
+                type="date"
+                value={pendingEnd}
+                onChange={e => setPendingEnd(e.target.value)}
+                className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-700 outline-none focus:ring-1 focus:ring-blue-400"
+              />
+              <button
+                onClick={() => { setCustomStart(pendingStart); setCustomEnd(pendingEnd); }}
+                className="bg-blue-600 text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-700 transition-colors shadow-sm"
+              >
+                OK
+              </button>
             </div>
           )}
         </div>
