@@ -47,7 +47,7 @@ export default function Contracts() {
         return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
       })
       .reduce((acc, c) => {
-        const calculation = calculateNetCommission(c.carrier || '', Number(c.monthly_fee) || 0, stoneData.name);
+        const calculation = calculateNetCommission(c.carrier || '', Number(c.monthly_fee) || 0, stoneData.name, c.type || 'PF', c.lives || 1, c.modality || 'PME');
         return acc + calculation.net;
       }, 0);
   }, [contracts, stoneData]);
@@ -267,7 +267,14 @@ export default function Contracts() {
                   </td>
                   <td className="px-6 py-4">
                     {(() => {
-                       const calc = calculateNetCommission(contract.carrier || '', Number(contract.monthly_fee) || 0, stoneData.name);
+                      const calc = calculateNetCommission(
+                        contract.carrier || '', 
+                        Number(contract.monthly_fee) || 0, 
+                        stoneData.name,
+                        contract.type || 'PF',
+                        contract.lives || 1,
+                        contract.modality || 'PME'
+                      );
                        return (
                          <div>
                            <p className="text-sm font-bold text-blue-900">{formatCurrency(calc.net)}</p>

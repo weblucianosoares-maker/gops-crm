@@ -60,7 +60,7 @@ export const getTier = (vgv: number): TierConfig => {
   return [...TIERS].reverse().find(t => vgv >= t.minVgv) || TIERS[0];
 };
 
-export const calculateNetCommission = (carrierName: string, monthlyFee: number, tier: TierName, type: 'PF' | 'PJ' = 'PF', lives: number = 1) => {
+export const calculateNetCommission = (carrierName: string, monthlyFee: number, tier: TierName, type: 'PF' | 'PJ' = 'PF', lives: number = 1, modality: string = 'PME') => {
   // 1. Carregar Configurações de Bônus e Parcelas do localStorage
   let customRules = {
     pme: { first_parcel: 100, second_parcel: 100, bonus_per_life: 0, anticipation_allowed: true },
@@ -81,12 +81,17 @@ export const calculateNetCommission = (carrierName: string, monthlyFee: number, 
   let totalPercentage = carrierKey ? CARRIER_RE_RULES[tier][carrierKey] : 100;
   const taxRate = carrierKey ? (CARRIER_TAXES[carrierKey] || 0) : 0;
 
+  // REGRA ADESÃO: sempre 100% (só angariação, sem resíduo PME)
+  const isAdesao = modality === 'Adesão';
+  if (isAdesao) {
+    totalPercentage = 100;
+  }
+
   // AJUSTE LEVE SAÚDE (PF vs PME)
-  if (carrierName.toLowerCase().includes('leve')) {
+  if (carrierName.toLowerCase().includes('leve') && !isAdesao) {
     if (type === 'PF') {
-      totalPercentage = 100; // PF/Adesão na Leve é geralmente 100% angariação
+      totalPercentage = 100;
     } else {
-      // PME na Leve segue a grade United (150% no Interno, etc.)
       totalPercentage = carrierKey ? CARRIER_RE_RULES[tier][carrierKey] : 150;
     }
   }

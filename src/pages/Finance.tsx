@@ -119,9 +119,10 @@ export default function Finance() {
         const calc = calculateNetCommission(
           String(c.carrier || ''), 
           Number(c.monthly_fee) || 0, 
-          stone.name, // Usamos a pedra do mês passado para o repasse (regra United)
+          stone.name,
           c.type as any,
-          Number(c.lives || 1)
+          Number(c.lives || 1),
+          c.modality || 'PME'
         );
 
         // Verifica cada parcela do contrato
