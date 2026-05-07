@@ -183,6 +183,7 @@ export default function Contracts() {
               <tr>
                 <th className="px-6 py-4 text-[0.6875rem] uppercase tracking-widest font-bold text-slate-400">Cliente</th>
                 <th className="px-6 py-4 text-[0.6875rem] uppercase tracking-widest font-bold text-slate-400">Operadora / Produto</th>
+                <th className="px-6 py-4 text-[0.6875rem] uppercase tracking-widest font-bold text-slate-400 text-center">Vidas</th>
                 <th className="px-6 py-3 text-left text-[0.6875rem] font-bold text-slate-500 uppercase tracking-widest">Vigência</th>
                 <th className="px-6 py-3 text-left text-[0.6875rem] font-bold text-slate-500 uppercase tracking-widest">Próx. Reajuste (12m)</th>
                 <th className="px-6 py-3 text-left text-[0.6875rem] font-bold text-slate-500 uppercase tracking-widest">Comissão (Líq.)</th>
@@ -216,6 +217,14 @@ export default function Contracts() {
                         <span className="text-sm font-bold text-slate-700">{contract.carrier}</span>
                       </div>
                       <span className="text-[10px] text-slate-400 ml-8">{contract.product || 'Plano de Saúde'}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <div className="flex flex-col items-center">
+                      <span className="text-sm font-black text-blue-600 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center border border-blue-100">
+                        {contract.lives || 0}
+                      </span>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase mt-1">Vidas</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
