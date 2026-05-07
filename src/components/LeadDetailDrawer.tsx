@@ -150,7 +150,7 @@ const SectionHeader = ({ icon: Icon, title, colorClass }: { icon: any, title: st
   </div>
 );
 
-const DetailField = ({ label, value, onChange, placeholder, type = "text", mask, selectOptions, lead, setLead, interactionStatuses }: any) => {
+const DetailField = ({ label, value, onChange, placeholder, type = "text", selectOptions, mask, className, isLoading }: any) => {
   if (type === "date") {
     return (
       <div className="space-y-1">
@@ -161,20 +161,9 @@ const DetailField = ({ label, value, onChange, placeholder, type = "text", mask,
   }
 
   return (
-    <div className="space-y-1">
+    <div className={cn("space-y-1", className)}>
       <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">{label}</label>
-      {label === "Status de Interação" ? (
-        <select 
-          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700 transition-all hover:bg-slate-100/50" 
-          value={lead.interaction_status} 
-          onChange={e => setLead({...lead, interaction_status: e.target.value})}
-        >
-          <option value="">Selecione o Status</option>
-          {interactionStatuses?.filter((s: any) => s.active).map((status: any) => (
-            <option key={status.id} value={status.name}>{status.name}</option>
-          ))}
-        </select>
-      ) : selectOptions ? (
+      {selectOptions ? (
         <select 
           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" 
           value={value || ""} 
@@ -184,13 +173,20 @@ const DetailField = ({ label, value, onChange, placeholder, type = "text", mask,
           {selectOptions.map((opt:any) => <option key={opt.id || opt} value={opt.value !== undefined ? opt.value : (opt.name || opt)}>{opt.label || opt.name || opt}</option>)}
         </select>
       ) : (
-        <input 
-          type={type}
-          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:bg-white focus:ring-4 focus:ring-blue-100/10 focus:border-blue-500 transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
-          placeholder={placeholder}
-          value={mask ? mask(value) : (value || '')}
-          onChange={e => onChange(e.target.value)}
-        />
+        <div className="relative">
+          <input 
+            type={type}
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-900 placeholder:text-slate-300 pr-10"
+            placeholder={placeholder}
+            value={mask ? mask(value) : (value || '')}
+            onChange={e => onChange(e.target.value)}
+          />
+          {isLoading && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-600">
+              <Icons.Loader2 className="w-4 h-4 animate-spin" />
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
@@ -247,34 +243,36 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
     const cleanCNPJ = formatted.replace(/\D/g, "");
     setLead((prev: any) => ({ ...prev, cnpj: formatted }));
     
-    if (cleanCNPJ.length === 14) {
+    if (cleanCNPJ.length === 14 && !isSearchingCNPJ) {
       setIsSearchingCNPJ(true);
       try {
-        const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCNPJ}`);
-        const data = await response.json();
-        if (response.ok && !data.error) {
+        let response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCNPJ}`);
+        let data = await response.json();
+        
+        if (!response.ok || data.error) {
+          console.log("BrasilAPI falhou, tentando fallback...");
+          response = await fetch(`https://minhareceita.org/${cleanCNPJ}`);
+          data = await response.json();
+        }
+
+        if (response.ok && !data.error && !data.message) {
           setLead((prev: any) => ({
             ...prev,
-            company_name: data.razao_social || prev.company_name,
+            company_name: data.razao_social || data.nome_empresarial || prev.company_name,
             nickname: data.nome_fantasia || prev.nickname,
-            company_zip: data.cep ? formatCEP(data.cep) : prev.company_zip,
-            company_street: data.logradouro || prev.company_street,
-            company_neighborhood: data.bairro || prev.company_neighborhood,
-            company_city: data.municipio || prev.company_city,
+            address_zip: data.cep ? formatCEP(data.cep) : prev.address_zip,
+            address_street: data.logradouro || prev.address_street,
+            address_neighborhood: data.bairro || prev.address_neighborhood,
+            address_city: data.municipio || data.municipio_descricao || prev.address_city,
+            company_city: data.municipio || data.municipio_descricao || prev.company_city,
+            address_state: data.uf || prev.address_state,
             company_state: data.uf || prev.company_state,
-            company_number: data.numero || prev.company_number,
-            cnae: data.cnae_fiscal ? data.cnae_fiscal.toString() : prev.cnae,
-            cnae_text: data.cnae_fiscal_descricao || prev.cnae_text,
-            cnae_secondary: data.cnaes_secundarios ? data.cnaes_secundarios.map((c: any) => `${c.codigo} - ${c.descricao}`).join('; ') : prev.cnae_secondary,
+            address_number: data.numero || prev.address_number,
+            cnae: data.cnae_fiscal_descricao || data.cnae_fiscal || prev.cnae,
             opening_date: formatDateToISO(data.data_abertura || data.abertura || data.data_inicio_atividade) || prev.opening_date,
-            resp_emp_email: data.email || prev.resp_emp_email,
-            resp_emp_phone: data.ddd_telefone_1 ? `${data.ddd_telefone_1}${data.telefone_1 || ''}` : prev.resp_emp_phone,
+            email: data.email || prev.email,
+            phone: data.ddd_telefone_1 ? formatPhone(data.ddd_telefone_1) : (data.telefone || prev.phone),
             share_capital: data.capital_social || prev.share_capital,
-            company_size: data.porte || prev.company_size,
-            legal_nature: data.natureza_juridica || prev.legal_nature,
-            registration_status: data.descricao_situacao_cadastral || prev.registration_status,
-            registration_status_date: data.data_situacao_cadastral || prev.registration_status_date,
-            tax_regime: data.opcao_pelo_simples ? 'Simples Nacional' : (data.opcao_pelo_mei ? 'MEI' : 'Lucro Presumido/Real'),
             simples_entry_date: data.data_opcao_pelo_simples || null,
             simples_exit_date: data.data_exclusao_do_simples || null,
             mei_entry_date: data.data_opcao_pelo_mei || null,
@@ -696,6 +694,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                       label="CNPJ" 
                       value={lead.cnpj} 
                       mask={formatCNPJ}
+                      isLoading={isSearchingCNPJ}
                       onChange={(v:any) => handleCNPJChange(v)} 
                     />
                   </div>
@@ -795,9 +794,8 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                 <DetailField 
                   label="Status de Interação" 
                   value={lead.interaction_status} 
-                  lead={lead} 
-                  setLead={setLead} 
-                  interactionStatuses={interactionStatuses} 
+                  selectOptions={interactionStatuses?.filter((s: any) => s.active).map((status: any) => ({ value: status.name, label: status.name }))}
+                  onChange={(v:any) => setLead({...lead, interaction_status: v})} 
                 />
                 <DetailField 
                   label="Tipo de Contato" 

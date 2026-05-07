@@ -23,17 +23,24 @@ const SectionHeader = ({ icon: Icon, title, colorClass }: { icon: any, title: st
   </div>
 );
 
-const InputField = ({ label, value, onChange, placeholder, type = "text", required = false, mask }: any) => (
+const InputField = ({ label, value, onChange, placeholder, type = "text", required = false, mask, isLoading }: any) => (
   <div className="space-y-1">
     <label className="block text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">{label}</label>
-    <input 
-      type={type}
-      required={required}
-      className="w-full bg-slate-50 border border-slate-200 rounded-xl md:rounded-2xl px-4 py-3 md:px-6 md:py-4 outline-none focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
-      placeholder={placeholder}
-      value={mask ? mask(value) : value}
-      onChange={e => onChange(e.target.value)}
-    />
+    <div className="relative">
+      <input 
+        type={type}
+        required={required}
+        className="w-full bg-slate-50 border border-slate-200 rounded-xl md:rounded-2xl px-4 py-3 md:px-6 md:py-4 outline-none focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300 pr-10 md:pr-14"
+        placeholder={placeholder}
+        value={mask ? mask(value) : value}
+        onChange={e => onChange(e.target.value)}
+      />
+      {isLoading && (
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-blue-600">
+          <Icons.Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
+        </div>
+      )}
+    </div>
   </div>
 );
 
@@ -137,31 +144,41 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
     const cleanCNPJ = formatted.replace(/\D/g, "");
     setNewLead(prev => ({ ...prev, cnpj: formatted }));
     
-    if (cleanCNPJ.length === 14) {
+    if (cleanCNPJ.length === 14 && !isSearchingCNPJ) {
       setIsSearchingCNPJ(true);
       try {
-        const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCNPJ}`);
-        const data = await response.json();
-        if (response.ok && !data.error) {
+        let response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCNPJ}`);
+        let data = await response.json();
+        
+        if (!response.ok || data.error) {
+          console.log("BrasilAPI falhou, tentando fallback...");
+          response = await fetch(`https://minhareceita.org/${cleanCNPJ}`);
+          data = await response.json();
+        }
+
+        if (response.ok && !data.error && !data.message) {
           setNewLead(prev => ({
             ...prev,
-            company_name: data.razao_social || prev.company_name,
+            company_name: data.razao_social || data.nome_empresarial || prev.company_name,
             nickname: data.nome_fantasia || prev.nickname,
             address_zip: data.cep ? formatCEP(data.cep) : prev.address_zip,
             address_street: data.logradouro || prev.address_street,
             address_neighborhood: data.bairro || prev.address_neighborhood,
-            address_city: data.municipio || prev.address_city,
+            address_city: data.municipio || data.municipio_descricao || prev.address_city,
             address_state: data.uf || prev.address_state,
             address_number: data.numero || prev.address_number,
-            cnae: data.cnae_fiscal ? `${data.cnae_fiscal}${data.cnae_fiscal_descricao ? ' - ' + data.cnae_fiscal_descricao : ''}` : (data.cnae_fiscal_descricao || prev.cnae),
+            cnae: data.cnae_fiscal_descricao || data.cnae_fiscal || prev.cnae,
             opening_date: formatDateToISO(data.data_abertura || data.abertura || data.data_inicio_atividade) || prev.opening_date,
             email: data.email || prev.email,
-            phone: data.ddd_telefone_1 ? formatPhone(data.ddd_telefone_1) : prev.phone
+            phone: data.ddd_telefone_1 ? formatPhone(data.ddd_telefone_1) : (data.telefone || prev.phone)
           }));
           showToast("Dados do CNPJ carregados com sucesso!", "success");
+        } else {
+          showToast("Não foi possível localizar os dados desta empresa.", "error");
         }
       } catch (e) {
         console.error("Erro ao buscar CNPJ:", e);
+        showToast("Erro ao consultar o serviço de CNPJ.", "error");
       } finally {
         setIsSearchingCNPJ(false);
       }
@@ -435,7 +452,7 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
                      <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
                        <SectionHeader icon={Icons.Building2} title="Dados da Empresa" colorClass="bg-blue-50 text-blue-600" />
                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                         <InputField label="CNPJ" value={newLead.cnpj} mask={formatCNPJ} onChange={(v:any) => handleCNPJChange(v)} placeholder="00.000.000/0000-00" required />
+                         <InputField label="CNPJ" value={newLead.cnpj} mask={formatCNPJ} isLoading={isSearchingCNPJ} onChange={(v:any) => handleCNPJChange(v)} placeholder="00.000.000/0000-00" required />
                          <div className="md:col-span-2">
                            <InputField label="Razão Social" value={newLead.company_name} onChange={(v:any) => setNewLead({...newLead, company_name: v})} required />
                          </div>

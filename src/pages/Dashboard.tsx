@@ -28,6 +28,24 @@ export default function Dashboard() {
   const [birthdaysMonth, setBirthdaysMonth] = useState(0);
   const [birthdaysWeek, setBirthdaysWeek] = useState(0);
   const [birthdaysDay, setBirthdaysDay] = useState(0);
+  const [selectedPeriod, setSelectedPeriod] = useState<'mês' | 'trimestre' | 'semestre' | 'ano'>('mês');
+
+  const getStartDate = (period: string) => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    if (period === 'mês') {
+      d.setDate(1);
+    } else if (period === 'trimestre') {
+      const quarter = Math.floor(d.getMonth() / 3);
+      d.setMonth(quarter * 3, 1);
+    } else if (period === 'semestre') {
+      const semester = Math.floor(d.getMonth() / 6);
+      d.setMonth(semester * 6, 1);
+    } else if (period === 'ano') {
+      d.setMonth(0, 1);
+    }
+    return d;
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -45,6 +63,7 @@ export default function Dashboard() {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
+    const periodStartDate = getStartDate(selectedPeriod);
     
     // Mês Anterior para definir a Pedra
     const lastMonthDate = new Date(currentYear, currentMonth - 1, 1);
@@ -65,20 +84,18 @@ export default function Dashboard() {
       })
       .reduce((acc, c) => acc + (Number(c.monthly_fee) || 0), 0);
 
-    const stoneStatus = getTier(lastMonthVgv);
-    const nextTier = TIERS[TIERS.indexOf(TIERS.find(t => t.name === stoneStatus.name)!) + 1] || null;
-    const progressToNext = nextTier ? Math.min((currentMonthVgv / nextTier.minVgv) * 100, 100) : 100;
-
-    // Cálculo de Comissões Líquidas (baseado na Pedra do mês passado)
-    const comissaoLiquidaTotal = contracts
+    
+    // Status Invictos (Baseado em VGV PAGO do mês atual - Regra Financeiro)
+    const totalVgvPaid = contracts
       .filter(c => {
-        const d = new Date(c.start_date);
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        const d = new Date(c.sale_date || c.start_date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear && c.is_paid;
       })
-      .reduce((acc, c) => {
-        const calculation = calculateNetCommission(c.carrier || '', Number(c.monthly_fee) || 0, stoneStatus.name);
-        return acc + calculation.net;
-      }, 0);
+      .reduce((acc, c) => acc + (Number(c.monthly_fee) || 0), 0);
+
+    const stoneStatus = getTier(totalVgvPaid);
+    const nextTier = TIERS[TIERS.indexOf(TIERS.find(t => t.name === stoneStatus.name)!) + 1] || null;
+    const progressToNext = nextTier ? Math.min((totalVgvPaid / nextTier.minVgv) * 100, 100) : 100;
     
     // Novas estatísticas baseadas nos leads e negócios ativos
     const totalLeads = leads.length;
@@ -101,19 +118,35 @@ export default function Dashboard() {
       .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
 
     const propostasEnviadas = leads
-      .filter(l => l.status === 'Cotação Enviada')
+      .filter(l => {
+        if (l.status !== 'Cotação Enviada') return false;
+        const d = new Date(l.updated_at || l.created_at);
+        return d >= periodStartDate;
+      })
       .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
 
     const propostasNaOperadora = leads
-      .filter(l => l.status === 'Proposta Operadora')
+      .filter(l => {
+        if (l.status !== 'Proposta Operadora') return false;
+        const d = new Date(l.updated_at || l.created_at);
+        return d >= periodStartDate;
+      })
       .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
 
     const contratoLiberado = leads
-      .filter(l => l.status === 'Contrato')
+      .filter(l => {
+        if (l.status !== 'Contrato') return false;
+        const d = new Date(l.updated_at || l.created_at);
+        return d >= periodStartDate;
+      })
       .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
 
     const implantaçãoAtiva = leads
-      .filter(l => l.status === 'Plano Ativo')
+      .filter(l => {
+        if (l.status !== 'Plano Ativo') return false;
+        const d = new Date(l.updated_at || l.created_at);
+        return d >= periodStartDate;
+      })
       .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
 
     // Meta Mensal (R$ 15.000) baseada em Contratos/Vidas convertidas este mês
@@ -122,7 +155,7 @@ export default function Dashboard() {
       .filter(l => {
         if (!['Contrato', 'Plano Ativo'].includes(l.status || '')) return false;
         const d = new Date(l.updated_at || l.created_at);
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        return d >= periodStartDate;
       })
       .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
     
@@ -130,8 +163,8 @@ export default function Dashboard() {
 
     setStats({ 
       totalLeads: leads.length, 
-      totalActiveContracts: contracts.filter(c => c.status?.toLowerCase() === 'ativo').length,
-      vidasAtivas: contracts.filter(c => c.status?.toLowerCase() === 'ativo').reduce((acc, c) => acc + (Number(c.lives) || 0), 0),
+      totalActiveContracts: activeContracts.length,
+      vidasAtivas,
       negociaçõesTotais,
       propostasEnviadas,
       propostasNaOperadora,
@@ -140,7 +173,7 @@ export default function Dashboard() {
       atingidoMeta,
       metaMensal,
       progressMeta,
-      comissaoLiquidaTotal: comissaoLiquidaTotal,
+      comissaoLiquidaTotal: totalVgvPaid, // Usando VGV Pago como referência de "Comissão" rápida no dashboard
       stoneStatus,
       nextTier,
       progressToNext
@@ -250,7 +283,7 @@ export default function Dashboard() {
     if (leads.length > 0 && stages.length > 0) {
       fetchDashboardData();
     }
-  }, [leads, stages]);
+  }, [leads, stages, selectedPeriod]);
 
   const MetricCard = ({ label, value, color, icon: Icon, delay }: any) => (
     <motion.div 
@@ -269,9 +302,9 @@ export default function Dashboard() {
           )}>
             <Icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
           </div>
-          <span className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">{label}</span>
+          <span className="text-[7px] md:text-[8px] font-black text-slate-400 uppercase tracking-widest truncate">{label}</span>
         </div>
-        <h3 className="text-sm md:text-lg font-black text-slate-900 truncate">{formatCurrency(value)}</h3>
+        <h3 className="text-xs md:text-base font-black text-slate-900 truncate">{formatCurrency(value)}</h3>
       </div>
       <div className={cn("absolute -right-4 -bottom-4 w-12 h-12 rounded-full blur-xl opacity-20",
         color === 'blue' ? "bg-blue-400" :
@@ -291,6 +324,36 @@ export default function Dashboard() {
 
   return (
     <div className="h-full overflow-y-auto overflow-x-hidden custom-scrollbar p-4 md:p-6 space-y-6 md:space-y-8">
+      {/* Period Selector */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/50 p-3 rounded-2xl border border-slate-100/50 backdrop-blur-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200">
+            <Icons.Calendar className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-sm font-black text-slate-900 uppercase tracking-tight">Período do Relatório</h2>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Selecione o intervalo</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 bg-slate-100/50 p-1 rounded-xl border border-slate-200/50">
+          {(['mês', 'trimestre', 'semestre', 'ano'] as const).map((p) => (
+            <button
+              key={p}
+              onClick={() => setSelectedPeriod(p)}
+              className={cn(
+                "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all duration-200",
+                selectedPeriod === p 
+                  ? "bg-white text-blue-600 shadow-sm border border-slate-200" 
+                  : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
+              )}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Summary Metrics - Fixed One Row Layout */}
       {/* Summary Metrics - Fixed One Row Layout */}
       <section className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3 xl:gap-4">
@@ -302,15 +365,15 @@ export default function Dashboard() {
         >
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Meta de Vendas</span>
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Meta de Vendas</span>
               <Icons.Target className="w-4 h-4 text-emerald-500" />
             </div>
             <div className="flex items-baseline gap-2">
-              <h3 className="text-2xl font-black text-slate-900">{formatCurrency(stats.atingidoMeta)}</h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase">/ {formatCurrency(stats.metaMensal)}</p>
+              <h3 className="text-xl font-black text-slate-900">{formatCurrency(stats.atingidoMeta)}</h3>
+              <p className="text-[9px] font-black text-slate-400 uppercase">/ {formatCurrency(stats.metaMensal)}</p>
             </div>
             <div className="mt-4">
-              <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase mb-1.5 tracking-tighter">
+              <div className="flex justify-between text-[8px] font-black text-slate-400 uppercase mb-1.5 tracking-tighter">
                 <span>Progresso Mensal</span>
                 <span className={cn(stats.progressMeta >= 100 ? "text-emerald-500" : "text-blue-600")}>
                   {Math.round(stats.progressMeta)}%
@@ -448,6 +511,34 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
         {/* Left Column: Funnel and Events */}
         <div className="lg:col-span-2 space-y-6 md:space-y-10">
+          {/* NEW: Today's Birthdays Highlight */}
+          {upcomingEvents.filter(e => (e.type === "Aniversário" || e.type === "Aniv. Dependente") && e.diff === 0).length > 0 && (
+            <motion.section 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-pink-600 p-4 md:p-6 rounded-2xl text-white shadow-xl shadow-pink-100 flex items-center justify-between"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl">
+                  🎂
+                </div>
+                <div>
+                  <h3 className="text-lg font-black uppercase tracking-tight">Aniversariantes de Hoje!</h3>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {upcomingEvents
+                      .filter(e => (e.type === "Aniversário" || e.type === "Aniv. Dependente") && e.diff === 0)
+                      .map((e, idx) => (
+                        <span key={idx} className="bg-white/10 px-2 py-0.5 rounded text-xs font-bold border border-white/20">
+                          {e.name}
+                        </span>
+                      ))}
+                  </div>
+                </div>
+              </div>
+              <Icons.Plus className="w-6 h-6 rotate-45 opacity-50" />
+            </motion.section>
+          )}
+
           {/* Sales Funnel Chart */}
           <section className="bg-white p-4 md:p-8 rounded-2xl border border-slate-100 shadow-sm">
             <div className="flex items-center justify-between mb-10">
@@ -459,6 +550,13 @@ export default function Dashboard() {
                   <h3 className="text-lg font-black text-slate-900">Funil de Vendas</h3>
                   <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Controle de Pipeline</p>
                 </div>
+              </div>
+              
+              <div className="bg-blue-50 px-4 py-1.5 rounded-xl border border-blue-100 flex flex-col items-end">
+                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Total em Andamento</span>
+                <span className="text-lg font-black text-blue-900 leading-tight">
+                  {funnelData.reduce((acc, item) => acc + item.value, 0)}
+                </span>
               </div>
             </div>
             
