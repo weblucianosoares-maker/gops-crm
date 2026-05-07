@@ -265,6 +265,8 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
       resp_con_email: newLead.resp_con_email,
       temperature: newLead.temperature,
       interaction_status: newLead.interaction_status || 'Sem Status',
+      modality: newLead.modality || 'PME',
+      administrator: newLead.administrator,
       status_updated_at: new Date().toISOString()
     }]).select();
       
@@ -667,6 +669,20 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
                            </select>
                         </div>
                         
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Modalidade</label>
+                          <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" value={newLead.modality} onChange={e => setNewLead({...newLead, modality: e.target.value, administrator: e.target.value === 'Adesão' ? newLead.administrator : ""})}>
+                            <option value="Individual">Individual</option>
+                            <option value="Adesão">Adesão</option>
+                            <option value="PME">PME</option>
+                            <option value="Empresarial">Empresarial</option>
+                          </select>
+                        </div>
+                        
+                        {newLead.modality === 'Adesão' && (
+                          <InputField label="Administradora" value={newLead.administrator} onChange={(v:any) => setNewLead({...newLead, administrator: v})} placeholder="Ex: Qualicorp, Elo..." />
+                        )}
+
                         <div>
                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Operadora Proposta</label>
                           <select 

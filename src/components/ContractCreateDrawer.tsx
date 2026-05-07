@@ -70,7 +70,9 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
     readjustment_percentage: 0,
     readjustment_new_value: 0,
     previous_plan_name: "",
-    previous_plan_value: 0
+    previous_plan_value: 0,
+    modality: "PME",
+    administrator: ""
   });
 
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([
@@ -99,7 +101,9 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         readjustment_percentage: editContract.readjustment_percentage || 0,
         readjustment_new_value: editContract.readjustment_new_value || 0,
         previous_plan_name: editContract.previous_plan_name || "",
-        previous_plan_value: editContract.previous_plan_value || 0
+        previous_plan_value: editContract.previous_plan_value || 0,
+        modality: editContract.modality || "PME",
+        administrator: editContract.administrator || ""
       });
       setIsNewLead(!!editContract.client_name && !editContract.lead_id);
       fetchBeneficiaries(editContract.id);
@@ -120,7 +124,9 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         grace_periods: "",
         end_date: "",
         previous_plan_name: "",
-        previous_plan_value: 0
+        previous_plan_value: 0,
+        modality: "PME",
+        administrator: ""
       });
       setBeneficiaries([{ name: "", type: "Titular", birth_date: "", cpf: "" }]);
     }
@@ -228,7 +234,9 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         readjustment_percentage: contract.readjustment_percentage,
         readjustment_new_value: contract.readjustment_new_value,
         previous_plan_name: contract.previous_plan_name,
-        previous_plan_value: contract.previous_plan_value
+        previous_plan_value: contract.previous_plan_value,
+        modality: contract.modality,
+        administrator: contract.administrator
       };
 
       let currentContractId = editContract?.id;
@@ -386,6 +394,18 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
           <section>
             <SectionHeader icon={Icons.Target} title="Plano & Vigência" colorClass="bg-amber-100 text-amber-700" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+               <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Modalidade</label>
+                  <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700" value={contract.modality} onChange={e => setContract({...contract, modality: e.target.value, administrator: e.target.value === 'Adesão' ? contract.administrator : ""})}>
+                    <option value="Individual">Individual</option>
+                    <option value="Adesão">Adesão</option>
+                    <option value="PME">PME</option>
+                    <option value="Empresarial">Empresarial</option>
+                  </select>
+               </div>
+               {contract.modality === 'Adesão' && (
+                 <InputField label="Administradora" value={contract.administrator} onChange={(v:any) => setContract({...contract, administrator: v})} placeholder="Ex: Qualicorp, Elo..." />
+               )}
                <div>
                   <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Operadora</label>
                   <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700" value={contract.carrier} onChange={e => setContract({...contract, carrier: e.target.value, product: ''})}>

@@ -573,7 +573,9 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       opening_date: lead.opening_date || null,
       first_contact_date: lead.first_contact_date || null,
       do_not_contact: lead.do_not_contact || false,
-      profile_picture_url: lead.profile_picture_url
+      profile_picture_url: lead.profile_picture_url,
+      modality: lead.modality || "PME",
+      administrator: lead.administrator
     };
     
     console.log("Salvando lead:", updates);
@@ -889,6 +891,15 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                <SectionHeader icon={Icons.FileText} title="Proposta / Planejamento" colorClass="bg-emerald-50 text-emerald-600" />
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                   <DetailField label="Tipo de Plano" value={lead.plan_type} selectOptions={['Saúde', 'Odonto', 'Saúde + Odonto']} onChange={(v:any) => setLead({...lead, plan_type: v})} />
+                  <DetailField 
+                    label="Modalidade" 
+                    value={lead.modality || "PME"} 
+                    selectOptions={['Individual', 'Adesão', 'PME', 'Empresarial']}
+                    onChange={(v:any) => setLead({...lead, modality: v, administrator: v === 'Adesão' ? lead.administrator : ""})} 
+                  />
+                  {lead.modality === 'Adesão' && (
+                    <DetailField label="Administradora" value={lead.administrator} onChange={(v:any) => setLead({...lead, administrator: v})} />
+                  )}
                   <DetailField 
                     label="Operadora Proposta" 
                     value={lead.carrier} 

@@ -216,7 +216,23 @@ export default function Contracts() {
                         </div>
                         <span className="text-sm font-bold text-slate-700">{contract.carrier}</span>
                       </div>
-                      <span className="text-[10px] text-slate-400 ml-8">{contract.product || 'Plano de Saúde'}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-slate-400 ml-8">{contract.product || 'Plano de Saúde'}</span>
+                        <span className={cn(
+                          "text-[8px] font-black uppercase px-1.5 py-0.5 rounded",
+                          contract.modality === 'Adesão' ? "bg-amber-100 text-amber-700" : 
+                          contract.modality === 'PME' ? "bg-blue-100 text-blue-700" :
+                          contract.modality === 'Empresarial' ? "bg-purple-100 text-purple-700" :
+                          "bg-slate-100 text-slate-600"
+                        )}>
+                          {contract.modality || 'PME'}
+                        </span>
+                        {contract.modality === 'Adesão' && contract.administrator && (
+                          <span className="text-[8px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 italic">
+                            via {contract.administrator}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-center">

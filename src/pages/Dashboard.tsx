@@ -31,6 +31,7 @@ export default function Dashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState<'mês' | 'trimestre' | 'semestre' | 'ano' | 'custom'>('mês');
   const [customStartDate, setCustomStartDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
   const [customEndDate, setCustomEndDate] = useState(new Date().toISOString().split('T')[0]);
+  const [drilldown, setDrilldown] = useState<{ title: string; leads: any[] } | null>(null);
 
   const getStartDate = (period: string) => {
     const d = new Date();
@@ -178,10 +179,17 @@ export default function Dashboard() {
       atingidoMeta,
       metaMensal,
       progressMeta,
-      comissaoLiquidaTotal: totalVgvPaid, // Usando VGV Pago como referência de "Comissão" rápida no dashboard
+      comissaoLiquidaTotal: totalVgvPaid,
       stoneStatus,
       nextTier,
-      progressToNext
+      progressToNext,
+      // raw lead sets for drilldown
+      _leads_negociacao: leads.filter(l => !['Ganhos', 'Perdidos', 'Arquivado'].includes(l.status || '')),
+      _leads_cotacoes: leads.filter(l => { const d = new Date(l.updated_at || l.created_at); return l.status === 'Cotação Enviada' && d >= periodStartDate && d <= periodEndDate; }),
+      _leads_operadora: leads.filter(l => { const d = new Date(l.updated_at || l.created_at); return l.status === 'Proposta Operadora' && d >= periodStartDate && d <= periodEndDate; }),
+      _leads_contrato: leads.filter(l => { const d = new Date(l.updated_at || l.created_at); return l.status === 'Contrato' && d >= periodStartDate && d <= periodEndDate; }),
+      _leads_implantacao: leads.filter(l => { const d = new Date(l.updated_at || l.created_at); return l.status === 'Plano Ativo' && d >= periodStartDate && d <= periodEndDate; }),
+      _leads_meta: leads.filter(l => { const d = new Date(l.updated_at || l.created_at); return ['Contrato', 'Plano Ativo'].includes(l.status || '') && d >= periodStartDate && d <= periodEndDate; }),
     });
 
     // Funnel Dinâmico
@@ -290,12 +298,13 @@ export default function Dashboard() {
     }
   }, [leads, stages, selectedPeriod, customStartDate, customEndDate]);
 
-  const MetricCard = ({ label, value, color, icon: Icon, delay }: any) => (
+  const MetricCard = ({ label, value, color, icon: Icon, delay, onClick }: any) => (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
-      className="bg-white p-3 md:p-4 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden group"
+      onClick={onClick}
+      className={cn("bg-white p-3 md:p-4 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden group", onClick && "cursor-pointer hover:shadow-md hover:border-blue-200 transition-all")}
     >
       <div className="relative z-10">
         <div className="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2">
@@ -308,6 +317,7 @@ export default function Dashboard() {
             <Icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
           </div>
           <span className="text-[7px] md:text-[8px] font-black text-slate-400 uppercase tracking-widest truncate">{label}</span>
+          {onClick && <Icons.ExternalLink className="w-3 h-3 text-slate-300 group-hover:text-blue-400 ml-auto transition-colors" />}
         </div>
         <h3 className="text-xs md:text-base font-black text-slate-900 truncate">{formatCurrency(value)}</h3>
       </div>
@@ -320,6 +330,96 @@ export default function Dashboard() {
     </motion.div>
   );
 
+  // ---- Drilldown Modal ----
+  const DrilldownModal = () => {
+    if (!drilldown) return null;
+    const fmt = (d: string) => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
+    return (
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={() => setDrilldown(null)}>
+        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          className="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden"
+          onClick={e => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100">
+            <div>
+              <h2 className="text-xl font-black text-slate-900">{drilldown.title}</h2>
+              <p className="text-xs text-slate-400 font-bold mt-0.5">{drilldown.leads.length} registro{drilldown.leads.length !== 1 ? 's' : ''}</p>
+            </div>
+            <button onClick={() => setDrilldown(null)} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all">
+              <Icons.X className="w-5 h-5" />
+            </button>
+          </div>
+          {/* Table */}
+          <div className="overflow-y-auto custom-scrollbar flex-1">
+            {drilldown.leads.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+                <Icons.Inbox className="w-10 h-10 mb-3 opacity-30" />
+                <p className="font-bold text-sm">Nenhum lead encontrado neste período</p>
+              </div>
+            ) : (
+              <table className="w-full">
+                <thead className="bg-slate-50 sticky top-0">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Nome</th>
+                    <th className="px-4 py-3 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Status no Funil</th>
+                    <th className="px-4 py-3 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">Valor</th>
+                    <th className="px-4 py-3 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest">Últ. Contato</th>
+                    <th className="px-4 py-3 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest">Cadastro</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {drilldown.leads.map((lead: any) => (
+                    <tr key={lead.id} className="hover:bg-blue-50/30 transition-colors">
+                      <td className="px-6 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-black shrink-0">
+                            {(lead.name || 'NN').substring(0,2).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-slate-800">{lead.name || '—'}</p>
+                            <p className="text-[10px] text-slate-400">{lead.carrier || lead.contact_type || '—'}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="inline-block text-[9px] font-black uppercase px-2 py-1 rounded-full bg-blue-50 text-blue-700">
+                          {lead.status || '—'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <span className="text-sm font-black text-slate-900">{formatCurrency(Number(lead.deal_value) || 0)}</span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="text-xs font-bold text-slate-500">{fmt(lead.updated_at)}</span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="text-xs font-bold text-slate-400">{fmt(lead.created_at)}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+          {/* Footer total */}
+          {drilldown.leads.length > 0 && (
+            <div className="px-8 py-4 border-t border-slate-100 bg-slate-50/80 flex items-center justify-between">
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Total</span>
+              <span className="text-lg font-black text-blue-600">
+                {formatCurrency(drilldown.leads.reduce((acc: number, l: any) => acc + (Number(l.deal_value) || 0), 0))}
+              </span>
+            </div>
+          )}
+        </motion.div>
+      </div>
+    );
+  };
+
   if (!stats) return <div className="p-8 flex items-center justify-center min-h-[400px]">
     <div className="flex flex-col items-center gap-4">
       <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
@@ -328,7 +428,9 @@ export default function Dashboard() {
   </div>;
 
   return (
-    <div className="h-full overflow-y-auto overflow-x-hidden custom-scrollbar p-4 md:p-6 space-y-6 md:space-y-8">
+    <>
+      {drilldown && <DrilldownModal />}
+      <div className="h-full overflow-y-auto overflow-x-hidden custom-scrollbar p-4 md:p-6 space-y-6 md:space-y-8">
       {/* Period Selector */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/50 p-3 rounded-2xl border border-slate-100/50 backdrop-blur-sm">
         <div className="flex items-center gap-3">
@@ -429,6 +531,7 @@ export default function Dashboard() {
           color="blue" 
           icon={Icons.Funnel} 
           delay={0.1}
+          onClick={() => setDrilldown({ title: 'Em Negociação', leads: stats._leads_negociacao })}
         />
         
         <MetricCard 
@@ -437,6 +540,7 @@ export default function Dashboard() {
           color="sky" 
           icon={Icons.MessageSquare} 
           delay={0.2}
+          onClick={() => setDrilldown({ title: 'Cotações Enviadas', leads: stats._leads_cotacoes })}
         />
 
         <MetricCard 
@@ -445,6 +549,7 @@ export default function Dashboard() {
           color="amber" 
           icon={Icons.History} 
           delay={0.3}
+          onClick={() => setDrilldown({ title: 'Na Operadora', leads: stats._leads_operadora })}
         />
 
         <MetricCard 
@@ -453,6 +558,7 @@ export default function Dashboard() {
           color="emerald" 
           icon={Icons.CheckCircle} 
           delay={0.4}
+          onClick={() => setDrilldown({ title: 'Contrato Liberado', leads: stats._leads_contrato })}
         />
 
         <MetricCard 
@@ -461,6 +567,7 @@ export default function Dashboard() {
           color="indigo" 
           icon={Icons.Rocket} 
           delay={0.5}
+          onClick={() => setDrilldown({ title: 'Implantação Ativa', leads: stats._leads_implantacao })}
         />
       </section>
 
@@ -751,5 +858,6 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
+    </>
   );
 }
