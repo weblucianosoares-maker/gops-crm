@@ -366,30 +366,32 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
   };
 
   const loadMessages = async () => {
-    if (!lead?.phone) return;
+    if (!lead?.id) return;
     setLoadingChat(true);
     try {
-      const apiRes = await evolutionService.getMessages(lead.phone);
-      const { data: localData } = await supabase.from('whatsapp_messages').select('*').eq('lead_id', lead.id).order('created_at', { ascending: true });
-      let rawApi = Array.isArray(apiRes) ? apiRes : (apiRes && (apiRes as any).messages) || [];
-      const normalizedApi = rawApi.map((m: any) => {
-        const msg = m.message || {};
-        let text = msg.conversation || msg.extendedTextMessage?.text || "";
-        let mediaType, mimetype, fileName;
-        if (msg.imageMessage) { mediaType = 'image'; mimetype = msg.imageMessage.mimetype; text = msg.imageMessage.caption || ""; }
-        else if (msg.audioMessage) { mediaType = 'audio'; mimetype = msg.audioMessage.mimetype; }
-        else if (msg.videoMessage) { mediaType = 'video'; mimetype = msg.videoMessage.mimetype; text = msg.videoMessage.caption || ""; }
-        else if (msg.documentMessage) { mediaType = 'document'; mimetype = msg.documentMessage.mimetype; fileName = msg.documentMessage.fileName; text = msg.documentMessage.caption || ""; }
-        return { id: m.key?.id || `api-${Math.random()}`, fromMe: !!m.key?.fromMe, text, timestamp: m.messageTimestamp * 1000, media_type: mediaType, mimetype, file_name: fileName };
-      });
+      const { data: localData, error } = await supabase
+        .from('whatsapp_messages')
+        .select('*')
+        .eq('lead_id', lead.id)
+        .order('created_at', { ascending: true });
+        
+      if (error) {
+        console.error("Erro ao buscar mensagens do Supabase:", error);
+        return;
+      }
+
       const normalizedLocal = (localData || []).map((m: any) => ({
-        id: m.message_id, fromMe: m.is_from_me, text: m.message_body, timestamp: new Date(m.created_at).getTime(), media_type: m.media_type, mimetype: m.mimetype, file_name: m.file_name, is_read: m.is_read ?? true
+        id: m.message_id, 
+        fromMe: m.is_from_me, 
+        text: m.message_body, 
+        timestamp: new Date(m.created_at).getTime(), 
+        media_type: m.media_type, 
+        mimetype: m.mimetype, 
+        file_name: m.file_name, 
+        is_read: m.is_read ?? true
       }));
-      const merged = [...normalizedApi, ...normalizedLocal].reduce((acc: any[], curr: any) => {
-        if (!acc.find(m => m.id === curr.id)) acc.push(curr);
-        return acc;
-      }, []);
-      setMessages(merged.sort((a,b) => a.timestamp - b.timestamp));
+      
+      setMessages(normalizedLocal);
     } catch (e) {
       console.error("Erro ao carregar mensagens:", e);
     } finally {
@@ -420,15 +422,16 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
     setMessages(prev => [...prev, { id: tempId, fromMe: true, text: txt, timestamp: Date.now(), status: 'sending' }]);
     try {
       const res = await evolutionService.sendMessage(lead.phone, txt);
-      if (res && res.key?.id) {
-        const now = new Date();
-        const formattedDate = `${now.getDate()} ${now.toLocaleString('pt-BR', { month: 'short' }).replace('.', '')}, ${now.getFullYear()}`;
-        await supabase.from('whatsapp_messages').upsert({ lead_id: lead.id, message_id: res.key.id, sender_number: lead.phone.replace(/\D/g, ''), message_body: txt, is_from_me: true, is_read: true, created_at: now.toISOString() });
-        await supabase.from('leads').update({ last_app_message_at: now.toISOString(), lastcontact: formattedDate }).eq('id', lead.id);
-        setLead(prev => ({ ...prev, last_app_message_at: now.toISOString(), lastcontact: formattedDate }));
-        setMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: res.key.id, status: 'sent' } : m));
-        setTimeout(() => onUpdate(), 100);
-      }
+      const newId = res?.id || res?.message_id || res?.messages?.[0]?.id || `out-${Date.now()}`;
+      
+      const now = new Date();
+      const formattedDate = `${now.getDate()} ${now.toLocaleString('pt-BR', { month: 'short' }).replace('.', '')}, ${now.getFullYear()}`;
+      await supabase.from('whatsapp_messages').upsert({ lead_id: lead.id, message_id: newId, sender_number: lead.phone.replace(/\D/g, ''), message_body: txt, is_from_me: true, is_read: true, created_at: now.toISOString() });
+      await supabase.from('leads').update({ last_app_message_at: now.toISOString(), lastcontact: formattedDate }).eq('id', lead.id);
+      setLead(prev => prev ? ({ ...prev, last_app_message_at: now.toISOString(), lastcontact: formattedDate }) : prev);
+      setMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: newId, status: 'sent' } : m));
+      setTimeout(() => onUpdate(), 100);
+
     } catch (e: any) { 
       showError(e.message || "Erro ao enviar");
       setMessages(prev => prev.filter(m => m.id !== tempId)); 
@@ -445,16 +448,16 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       setMessages(prev => [...prev, { id: tempId, fromMe: true, text: file.name, timestamp: Date.now(), media_type: type, mimetype: file.type, file_name: file.name, status: 'sending', media_preview: b64 }]);
       try {
         const res = await evolutionService.sendMedia(lead.phone, b64, type, file.type, file.name);
-        if (res && res.key?.id) {
-          const now = new Date();
-          const formattedDate = `${now.getDate()} ${now.toLocaleString('pt-BR', { month: 'short' }).replace('.', '')}, ${now.getFullYear()}`;
-          await supabase.from('whatsapp_messages').upsert({ lead_id: lead.id, message_id: res.key.id, sender_number: lead.phone.replace(/\D/g, ''), message_body: `[Arquivo: ${file.name}]`, is_from_me: true, is_read: true, created_at: now.toISOString(), media_type: type, mimetype: file.type, file_name: file.name });
-          await supabase.from('leads').update({ last_app_message_at: now.toISOString(), lastcontact: formattedDate }).eq('id', lead.id);
-          setLead(prev => ({ ...prev, last_app_message_at: now.toISOString(), lastcontact: formattedDate }));
-          setMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: res.key.id, status: 'sent' } : m));
-          success("Arquivo enviado!");
-          setTimeout(() => onUpdate(), 100);
-        }
+        const newId = res?.key?.id || `media-${Date.now()}`;
+        
+        const now = new Date();
+        const formattedDate = `${now.getDate()} ${now.toLocaleString('pt-BR', { month: 'short' }).replace('.', '')}, ${now.getFullYear()}`;
+        await supabase.from('whatsapp_messages').upsert({ lead_id: lead.id, message_id: newId, sender_number: lead.phone.replace(/\D/g, ''), message_body: file.name, media_type: type, mimetype: file.type, file_name: file.name, is_from_me: true, is_read: true, created_at: now.toISOString() });
+        await supabase.from('leads').update({ last_app_message_at: now.toISOString(), lastcontact: formattedDate }).eq('id', lead.id);
+        setLead(prev => prev ? ({ ...prev, last_app_message_at: now.toISOString(), lastcontact: formattedDate }) : prev);
+        setMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: newId, status: 'sent' } : m));
+        success("Arquivo enviado!");
+        setTimeout(() => onUpdate(), 100);
       } catch (e: any) {
         showError("Erro ao enviar arquivo");
         setMessages(prev => prev.filter(m => m.id !== tempId));
