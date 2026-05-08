@@ -32,6 +32,10 @@ export default function Dashboard() {
   const [customStartDate, setCustomStartDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
   const [customEndDate, setCustomEndDate] = useState(new Date().toISOString().split('T')[0]);
   const [drilldown, setDrilldown] = useState<{ title: string; leads: any[] } | null>(null);
+  // Mês específico selecionado (formato YYYY-MM)
+  const [selectedMonth, setSelectedMonth] = useState(
+    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
+  );
 
   const getStartDate = (period: string) => {
     const d = new Date();
@@ -67,9 +71,26 @@ export default function Dashboard() {
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     
-    const periodStartDate = selectedPeriod === 'custom' ? new Date(customStartDate) : getStartDate(selectedPeriod);
-    const periodEndDate = selectedPeriod === 'custom' ? new Date(customEndDate) : new Date();
-    periodEndDate.setHours(23, 59, 59, 999);
+    const periodStartDate: Date = (() => {
+      if (selectedPeriod === 'custom') return new Date(customStartDate);
+      if (selectedPeriod === 'mês') {
+        const [y, m] = selectedMonth.split('-').map(Number);
+        return new Date(y, m - 1, 1, 0, 0, 0, 0);
+      }
+      return getStartDate(selectedPeriod);
+    })();
+
+    const periodEndDate: Date = (() => {
+      if (selectedPeriod === 'custom') {
+        const d = new Date(customEndDate); d.setHours(23,59,59,999); return d;
+      }
+      if (selectedPeriod === 'mês') {
+        const [y, m] = selectedMonth.split('-').map(Number);
+        const d = new Date(y, m, 0, 23, 59, 59, 999); // último dia do mês
+        return d;
+      }
+      const d = new Date(); d.setHours(23,59,59,999); return d;
+    })();
     
     // Mês Anterior para definir a Pedra
     const lastMonthDate = new Date(currentYear, currentMonth - 1, 1);
@@ -298,7 +319,7 @@ export default function Dashboard() {
     if (leads.length > 0 && stages.length > 0) {
       fetchDashboardData();
     }
-  }, [leads, stages, selectedPeriod, customStartDate, customEndDate]);
+  }, [leads, stages, selectedPeriod, customStartDate, customEndDate, selectedMonth]);
 
   const MetricCard = ({ label, value, color, icon: Icon, delay, onClick }: any) => (
     <motion.div 
@@ -481,6 +502,18 @@ export default function Dashboard() {
                   className="bg-white border border-slate-200 rounded px-2 py-1 text-[10px] font-bold text-slate-700 outline-none focus:ring-1 focus:ring-blue-400"
                 />
               </div>
+            </div>
+          )}
+          {selectedPeriod === 'mês' && (
+            <div className="flex items-center gap-2 ml-2 px-3 border-l border-slate-200">
+              <Icons.Calendar className="w-3.5 h-3.5 text-slate-400" />
+              <input
+                type="month"
+                value={selectedMonth}
+                max={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`}
+                onChange={e => setSelectedMonth(e.target.value)}
+                className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[10px] font-bold text-slate-700 outline-none focus:ring-1 focus:ring-blue-400 cursor-pointer"
+              />
             </div>
           )}
         </div>
