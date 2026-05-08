@@ -37,20 +37,33 @@ export default async function handler(req: any, res: any) {
     let mediaUrl = '';
     let mimeType = '';
 
+    // Flag para identificar se a mensagem é nossa (outbound via WhatsApp Web/UmClique)
+    let isFromMe = false;
+
     // 1. Tentar parsear formato Oficial da Meta (WhatsApp Cloud API)
     if (payload.object === 'whatsapp_business_account' && payload.entry) {
       const change = payload.entry[0]?.changes[0]?.value;
+      let msgObj = null;
+
       if (change?.messages && change.messages.length > 0) {
-        const msg = change.messages[0];
-        from = msg.from;
-        messageId = msg.id;
-        timestamp = new Date(parseInt(msg.timestamp) * 1000);
-        type = msg.type;
+        msgObj = change.messages[0];
+        isFromMe = false;
+      } else if (change?.message_echoes && change.message_echoes.length > 0) {
+        msgObj = change.message_echoes[0];
+        isFromMe = true;
+      }
+
+      if (msgObj) {
+        // Se for de nós para o cliente, o lead é o 'to'. Se for do cliente para nós, é o 'from'.
+        from = isFromMe ? msgObj.to : msgObj.from;
+        messageId = msgObj.id;
+        timestamp = new Date(parseInt(msgObj.timestamp) * 1000);
+        type = msgObj.type;
         
         if (type === 'text') {
-          text = msg.text?.body || '';
+          text = msgObj.text?.body || '';
         } else if (['image', 'document', 'audio', 'video'].includes(type)) {
-          const mediaObj = msg[type];
+          const mediaObj = msgObj[type];
           messageId = mediaObj?.id || messageId;
           text = mediaObj?.caption || '';
           mediaUrl = mediaObj?.link || mediaObj?.id || '';
@@ -60,7 +73,7 @@ export default async function handler(req: any, res: any) {
         // Pode ser um evento de status (sent, delivered, read), ignorar por enquanto
         return res.status(200).send('Event received');
       }
-    } 
+    }
     // 2. Tentar parsear formato UmClique Simplificado ou Evolution-like
     else if (payload.data?.message || payload.message) {
       const msg = payload.data?.message || payload.message || payload.data;
@@ -118,8 +131,8 @@ export default async function handler(req: any, res: any) {
       media_type: type !== 'text' ? type : null,
       file_name: null,
       mimetype: mimeType,
-      is_from_me: false,
-      is_read: false,
+      is_from_me: isFromMe,
+      is_read: isFromMe ? true : false,
       created_at: timestamp.toISOString()
     }, { onConflict: 'message_id' });
 
