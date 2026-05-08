@@ -406,7 +406,14 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
        markRead();
        const channel = supabase.channel(`chat-${lead.id}`).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'whatsapp_messages', filter: `lead_id=eq.${lead.id}` }, (payload) => {
            const n = payload.new;
-           setMessages(prev => prev.find(m => m.id === n.message_id) ? prev : [...prev, { id: n.message_id, fromMe: n.is_from_me, text: n.message_body, timestamp: new Date(n.created_at).getTime(), media_type: n.media_type, mimetype: n.mimetype, file_name: n.file_name, is_read: true }].sort((a,b) => a.timestamp - b.timestamp));
+           setMessages(prev => {
+             const isDuplicate = prev.some(m => 
+               m.id === n.message_id || 
+               (m.fromMe === n.is_from_me && m.text === n.message_body && Math.abs(m.timestamp - new Date(n.created_at).getTime()) < 15000)
+             );
+             if (isDuplicate) return prev;
+             return [...prev, { id: n.message_id, fromMe: n.is_from_me, text: n.message_body, timestamp: new Date(n.created_at).getTime(), media_type: n.media_type, mimetype: n.mimetype, file_name: n.file_name, is_read: true }].sort((a,b) => a.timestamp - b.timestamp);
+           });
            markRead();
        }).subscribe();
        return () => { supabase.removeChannel(channel); };
