@@ -155,15 +155,17 @@ export default function Dashboard() {
       })
       .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
 
-    // Meta Mensal (R$ 15.000) baseada em Contratos/Vidas convertidas este mês
+    // Meta Mensal: soma das mensalidades dos contratos PAGOS no período (sale_date)
     const metaMensal = 15000;
-    const atingidoMeta = leads
-      .filter(l => {
-        if (!['Contrato', 'Plano Ativo'].includes(l.status || '')) return false;
-        const d = new Date(l.updated_at || l.created_at);
-        return d >= periodStartDate && d <= periodEndDate;
+    const atingidoMeta = contracts
+      .filter(c => {
+        const dateRef = c.sale_date || c.start_date;
+        if (!dateRef) return false;
+        const [y, m, d] = dateRef.split('-').map(Number);
+        const dt = new Date(y, m - 1, d);
+        return dt >= periodStartDate && dt <= periodEndDate;
       })
-      .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
+      .reduce((acc, c) => acc + (Number(c.monthly_fee) || 0), 0);
     
     const progressMeta = Math.min((atingidoMeta / metaMensal) * 100, 100);
 
