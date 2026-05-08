@@ -10,6 +10,9 @@ const UMCLIQUE_API_URL = 'https://czduqujgtziamxuvzaue.supabase.co/functions/v1/
 const UMCLIQUE_API_KEY  = import.meta.env.VITE_UMCLIQUE_API_KEY  || '';
 const UMCLIQUE_CHANNEL_ID = import.meta.env.VITE_UMCLIQUE_CHANNEL_ID || '';
 
+// Debugging (remove in production)
+console.log('[UmClique] Init - Channel ID is:', UMCLIQUE_CHANNEL_ID ? 'Configured' : 'Missing');
+
 const headers = () => ({
   'X-API-Key': UMCLIQUE_API_KEY,
   'Content-Type': 'application/json',
