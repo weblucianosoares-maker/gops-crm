@@ -92,24 +92,21 @@ export default async function handler(req: any, res: any) {
     // Tentar encontrar o lead
     let leadId = null;
     
-    // Busca exata
-    let { data: leads } = await supabase
-      .from('leads')
-      .select('id, phone')
-      .ilike('phone', `%${cleanPhone}%`);
+    // Busca robusta: pega os últimos 8 dígitos (que geralmente são 9999-9999 ou 999-9999)
+    // e faz uma busca flexível para ignorar parênteses e traços no banco.
+    if (cleanPhone.length >= 8) {
+      const part1 = cleanPhone.slice(-8, -4);
+      const part2 = cleanPhone.slice(-4);
       
-    // Se não encontrou e for celular BR (começa com 55 e tem 13 dígitos), tenta sem o 9
-    if ((!leads || leads.length === 0) && cleanPhone.startsWith('55') && cleanPhone.length === 13) {
-      const fallbackPhone = cleanPhone.slice(0, 4) + cleanPhone.slice(5);
-      const { data: fallbackLeads } = await supabase
+      const { data: leads } = await supabase
         .from('leads')
         .select('id, phone')
-        .ilike('phone', `%${fallbackPhone}%`);
-      leads = fallbackLeads;
-    }
-
-    if (leads && leads.length > 0) {
-      leadId = leads[0].id;
+        .ilike('phone', `%${part1}%${part2}%`);
+        
+      if (leads && leads.length > 0) {
+        // Se encontrar múltiplos, tenta o que tem o DDD mais parecido, ou simplesmente pega o primeiro
+        leadId = leads[0].id;
+      }
     }
 
     // Inserir no banco de mensagens
