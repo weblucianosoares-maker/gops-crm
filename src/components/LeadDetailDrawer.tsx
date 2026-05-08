@@ -4,7 +4,7 @@ import { Icons } from "./Icons";
 import { cn, formatCPF, formatPhone, formatCNPJ, formatCEP, formatCurrencyValue, parseCurrencyValue } from "../lib/utils";
 import { supabase } from "../lib/supabase";
 import { useLeads } from "../lib/leadsContext";
-import { evolutionService } from "../lib/evolution";
+import { evolutionService } from "../lib/umclique";
 import { useToast } from "./Toasts";
 import { DatePicker } from "./DatePicker";
 

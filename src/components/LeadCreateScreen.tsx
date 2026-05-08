@@ -5,7 +5,7 @@ import { cn, formatCPF, formatPhone, formatCNPJ, formatCEP, formatCurrencyValue,
 import { supabase } from "../lib/supabase";
 import { useLeads } from "../lib/leadsContext";
 import { useToast } from "./Toasts";
-import { validateLeadWhatsApp } from "../lib/evolution";
+import { validateLeadWhatsApp } from "../lib/umclique";
 import { DatePicker } from "./DatePicker";
 
 interface LeadCreateScreenProps {

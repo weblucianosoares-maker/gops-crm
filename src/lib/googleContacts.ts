@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { batchValidateLeadsWhatsApp } from './evolution';
+import { umcliqueService as evolutionService, batchValidateLeadsWhatsApp } from './umclique';
 import { normalizePhone } from './utils';
 
 /**

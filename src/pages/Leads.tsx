@@ -10,7 +10,7 @@ import { LeadDetailDrawer } from "../components/LeadDetailDrawer";
 import { LeadCreateScreen } from "../components/LeadCreateScreen";
 import { useToast } from "../components/Toasts";
 import { syncGoogleContacts } from "../lib/googleContacts";
-import { batchValidateLeadsWhatsApp } from "../lib/evolution";
+import { evolutionService, batchValidateLeadsWhatsApp } from "../lib/umclique";
 
 const getStatusColor = (name: string) => {
   const status = name?.toLowerCase().trim();
