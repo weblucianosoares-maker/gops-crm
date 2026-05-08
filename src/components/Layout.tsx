@@ -16,6 +16,7 @@ const menuItems = [
   { icon: Icons.Sparkles, label: "Entrevista IA", path: "/interview" },
   { icon: Icons.Contracts, label: "Contratos", path: "/contracts" },
   { icon: Icons.CreditCard, label: "Financeiro", path: "/finance" },
+  { icon: Icons.MessageSquare, label: "WhatsApp", path: "/whatsapp" },
   { icon: Icons.Carriers, label: "Operadoras", path: "/carriers" },
   { icon: Icons.MapPin, label: "Rede Médica", path: "/network" },
   { icon: Icons.Bell, label: "Avisos", path: "/alerts" },

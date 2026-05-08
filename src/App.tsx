@@ -12,6 +12,7 @@ import NetworkSearch from "./pages/NetworkSearch";
 import Alerts from "./pages/Alerts";
 import AIInterview from "./pages/AIInterview";
 import Finance from "./pages/Finance";
+import WhatsAppDashboard from "./pages/WhatsAppDashboard";
 
 import { LeadsProvider } from "./lib/leadsContext";
 import { BrokerProvider } from "./lib/brokerContext";
@@ -35,6 +36,7 @@ function AppContent() {
       case "/alerts": return "Central de Avisos";
       case "/interview": return "Entrevista Mágica";
       case "/finance": return "Controle Financeiro";
+      case "/whatsapp": return "Controle WhatsApp";
       default: return "Efraim";
     }
   };
@@ -65,6 +67,7 @@ function AppContent() {
             <Route path="/alerts" element={<Alerts />} />
             <Route path="/interview" element={<AIInterview />} />
             <Route path="/finance" element={<Finance />} />
+            <Route path="/whatsapp" element={<WhatsAppDashboard />} />
           </Routes>
         </main>
       </div>
