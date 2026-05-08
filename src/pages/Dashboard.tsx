@@ -176,17 +176,10 @@ export default function Dashboard() {
       })
       .reduce((acc, l) => acc + (Number(l.deal_value) || 0), 0);
 
-    // Meta Mensal: soma das mensalidades dos contratos PAGOS no período (sale_date)
+    // Meta Mensal: valor de contratos efetivamente IMPLANTADOS no período
+    // = leads em status "Plano Ativo" (contrato pago e ativo) com data no período
     const metaMensal = 15000;
-    const atingidoMeta = contracts
-      .filter(c => {
-        const dateRef = c.sale_date || c.start_date;
-        if (!dateRef) return false;
-        const [y, m, d] = dateRef.split('-').map(Number);
-        const dt = new Date(y, m - 1, d);
-        return dt >= periodStartDate && dt <= periodEndDate;
-      })
-      .reduce((acc, c) => acc + (Number(c.monthly_fee) || 0), 0);
+    const atingidoMeta = implantaçãoAtiva;
     
     const progressMeta = Math.min((atingidoMeta / metaMensal) * 100, 100);
 
