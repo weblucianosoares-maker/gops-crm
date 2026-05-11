@@ -69,9 +69,28 @@ export default async function handler(req: any, res: any) {
           mediaUrl = mediaObj?.link || mediaObj?.id || '';
           mimeType = mediaObj?.mime_type || '';
         }
+      } else if (change?.statuses && change.statuses.length > 0) {
+        // É um evento de status (sent, delivered, read, failed)
+        const statusObj = change.statuses[0];
+        const msgId = statusObj.id;
+        const status = statusObj.status;
+        let errorMessage = null;
+
+        if (status === 'failed' && statusObj.errors && statusObj.errors.length > 0) {
+          const err = statusObj.errors[0];
+          errorMessage = err.error_data?.details || err.message || 'Erro ao enviar mensagem';
+          console.error(`[Webhook] Mensagem ${msgId} falhou: ${errorMessage}`);
+        }
+
+        // Atualizar status no banco
+        await supabase.from('whatsapp_messages')
+          .update({ status: status, error_message: errorMessage })
+          .eq('message_id', msgId);
+
+        return res.status(200).json({ success: true, status: 'updated' });
       } else {
-        // Pode ser um evento de status (sent, delivered, read), ignorar por enquanto
-        return res.status(200).send('Event received');
+        // Outros eventos ignorados
+        return res.status(200).send('Event ignored');
       }
     }
     // 2. Tentar parsear formato UmClique Simplificado ou Evolution-like

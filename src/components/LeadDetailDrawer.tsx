@@ -388,7 +388,9 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
         media_type: m.media_type, 
         mimetype: m.mimetype, 
         file_name: m.file_name, 
-        is_read: m.is_read ?? true
+        is_read: m.is_read ?? true,
+        status: m.status || 'sent',
+        error_message: m.error_message
       }));
       
       setMessages(normalizedLocal);
@@ -404,17 +406,21 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
        loadMessages();
        const markRead = () => supabase.from('whatsapp_messages').update({ is_read: true }).eq('lead_id', lead.id).eq('is_from_me', false).eq('is_read', false);
        markRead();
-       const channel = supabase.channel(`chat-${lead.id}`).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'whatsapp_messages', filter: `lead_id=eq.${lead.id}` }, (payload) => {
-           const n = payload.new;
-           setMessages(prev => {
-             const isDuplicate = prev.some(m => 
-               m.id === n.message_id || 
-               (m.fromMe === n.is_from_me && m.text === n.message_body && Math.abs(m.timestamp - new Date(n.created_at).getTime()) < 15000)
-             );
-             if (isDuplicate) return prev;
-             return [...prev, { id: n.message_id, fromMe: n.is_from_me, text: n.message_body, timestamp: new Date(n.created_at).getTime(), media_type: n.media_type, mimetype: n.mimetype, file_name: n.file_name, is_read: true }].sort((a,b) => a.timestamp - b.timestamp);
-           });
-           markRead();
+       const channel = supabase.channel(`chat-${lead.id}`).on('postgres_changes', { event: '*', schema: 'public', table: 'whatsapp_messages', filter: `lead_id=eq.${lead.id}` }, (payload) => {
+           const n = payload.new as any;
+           if (payload.eventType === 'INSERT') {
+             setMessages(prev => {
+               const isDuplicate = prev.some(m => 
+                 m.id === n.message_id || 
+                 (m.fromMe === n.is_from_me && m.text === n.message_body && Math.abs(m.timestamp - new Date(n.created_at).getTime()) < 15000)
+               );
+               if (isDuplicate) return prev;
+               return [...prev, { id: n.message_id, fromMe: n.is_from_me, text: n.message_body, timestamp: new Date(n.created_at).getTime(), media_type: n.media_type, mimetype: n.mimetype, file_name: n.file_name, is_read: true, status: n.status || 'sent', error_message: n.error_message }].sort((a,b) => a.timestamp - b.timestamp);
+             });
+             if (!n.is_from_me) markRead();
+           } else if (payload.eventType === 'UPDATE') {
+             setMessages(prev => prev.map(m => m.id === n.message_id ? { ...m, status: n.status, error_message: n.error_message } : m));
+           }
        }).subscribe();
        return () => { supabase.removeChannel(channel); };
     }
@@ -433,7 +439,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       
       const now = new Date();
       const formattedDate = `${now.getDate()} ${now.toLocaleString('pt-BR', { month: 'short' }).replace('.', '')}, ${now.getFullYear()}`;
-      await supabase.from('whatsapp_messages').upsert({ lead_id: lead.id, message_id: newId, sender_number: lead.phone.replace(/\D/g, ''), message_body: txt, is_from_me: true, is_read: true, created_at: now.toISOString() });
+      await supabase.from('whatsapp_messages').upsert({ lead_id: lead.id, message_id: newId, sender_number: lead.phone.replace(/\D/g, ''), message_body: txt, is_from_me: true, is_read: true, status: 'sent', created_at: now.toISOString() });
       await supabase.from('leads').update({ last_app_message_at: now.toISOString(), lastcontact: formattedDate }).eq('id', lead.id);
       setLead(prev => prev ? ({ ...prev, last_app_message_at: now.toISOString(), lastcontact: formattedDate }) : prev);
       setMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: newId, status: 'sent' } : m));
@@ -459,7 +465,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
         
         const now = new Date();
         const formattedDate = `${now.getDate()} ${now.toLocaleString('pt-BR', { month: 'short' }).replace('.', '')}, ${now.getFullYear()}`;
-        await supabase.from('whatsapp_messages').upsert({ lead_id: lead.id, message_id: newId, sender_number: lead.phone.replace(/\D/g, ''), message_body: file.name, media_type: type, mimetype: file.type, file_name: file.name, is_from_me: true, is_read: true, created_at: now.toISOString() });
+        await supabase.from('whatsapp_messages').upsert({ lead_id: lead.id, message_id: newId, sender_number: lead.phone.replace(/\D/g, ''), message_body: file.name, media_type: type, mimetype: file.type, file_name: file.name, is_from_me: true, is_read: true, status: 'sent', created_at: now.toISOString() });
         await supabase.from('leads').update({ last_app_message_at: now.toISOString(), lastcontact: formattedDate }).eq('id', lead.id);
         setLead(prev => prev ? ({ ...prev, last_app_message_at: now.toISOString(), lastcontact: formattedDate }) : prev);
         setMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: newId, status: 'sent' } : m));
@@ -966,9 +972,19 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
           <div className="h-full flex flex-col bg-[#efe7de]">
              <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 flex flex-col custom-scrollbar">
                 {messages.map((msg, idx) => (
-                  <div key={msg.id || idx} className={cn("max-w-[85%] p-3 rounded-2xl text-sm shadow-sm", msg.fromMe ? "bg-[#dcf8c6] self-end" : "bg-white self-start border")}>
+                  <div key={msg.id || idx} className={cn("max-w-[85%] p-3 rounded-2xl text-sm shadow-sm relative group", msg.fromMe ? "bg-[#dcf8c6] self-end" : "bg-white self-start border")}>
                      <MediaMessage msg={msg} />
-                     <p className="text-[9px] text-slate-400 text-right mt-1 font-bold">{msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : ""}</p>
+                     <div className="flex items-center justify-end gap-1 mt-1">
+                       {msg.status === 'failed' && (
+                         <div className="relative flex items-center group/error cursor-help">
+                           <Icons.AlertCircle className="w-3.5 h-3.5 text-red-500" />
+                           <div className="absolute right-0 bottom-full mb-2 hidden group-hover/error:block w-48 bg-red-50 text-red-700 border border-red-200 text-[10px] p-2 rounded-lg z-10 shadow-lg font-bold">
+                             Falha no envio: {msg.error_message || "Erro desconhecido"}
+                           </div>
+                         </div>
+                       )}
+                       <p className="text-[9px] text-slate-400 font-bold">{msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : ""}</p>
+                     </div>
                   </div>
                 ))}
              </div>
