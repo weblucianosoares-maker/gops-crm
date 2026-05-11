@@ -9,6 +9,7 @@ interface DatePickerProps {
   placeholder?: string;
   className?: string;
   themeColor?: string; // Tailwind color class like "blue-600"
+  placement?: 'top' | 'bottom';
 }
 
 export const DatePicker = ({ 
@@ -16,7 +17,8 @@ export const DatePicker = ({
   onChange, 
   placeholder = "DD/MM/AAAA", 
   className,
-  themeColor = "blue-600"
+  themeColor = "blue-600",
+  placement = 'bottom'
 }: DatePickerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'days' | 'months' | 'years'>('days');
@@ -161,10 +163,13 @@ export const DatePicker = ({
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 5, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="absolute z-[300] top-full right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 p-4 w-[280px]"
+            initial={{ opacity: 0, y: placement === 'top' ? 5 : 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: placement === 'top' ? 0 : 5, scale: 1 }}
+            exit={{ opacity: 0, y: placement === 'top' ? 5 : 10, scale: 0.95 }}
+            className={cn(
+              "absolute z-[300] right-0 bg-white rounded-2xl shadow-2xl border border-slate-100 p-4 w-[280px]",
+              placement === 'top' ? "bottom-full mb-2 origin-bottom" : "top-full mt-2 origin-top"
+            )}
           >
             {/* Header */}
             <div className="flex justify-between items-center mb-4">

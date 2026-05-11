@@ -948,7 +948,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                     <input type="text" value={reminderTitle} onChange={e => setReminderTitle(e.target.value)} placeholder="O que precisa ser feito?" className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-bold outline-none focus:border-amber-500" />
                     <div className="flex gap-2">
                       <div className="flex-1">
-                        <DatePicker value={reminderDate} onChange={setReminderDate} themeColor="amber-500" />
+                        <DatePicker value={reminderDate} onChange={setReminderDate} themeColor="amber-500" placement="top" />
                       </div>
                       <button onClick={() => handleAddReminder()} disabled={isSavingReminder} className="px-6 bg-amber-500 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-amber-600 transition-all shadow-lg shadow-amber-100">Criar Alerta</button>
                     </div>
