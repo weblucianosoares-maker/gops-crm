@@ -679,7 +679,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                   <DetailField label="UF" value={lead.address_state} onChange={(v:any) => setLead({...lead, address_state: v})} />
                 </div>
                 <div className="md:col-span-3 lg:col-span-2">
-                  <DetailField label="1º Contato" type="date" value={lead.first_contact_date || new Date().toISOString().split('T')[0]} onChange={(v:any) => setLead({...lead, first_contact_date: v})} />
+                  <DetailField label="1º Contato" type="date" value={lead.first_contact_date || (lead.created_at ? lead.created_at.substring(0, 10) : '')} onChange={(v:any) => setLead({...lead, first_contact_date: v})} />
                 </div>
                 <div className="md:col-span-3 lg:col-span-1">
                    <div className="space-y-1">
@@ -687,7 +687,7 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                       <div className="h-[42px] px-3 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center gap-1.5">
                          <Icons.Clock className="w-3 h-3 text-indigo-600" />
                          <span className="text-xs font-black text-indigo-700">
-                           {lead.first_contact_date ? `${Math.floor((new Date().getTime() - new Date(lead.first_contact_date).getTime()) / (1000 * 3600 * 24))}d` : '-'}
+                           {(lead.first_contact_date || lead.created_at) ? `${Math.floor((new Date().getTime() - new Date(lead.first_contact_date || lead.created_at).getTime()) / (1000 * 3600 * 24))}d` : '-'}
                          </span>
                       </div>
                    </div>
