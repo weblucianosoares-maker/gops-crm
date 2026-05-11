@@ -283,16 +283,17 @@ export default function Leads() {
     }
   };
 
-  const availableUFs = React.useMemo(() => {
-    const ufs = new Set(leads.map((l: any) => l.address_state).filter(Boolean));
-    return Array.from(ufs).sort();
-  }, [leads]);
+  const ALL_UFS = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
 
   const filteredLeads = React.useMemo(() => {
     let result = filter === "Todos" ? leads : leads.filter((l: any) => l.source === filter);
 
     if (ufFilter !== "Todos") {
-      result = result.filter((l: any) => l.address_state === ufFilter);
+      if (ufFilter === "Sem Estado") {
+        result = result.filter((l: any) => !l.address_state || l.address_state.trim() === "");
+      } else {
+        result = result.filter((l: any) => l.address_state === ufFilter);
+      }
     }
     
     if (statusFilter !== "Todos") {
@@ -595,7 +596,8 @@ export default function Leads() {
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 transition-all text-sm font-bold text-slate-700 cursor-pointer"
                 >
                   <option value="Todos">Todos os Estados</option>
-                  {availableUFs.map((uf: any) => (
+                  <option value="Sem Estado">Sem Estado</option>
+                  {ALL_UFS.map((uf: any) => (
                     <option key={uf} value={uf}>{uf}</option>
                   ))}
                 </select>
