@@ -253,11 +253,11 @@ export default function Funnel() {
     <div className="flex flex-col h-full w-full overflow-hidden">
       {/* Kanban Header */}
       <header className="w-full px-8 py-5 bg-white border-b shrink-0 z-20 shadow-sm">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           
-          <div className="flex flex-wrap items-center gap-6 lg:gap-10 flex-1">
+          <div className="flex flex-row items-center gap-6 lg:gap-10 flex-1 overflow-x-auto no-scrollbar">
             {/* Card: Oportunidades Totais */}
-            <div className="flex flex-col p-3 px-4 bg-slate-50 border border-slate-100 rounded-2xl min-w-[170px] shrink-0">
+            <div className="flex flex-col p-3 px-4 bg-slate-50 border border-slate-100 rounded-2xl min-w-[160px] shrink-0">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total em Aberto</span>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-black text-slate-800">{activeCount}</span>
@@ -268,7 +268,7 @@ export default function Funnel() {
             </div>
 
             {/* Card: Pipeline de Vendas */}
-            <div className="flex flex-col gap-1 min-w-[220px]">
+            <div className="flex flex-col gap-1 min-w-[200px] shrink-0">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pipeline de Cotação</span>
               <div className="flex items-center gap-6">
                 <div className="flex flex-col">
@@ -290,7 +290,7 @@ export default function Funnel() {
             </div>
 
             {/* Card: Status de Implantação */}
-            <div className="flex flex-col gap-1 min-w-[340px]">
+            <div className="flex flex-col gap-1 min-w-[320px] shrink-0">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Fluxo de Implantação</span>
               <div className="flex items-center gap-6">
                 <div className="flex flex-col">
