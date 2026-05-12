@@ -11,6 +11,7 @@ const safe = (v: any) => (v && typeof v === 'object') ? '' : v;
 
 export default function Finance() {
   const [contracts, setContracts] = useState<any[]>([]);
+  const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth());
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
@@ -20,16 +21,14 @@ export default function Finance() {
 
   const fetchData = async () => {
     setIsRefreshing(true);
-    const { data, error } = await supabase
-      .from('contracts')
-      .select('*')
-      .order('start_date', { ascending: false });
+    const [cRes, lRes] = await Promise.all([
+      supabase.from('contracts').select('*').order('start_date', { ascending: false }),
+      supabase.from('leads').select('*').eq('is_proposal_approved', true)
+    ]);
     
-    if (!error) {
-      setContracts(data || []);
-    } else {
-      console.error("Erro ao buscar contratos:", error);
-    }
+    if (!cRes.error) setContracts(cRes.data || []);
+    if (!lRes.error) setLeads(lRes.data || []);
+
     setLoading(false);
     setTimeout(() => setIsRefreshing(false), 500);
   };
@@ -110,7 +109,6 @@ export default function Finance() {
     const avgTicketPme = pmeSales.length > 0 ? pmeSales.reduce((acc, c) => acc + (Number(c.monthly_fee) || 0), 0) / pmeSales.length : 0;
 
     // 3. FLUXO DE CAIXA: Encontrar todas as parcelas que caem neste mês
-    // Percorremos TODOS os contratos para ver quais parcelas vencem agora
     const upcomingCommissions: any[] = [];
     let totalNetFlow = 0;
 
@@ -126,7 +124,6 @@ export default function Finance() {
           c.is_anticipated || false
         );
 
-        // Verifica cada parcela do contrato
         calc.installments.forEach((inst: any) => {
           const startDate = new Date(c.start_date);
           const paymentDate = new Date(startDate.getFullYear(), startDate.getMonth() + inst.relativeMonth, 1);
@@ -145,27 +142,64 @@ export default function Finance() {
       }
     });
 
+    // 4. PREVISÕES FUTURAS (Leads aprovados mas ainda não convertidos em contrato pago)
+    const futureForecasts: any[] = [];
+    let totalForecastValue = 0;
+
+    leads.forEach(l => {
+      if ((l.contract_start_date || l.first_invoice_date) && !l.is_first_invoice_paid) {
+        try {
+          const calc = calculateNetCommission(
+            String(l.carrier || ''), 
+            Number(l.deal_value) || 0, 
+            stone.name,
+            l.lead_type as any,
+            Number(l.interested_lives || 1),
+            l.modality || 'PME'
+          );
+
+          // Pegamos apenas a 1ª parcela como previsão imediata
+          const firstInst = calc.installments[0];
+          totalForecastValue += firstInst.netAmount;
+          
+          futureForecasts.push({
+            id: l.id,
+            client_name: l.name,
+            carrier: l.carrier,
+            product: l.product,
+            monthly_fee: l.deal_value,
+            lives: l.interested_lives,
+            start_date: l.contract_start_date || l.first_invoice_date,
+            forecast_date: l.first_invoice_date || l.contract_start_date,
+            net_amount: firstInst.netAmount,
+            fullCommission: calc
+          });
+        } catch (e) {
+          console.error("Erro no cálculo de previsão:", e);
+        }
+      }
+    });
+
     return {
       totalVgv,
       totalVgvPaid,
       totalNet: totalNetFlow,
+      count: monthSales.length,
+      commissions: upcomingCommissions,
+      forecasts: futureForecasts,
+      totalForecastValue,
+      stats: {
+        avgTicketTotal,
+        avgTicketPf,
+        avgTicketPme
+      },
       stone: {
         current: currentStone,
         next: nextStone,
         vgvPaid: totalVgvPaid
-      },
-      stats: {
-        avgTicketTotal,
-        avgTicketPf,
-        avgTicketPme,
-        pfCount: pfSales.length,
-        pmeCount: pmeSales.length,
-        totalCount: monthSales.length
-      },
-      commissions: upcomingCommissions,
-      count: monthSales.length
+      }
     };
-  }, [contracts, filterMonth, filterYear]);
+  }, [contracts, leads, filterMonth, filterYear]);
 
   if (loading) return <div className="p-8">Carregando...</div>;
 
@@ -293,12 +327,9 @@ export default function Finance() {
         <div className="p-6 border-b border-slate-50 flex items-center justify-between">
           <div>
             <h3 className="text-md font-black text-slate-900 uppercase tracking-tight">Entradas de Comissões</h3>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Previsão por Contrato Implantado</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Recebimentos Confirmados</p>
           </div>
           <div className="flex gap-2">
-             <button className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:text-blue-600 transition-colors">
-                <Icons.Search className="w-4 h-4" />
-             </button>
              <button className="px-4 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-lg">Exportar Relatório</button>
           </div>
         </div>
@@ -335,52 +366,95 @@ export default function Finance() {
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-1">
                       <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 w-fit">{Math.round(c.fullCommission.percentage)}% Total</span>
-                      {c.fullCommission.bonus > 0 && (
-                        <span className="text-[9px] font-bold text-emerald-600">+{formatCurrency(c.fullCommission.bonus)} Bônus</span>
-                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
                        <div className="flex-1 min-w-[120px]">
-                          <p className={cn("text-sm font-black", c.installment.isDirect ? "text-blue-600" : "text-slate-900")}>
+                          <p className="text-sm font-black text-slate-900">
                             {formatCurrency(c.installment.netAmount)}
-                          </p>
-                          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">
-                            {c.installment.isDirect ? "Recebimento Direto" : "Via Operadora/United"}
                           </p>
                        </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <button 
-                      onClick={() => togglePaymentStatus(c.id, c.is_paid)}
-                      className={cn(
-                        "flex flex-col items-center gap-1 group transition-all",
-                        c.is_paid ? "text-emerald-600" : "text-amber-600"
-                      )}
-                    >
-                       <span className={cn(
-                         "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all",
-                         c.is_paid 
-                          ? "bg-emerald-50 border-emerald-200 group-hover:bg-emerald-100" 
-                          : "bg-amber-50 border-amber-200 group-hover:bg-amber-100"
-                       )}>
-                         {c.is_paid ? "Recebido" : "Pendente"}
-                       </span>
-                       {!c.is_paid && c.carrier.toLowerCase().includes('united') && (
-                         <span className="text-[8px] font-bold text-blue-500 uppercase tracking-tighter">Antecipação Disp.</span>
-                       )}
-                       {c.is_paid && (
-                         <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-tighter">Caiu na Conta</span>
-                       )}
-                    </button>
+                  <td className="px-6 py-4 text-center">
+                    <span className={cn(
+                      "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
+                      c.is_paid ? "bg-emerald-50 border-emerald-200 text-emerald-600" : "bg-amber-50 border-amber-200 text-amber-600"
+                    )}>
+                      {c.is_paid ? "Recebido" : "Pendente"}
+                    </span>
                   </td>
                 </tr>
               ))}
               {currentMonthData.commissions.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-20 text-center text-slate-400 text-[10px] font-black uppercase tracking-widest italic">Nenhuma venda registrada este mês</td>
+                  <td colSpan={6} className="px-6 py-20 text-center text-slate-400 text-[10px] font-black uppercase tracking-widest italic">Nenhuma entrada confirmada este mês</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Forecasts Table */}
+      <section className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100">
+        <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+          <div>
+            <h3 className="text-md font-black text-slate-900 uppercase tracking-tight">Previsões de Recebimentos</h3>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Baseado em contratos com vigência/boleto lançados</p>
+          </div>
+          <div className="flex items-center gap-3">
+             <div className="text-right">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Previsto</p>
+                <p className="text-sm font-black text-blue-600">{formatCurrency(currentMonthData.totalForecastValue)}</p>
+             </div>
+          </div>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400">Contrato / Cliente</th>
+                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400">Operadora</th>
+                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400">VGV (Bruto)</th>
+                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400">Grade (%)</th>
+                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400">Comissão Líquida</th>
+                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Prev. Pagamento</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {currentMonthData.forecasts.map((f, idx) => (
+                <tr key={f.id} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="px-6 py-4">
+                    <p className="text-sm font-bold text-slate-900">{f.client_name}</p>
+                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-tight">Vigência: {f.start_date?.split('-').reverse().join('/')}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-xs font-bold text-slate-700">{f.carrier}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">{f.product}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-sm font-bold text-slate-700">{formatCurrency(Number(f.monthly_fee) || 0)}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">{f.lives} Vidas</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 w-fit">{Math.round(f.fullCommission.percentage)}%</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-sm font-black text-slate-900">{formatCurrency(f.net_amount)}</p>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <span className="px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-[9px] font-black uppercase tracking-widest">
+                      {f.forecast_date?.split('-').reverse().join('/')}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {currentMonthData.forecasts.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-20 text-center text-slate-400 text-[10px] font-black uppercase tracking-widest italic">Nenhuma previsão para os próximos meses</td>
                 </tr>
               )}
             </tbody>
