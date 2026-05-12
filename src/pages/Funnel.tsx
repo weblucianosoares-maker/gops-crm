@@ -251,73 +251,76 @@ export default function Funnel() {
   return (
     <div className="flex flex-col h-full w-full overflow-hidden">
       {/* Kanban Header */}
-      <header className="w-full px-8 py-4 bg-white border-b shrink-0 z-10 shadow-sm">
-        <div className="flex justify-between items-start">
-          <div className="flex items-start gap-6">
-            <div>
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Oportunidades</span>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-sm font-bold text-slate-700">{activeCount}</span>
-                  <span className="text-sm font-bold text-blue-600 truncate max-w-[100px]">{formatCurrency(totalValue)}</span>
+      <header className="w-full px-8 py-5 bg-white border-b shrink-0 z-20 shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          
+          <div className="flex flex-wrap items-center gap-4 lg:gap-8 flex-1">
+            {/* Card: Oportunidades Totais */}
+            <div className="flex flex-col p-3 px-4 bg-slate-50 border border-slate-100 rounded-2xl min-w-[180px]">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total em Aberto</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-black text-slate-800">{activeCount}</span>
+                <span className="text-sm font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg">
+                  {formatCurrency(totalValue)}
+                </span>
+              </div>
+            </div>
+
+            {/* Divisor Vertical */}
+            <div className="hidden lg:block h-10 w-px bg-slate-100"></div>
+
+            {/* Card: Pipeline de Vendas */}
+            <div className="flex flex-col gap-1 flex-1 min-w-[240px]">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pipeline de Cotação</span>
+              <div className="flex items-center gap-6">
+                <div className="flex flex-col">
+                   <div className="flex items-center gap-1.5 mb-0.5">
+                     <div className="w-2 h-2 rounded-full bg-blue-500 shadow-sm shadow-blue-200"></div>
+                     <span className="text-[9px] font-black text-slate-500 uppercase">Enviadas</span>
+                   </div>
+                   <span className="text-sm font-black text-slate-700">{formatCurrency(stats.quotesSent)}</span>
+                </div>
+                <Icons.ChevronRight className="w-4 h-4 text-slate-200" />
+                <div className="flex flex-col">
+                   <div className="flex items-center gap-1.5 mb-0.5">
+                     <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-200"></div>
+                     <span className="text-[9px] font-black text-slate-500 uppercase">Aprovadas</span>
+                   </div>
+                   <span className="text-sm font-black text-emerald-600">{formatCurrency(stats.quotesApproved)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Divisor Vertical */}
+            <div className="hidden lg:block h-10 w-px bg-slate-100"></div>
+
+            {/* Card: Status de Implantação */}
+            <div className="flex flex-col gap-1 flex-1 min-w-[300px]">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Fluxo de Implantação</span>
+              <div className="flex items-center gap-6">
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-black text-slate-400 uppercase mb-0.5">Na Operadora</span>
+                  <span className="text-xs font-black text-slate-700">{formatCurrency(stats.inCarrier)}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-black text-slate-400 uppercase mb-0.5 text-emerald-500">Liberado</span>
+                  <span className="text-xs font-black text-emerald-700">{formatCurrency(stats.contractReleased)}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-black text-slate-400 uppercase mb-0.5 text-blue-500">Ativo</span>
+                  <span className="text-xs font-black text-blue-700">{formatCurrency(stats.activeDeployment)}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="flex-1 px-4 md:px-8 flex items-center gap-4 md:gap-10 overflow-x-auto no-scrollbar">
-            <div className="flex flex-col gap-1 pr-4 md:pr-6 border-r border-slate-100 shrink-0">
-              <span className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-0.5 md:mb-1">Pipeline</span>
-              <div className="flex items-center gap-4 md:gap-6">
-                <div className="flex flex-col">
-                   <div className="flex items-center gap-1 mb-0.5">
-                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Enviadas</span>
-                   </div>
-                   <span className="text-[10px] md:text-xs font-black text-slate-700">{formatCurrency(stats.quotesSent)}</span>
-                </div>
-                <div className="flex flex-col">
-                   <div className="flex items-center gap-1 mb-0.5">
-                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Aprovadas</span>
-                   </div>
-                   <span className="text-[10px] md:text-xs font-black text-emerald-600">{formatCurrency(stats.quotesApproved)}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1 shrink-0">
-              <span className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-0.5 md:mb-1">Status</span>
-              <div className="flex items-center gap-4 md:gap-8">
-                <div className="flex flex-col">
-                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">Na Op</span>
-                  <span className="text-[10px] md:text-[11px] font-black text-slate-700">{formatCurrency(stats.inCarrier)}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">Liberado</span>
-                  <span className="text-[10px] md:text-[11px] font-black text-emerald-700">{formatCurrency(stats.contractReleased)}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">Ativo</span>
-                  <span className="text-[10px] md:text-[11px] font-black text-blue-700">{formatCurrency(stats.activeDeployment)}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setIsAIInterviewOpen(true)}
-              className="group flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-white border border-slate-200 text-blue-600 text-xs md:text-sm font-bold rounded-xl hover:bg-blue-50 transition-all shadow-sm hover:border-blue-300"
-            >
-              <Icons.Sparkles className="w-4 h-4 animate-pulse group-hover:rotate-12 transition-transform shrink-0" /> 
-              <span className="hidden sm:inline">Novo Lead com IA</span>
-              <span className="sm:hidden">IA</span>
-            </button>
+          <div className="flex items-center gap-3 shrink-0">
             <button 
               onClick={() => setIsSelectionModalOpen(true)}
-              className="flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 bg-blue-600 text-white text-xs md:text-sm font-black uppercase tracking-widest rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 active:scale-95 shrink-0"
+              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 active:scale-95 group"
             >
-              <Icons.Plus className="w-4 h-4 shrink-0" /> <span className="hidden sm:inline">Nova Oportunidade</span><span className="sm:hidden">Novo</span>
+              <Icons.Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" /> 
+              <span>Nova Oportunidade</span>
             </button>
           </div>
         </div>
@@ -595,9 +598,13 @@ export default function Funnel() {
                 <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold group-hover:bg-blue-600 group-hover:text-white transition-colors"><Icons.Search className="w-6 h-6" /></div>
                 <div><p className="font-bold text-slate-900">Selecionar Lead</p><p className="text-xs text-slate-500">Puxar do cadastro existente</p></div>
               </button>
+              <button onClick={() => { setIsSelectionModalOpen(false); setIsAIInterviewOpen(true); }} className="w-full flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-blue-500 hover:bg-blue-50 transition-all text-left group">
+                <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold group-hover:bg-indigo-600 group-hover:text-white transition-colors"><Icons.Sparkles className="w-6 h-6" /></div>
+                <div><p className="font-bold text-slate-900">Criar com IA</p><p className="text-xs text-slate-500">Iniciar entrevista guiada</p></div>
+              </button>
               <button onClick={() => { setIsSelectionModalOpen(false); setSelectedLead({ name: '', source: 'Manual', status: stages[0]?.name || 'Novo', deal_value: 0 }); }} className="w-full flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-blue-500 hover:bg-blue-50 transition-all text-left group">
                 <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold group-hover:bg-blue-600 group-hover:text-white transition-colors"><Icons.Plus className="w-6 h-6" /></div>
-                <div><p className="font-bold text-slate-900">Criar do Zero</p><p className="text-xs text-slate-500">Cadastrar novo registro</p></div>
+                <div><p className="font-bold text-slate-900">Criar do Zero</p><p className="text-xs text-slate-500">Cadastrar manualmente</p></div>
               </button>
             </div>
           </motion.div>

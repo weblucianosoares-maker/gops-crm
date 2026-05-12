@@ -62,6 +62,19 @@ export default async function handler(req: any, res: any) {
         
         if (type === 'text') {
           text = msgObj.text?.body || '';
+        } else if (type === 'button') {
+          text = msgObj.button?.text || '';
+        } else if (type === 'interactive') {
+          const interactive = msgObj.interactive;
+          if (interactive.type === 'button_reply') {
+            text = interactive.button_reply?.title || '';
+          } else if (interactive.type === 'list_reply') {
+            text = interactive.list_reply?.title || '';
+            const description = interactive.list_reply?.description;
+            if (description) text += ` (${description})`;
+          }
+        } else if (type === 'reaction') {
+          text = `Reagiu com: ${msgObj.reaction?.emoji || ''}`;
         } else if (['image', 'document', 'audio', 'video'].includes(type)) {
           const mediaObj = msgObj[type];
           messageId = mediaObj?.id || messageId;

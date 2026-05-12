@@ -103,7 +103,22 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
      temperature: 'Morno',
      interaction_status: 'Sem Status',
      client_objective: '',
-     current_situation: ''
+     current_situation: '',
+     registration_status: '',
+     share_capital: 0,
+     company_size: '',
+     legal_nature: '',
+     cnae_text: '',
+     cnae_secondary: '',
+     partner_name: '',
+     qualification: '',
+     age_range: '',
+     registration_status_date: '',
+     mei_entry_date: '',
+     mei_exit_date: '',
+     tax_regime: '',
+     simples_entry_date: '',
+     simples_exit_date: ''
    });
 
    // Reset component when opening
@@ -171,9 +186,23 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
             address_state: data.uf || prev.address_state,
             address_number: data.numero || prev.address_number,
             cnae: data.cnae_fiscal_descricao || data.cnae_fiscal || prev.cnae,
+            cnae_text: data.cnae_fiscal_descricao || prev.cnae_text,
             opening_date: formatDateToISO(data.data_abertura || data.abertura || data.data_inicio_atividade) || prev.opening_date,
             email: data.email || prev.email,
-            phone: data.ddd_telefone_1 ? formatPhone(data.ddd_telefone_1) : (data.telefone || prev.phone)
+            phone: data.ddd_telefone_1 ? formatPhone(data.ddd_telefone_1) : (data.telefone || prev.phone),
+            registration_status: data.descricao_situacao_cadastral || data.situacao_cadastral || prev.registration_status,
+            share_capital: data.capital_social || prev.share_capital,
+            company_size: data.porte || data.descricao_porte || prev.company_size,
+            legal_nature: data.natureza_juridica || data.descricao_natureza_juridica || prev.legal_nature,
+            partner_name: data.qsa ? data.qsa.map((s: any) => s.nome_socio || s.nome).join("; ") : prev.partner_name,
+            qualification: data.qsa ? data.qsa.map((s: any) => s.qualificacao_socio || s.qualificacao || s.funcao).join("; ") : prev.qualification,
+            cnae_secondary: data.cnaes_secundarios ? data.cnaes_secundarios.map((c: any) => `${c.codigo} - ${c.descricao}`).join("; ") : prev.cnae_secondary,
+            registration_status_date: formatDateToISO(data.data_situacao_cadastral) || prev.registration_status_date,
+            tax_regime: data.opcao_pelo_simples ? "Simples Nacional" : (data.opcao_pelo_mei ? "MEI" : "Lucro Presumido/Real"),
+            simples_entry_date: formatDateToISO(data.data_opcao_pelo_simples) || prev.simples_entry_date,
+            simples_exit_date: formatDateToISO(data.data_exclusao_do_simples) || prev.simples_exit_date,
+            mei_entry_date: formatDateToISO(data.data_opcao_pelo_mei) || prev.mei_entry_date,
+            mei_exit_date: formatDateToISO(data.data_exclusao_do_mei) || prev.mei_exit_date,
           }));
           showToast("Dados do CNPJ carregados com sucesso!", "success");
         } else {
@@ -272,6 +301,21 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
       administrator: newLead.administrator,
       client_objective: newLead.client_objective,
       current_situation: newLead.current_situation,
+      registration_status: newLead.registration_status,
+      share_capital: newLead.share_capital,
+      company_size: newLead.company_size,
+      legal_nature: newLead.legal_nature,
+      cnae_text: newLead.cnae_text,
+      cnae_secondary: newLead.cnae_secondary,
+      partner_name: newLead.partner_name,
+      qualification: newLead.qualification,
+      age_range: newLead.age_range,
+      registration_status_date: newLead.registration_status_date || null,
+      mei_entry_date: newLead.mei_entry_date || null,
+      mei_exit_date: newLead.mei_exit_date || null,
+      tax_regime: newLead.tax_regime,
+      simples_entry_date: newLead.simples_entry_date || null,
+      simples_exit_date: newLead.simples_exit_date || null,
       status_updated_at: new Date().toISOString()
     }]).select();
       
@@ -574,8 +618,8 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
                   {/* OBJETIVO E SITUAÇÃO */}
                   <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
                     <SectionHeader icon={Icons.Target} title="Objetivo do Cliente" colorClass="bg-blue-50 text-blue-600" />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-1">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                      <div className="md:col-span-4 space-y-1">
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Objetivo Principal</label>
                         <select 
                           className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-700" 
@@ -588,15 +632,15 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
                           ))}
                         </select>
                       </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Resumo da Situação Atual</label>
-                      <textarea 
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300 resize-none min-h-[120px]"
-                        placeholder="Descreva detalhadamente a situação atual do lead e o que ele busca..."
-                        value={newLead.current_situation}
-                        onChange={(e) => setNewLead({...newLead, current_situation: e.target.value})}
-                      />
+                      <div className="md:col-span-8 space-y-1">
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Resumo da Situação Atual</label>
+                        <textarea 
+                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300 resize-none h-[60px]"
+                          placeholder="Descreva detalhadamente a situação atual do lead e o que ele busca..."
+                          value={newLead.current_situation}
+                          onChange={(e) => setNewLead({...newLead, current_situation: e.target.value})}
+                        />
+                      </div>
                     </div>
                   </div>
 

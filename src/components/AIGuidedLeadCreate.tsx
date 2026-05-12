@@ -96,7 +96,13 @@ export function AIGuidedLeadCreate({ isOpen, onClose, onSuccess }: AIGuidedLeadC
              nickname: data.nome_fantasia,
              opening_date: data.data_abertura,
              cnae: data.cnae_fiscal ? `${data.cnae_fiscal}${data.cnae_fiscal_descricao ? ' - ' + data.cnae_fiscal_descricao : ''}` : data.cnae_fiscal_descricao,
-             address: `${data.logradouro}, ${data.numero} - ${data.municipio}/${data.uf}`
+             address: `${data.logradouro}, ${data.numero} - ${data.municipio}/${data.uf}`,
+             registration_status: data.descricao_situacao_cadastral || data.situacao_cadastral,
+             share_capital: data.capital_social,
+             company_size: data.porte || data.descricao_porte,
+             legal_nature: data.natureza_juridica || data.descricao_natureza_juridica,
+             partner_name: data.qsa ? data.qsa.map((s: any) => s.nome_socio || s.nome).join("; ") : "",
+             qualification: data.qsa ? data.qsa.map((s: any) => s.qualificacao_socio || s.qualificacao || s.funcao).join("; ") : "",
            }));
            success("Dados da empresa carregados via CNPJ!");
         }
@@ -147,6 +153,12 @@ export function AIGuidedLeadCreate({ isOpen, onClose, onSuccess }: AIGuidedLeadC
         current_value: extractedData.current_value,
         client_objective: extractedData.client_objective,
         current_situation: extractedData.current_situation || extractedData.motivation || extractedData.analysis,
+        registration_status: extractedData.registration_status,
+        share_capital: extractedData.share_capital,
+        company_size: extractedData.company_size,
+        legal_nature: extractedData.legal_nature,
+        partner_name: extractedData.partner_name,
+        qualification: extractedData.qualification,
         source: 'IA Interview',
         status: 'Novo',
         temperature: 'Morno'

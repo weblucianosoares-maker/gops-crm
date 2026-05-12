@@ -577,17 +577,38 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       legal_nature: lead.legal_nature,
       registration_status: lead.registration_status,
       registration_status_date: lead.registration_status_date,
+      client_objective: lead.client_objective,
+      current_situation: lead.current_situation,
+      registration_status: lead.registration_status,
+      registration_status_date: lead.registration_status_date || null,
       tax_regime: lead.tax_regime,
-      simples_entry_date: lead.simples_entry_date,
-      simples_exit_date: lead.simples_exit_date,
-      mei_entry_date: lead.mei_entry_date,
-      mei_exit_date: lead.mei_exit_date,
+      simples_entry_date: lead.simples_entry_date || null,
+      simples_exit_date: lead.simples_exit_date || null,
+      mei_entry_date: lead.mei_entry_date || null,
+      mei_exit_date: lead.mei_exit_date || null,
       partner_name: lead.partner_name,
       qualification: lead.qualification,
       age_range: lead.age_range,
+      resp_emp_name: lead.resp_emp_name,
+      resp_emp_job: lead.resp_emp_job,
+      resp_emp_birth_date: lead.resp_emp_birth_date || null,
+      resp_emp_marital_status: lead.resp_emp_marital_status,
+      resp_emp_marriage_date: lead.resp_emp_marriage_date || null,
+      resp_emp_cpf: lead.resp_emp_cpf,
+      resp_emp_rg: lead.resp_emp_rg,
+      resp_emp_whatsapp: lead.resp_emp_whatsapp,
       resp_emp_phone: lead.resp_emp_phone,
       resp_emp_email: lead.resp_emp_email,
-      opening_date: lead.opening_date || null,
+      resp_con_name: lead.resp_con_name,
+      resp_con_job: lead.resp_con_job,
+      resp_con_birth_date: lead.resp_con_birth_date || null,
+      resp_con_marital_status: lead.resp_con_marital_status,
+      resp_con_marriage_date: lead.resp_con_marriage_date || null,
+      resp_con_cpf: lead.resp_con_cpf,
+      resp_con_rg: lead.resp_con_rg,
+      resp_con_whatsapp: lead.resp_con_whatsapp,
+      resp_con_phone: lead.resp_con_phone,
+      resp_con_email: lead.resp_con_email,
       first_contact_date: lead.first_contact_date || null,
       do_not_contact: lead.do_not_contact || false,
       profile_picture_url: lead.profile_picture_url,
@@ -711,18 +732,20 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                 </div>
 
                 {/* LINHA 4 - OBJETIVO E SITUAÇÃO */}
-                <div className="md:col-span-6 lg:col-span-12 mt-4 space-y-5">
-                  <DetailField 
-                    label="Objetivo do Cliente" 
-                    value={lead.client_objective} 
-                    selectOptions={clientObjectives?.filter((o: any) => o.active).map((o: any) => o.name)}
-                    onChange={(v:any) => setLead({...lead, client_objective: v})} 
-                  />
+                <div className="md:col-span-6 lg:col-span-12 mt-4 grid grid-cols-1 md:grid-cols-12 gap-5">
+                  <div className="md:col-span-4">
+                    <DetailField 
+                      label="Objetivo do Cliente" 
+                      value={lead.client_objective} 
+                      selectOptions={clientObjectives?.filter((o: any) => o.active).map((o: any) => o.name)}
+                      onChange={(v:any) => setLead({...lead, client_objective: v})} 
+                    />
+                  </div>
                   
-                  <div className="space-y-1">
+                  <div className="md:col-span-8 space-y-1">
                     <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">Resumo da Situação Atual</label>
                     <textarea 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-900 placeholder:text-slate-300 resize-none min-h-[100px]"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-900 placeholder:text-slate-300 resize-none h-[42px]"
                       placeholder="Descreva detalhadamente a situação atual do lead..."
                       value={lead.current_situation || ''}
                       onChange={(e) => setLead({...lead, current_situation: e.target.value})}
