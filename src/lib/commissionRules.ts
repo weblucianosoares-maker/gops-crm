@@ -54,13 +54,22 @@ const CARRIER_TAXES: Record<string, number> = {
   'Assim': 0.0476,
   'Hapvida': 0.0665,
   'Klini': 0.0965,
+  'Porto Saúde': 0.03144, // Ajustado conforme caso real (R$ 3493,86 / R$ 3607,28)
 };
 
 export const getTier = (vgv: number): TierConfig => {
   return [...TIERS].reverse().find(t => vgv >= t.minVgv) || TIERS[0];
 };
 
-export const calculateNetCommission = (carrierName: string, monthlyFee: number, tier: TierName, type: 'PF' | 'PJ' = 'PF', lives: number = 1, modality: string = 'PME') => {
+export const calculateNetCommission = (
+  carrierName: string, 
+  monthlyFee: number, 
+  tier: TierName, 
+  type: 'PF' | 'PJ' = 'PF', 
+  lives: number = 1, 
+  modality: string = 'PME',
+  isAnticipated: boolean = false
+) => {
   // 1. Carregar Configurações de Bônus e Parcelas do localStorage
   let customRules = {
     pme: { first_parcel: 100, second_parcel: 100, bonus_per_life: 0, anticipation_allowed: true },
@@ -142,29 +151,58 @@ export const calculateNetCommission = (carrierName: string, monthlyFee: number, 
   const grossValue = (monthlyFee * (totalPercentage / 100)) + totalBonus;
   const netValue = grossValue * (1 - taxRate);
 
-  const detailedInstallments = installments.map((p, i) => {
-    let description = `${i + 1}ª Parcela`;
-    let isDirect = false;
+  let detailedInstallments: any[] = [];
 
-    if (type === 'PF' && i === 0) {
-      description = "Taxa Angariação (Direto)";
-      isDirect = true;
-    } else if (type === 'PJ' && i === 1 && carrierName.toLowerCase().includes('united')) {
-      description = "2ª Parcela (Antecipável)";
-    } else if (carrierName.toLowerCase().includes('leve')) {
-      description = "Repasse 100% Operadora";
+  if (isAnticipated && type === 'PJ' && installments.length >= 2) {
+    // Se antecipado, soma as duas primeiras parcelas no primeiro mês
+    const p1 = installments[0];
+    const p2 = installments[1];
+    const combinedP = p1 + p2;
+    
+    detailedInstallments.push({
+      index: 1,
+      amount: monthlyFee * combinedP,
+      netAmount: (monthlyFee * combinedP) * (1 - taxRate),
+      description: "1ª Parcela + Antecipação 2ª",
+      isDirect: false,
+      relativeMonth: 0
+    });
+
+    // Adiciona as demais se houver (ex: sobra de Bradesco)
+    for (let i = 2; i < installments.length; i++) {
+      detailedInstallments.push({
+        index: i + 1,
+        amount: monthlyFee * installments[i],
+        netAmount: (monthlyFee * installments[i]) * (1 - taxRate),
+        description: `${i + 1}ª Parcela`,
+        isDirect: false,
+        relativeMonth: i
+      });
     }
+  } else {
+    detailedInstallments = installments.map((p, i) => {
+      let description = `${i + 1}ª Parcela`;
+      let isDirect = false;
 
-    return {
-      index: i + 1,
-      amount: monthlyFee * p,
-      netAmount: (monthlyFee * p) * (1 - taxRate),
-      description,
-      isDirect,
-      // Mês relativo ao início da vigência (0 = mês de início, 1 = mês seguinte, etc.)
-      relativeMonth: i 
-    };
-  });
+      if (type === 'PF' && i === 0) {
+        description = "Taxa Angariação (Direto)";
+        isDirect = true;
+      } else if (type === 'PJ' && i === 1 && carrierName.toLowerCase().includes('united')) {
+        description = "2ª Parcela (Antecipável)";
+      } else if (carrierName.toLowerCase().includes('leve')) {
+        description = "Repasse 100% Operadora";
+      }
+
+      return {
+        index: i + 1,
+        amount: monthlyFee * p,
+        netAmount: (monthlyFee * p) * (1 - taxRate),
+        description,
+        isDirect,
+        relativeMonth: i 
+      };
+    });
+  }
 
   return {
     gross: grossValue,

@@ -74,7 +74,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
     modality: "PME",
     administrator: "",
     first_contact_date: "",
-    is_paid: false
+    is_paid: false,
+    is_anticipated: false
   });
 
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([
@@ -107,7 +108,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         modality: editContract.modality || "PME",
         administrator: editContract.administrator || "",
         first_contact_date: editContract.first_contact_date || "",
-        is_paid: editContract.is_paid || false
+        is_paid: editContract.is_paid || false,
+        is_anticipated: editContract.is_anticipated || false
       });
       setIsNewLead(!!editContract.client_name && !editContract.lead_id);
       fetchBeneficiaries(editContract.id);
@@ -132,7 +134,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         modality: "PME",
         administrator: "",
         first_contact_date: "",
-        is_paid: false
+        is_paid: false,
+        is_anticipated: false
       });
       setBeneficiaries([{ name: "", type: "Titular", birth_date: "", cpf: "" }]);
     }
@@ -244,7 +247,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         modality: contract.modality,
         administrator: contract.administrator,
         first_contact_date: contract.first_contact_date || null,
-        is_paid: contract.is_paid
+        is_paid: contract.is_paid,
+        is_anticipated: contract.is_anticipated
       };
 
       let currentContractId = editContract?.id;
@@ -467,6 +471,29 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
                       {contract.is_paid && <Icons.Check className="w-3 h-3 text-white" />}
                     </div>
                     <span className="text-[10px] font-black uppercase tracking-widest">Boleto Pago</span>
+                  </div>
+                </div>
+
+                <div className="relative group">
+                   <div 
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all cursor-pointer h-full",
+                      contract.is_anticipated 
+                        ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100" 
+                        : "bg-slate-50 border-slate-200 text-slate-500 hover:border-blue-300"
+                    )}
+                    onClick={() => setContract({...contract, is_anticipated: !contract.is_anticipated})}
+                  >
+                    <div className={cn(
+                      "w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all",
+                      contract.is_anticipated ? "bg-white border-white" : "border-slate-300"
+                    )}>
+                      {contract.is_anticipated && <Icons.Zap className="w-3.5 h-3.5 text-blue-600" />}
+                    </div>
+                    <div>
+                       <p className="text-[10px] font-black uppercase tracking-widest">Antecipação Total</p>
+                       <p className={cn("text-[8px] font-bold", contract.is_anticipated ? "text-blue-100" : "text-slate-400")}>Receber 100% da 2ª parcela no 1º mês</p>
+                    </div>
                   </div>
                 </div>
                <InputField label="Início da Vigência" type="date" required value={contract.start_date} onChange={(v:any) => setContract({...contract, start_date: v})} />

@@ -122,7 +122,8 @@ export default function Finance() {
           stone.name,
           c.type as any,
           Number(c.lives || 1),
-          c.modality || 'PME'
+          c.modality || 'PME',
+          c.is_anticipated || false
         );
 
         // Verifica cada parcela do contrato
