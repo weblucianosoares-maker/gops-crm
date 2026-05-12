@@ -254,7 +254,26 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
 
       let currentContractId = editContract?.id;
 
-      if (editContract) {
+      if (editContract?.is_pending_lead) {
+        const { error: leadErr } = await supabase
+          .from('leads')
+          .update({
+            first_invoice_date: contract.sale_date,
+            is_first_invoice_paid: contract.is_paid,
+            is_anticipated: contract.is_anticipated,
+            contract_start_date: contract.start_date,
+            carrier: contract.carrier,
+            product: contract.product,
+            deal_value: contract.monthly_fee,
+            interested_lives: beneficiaries.length,
+            lead_type: contract.type,
+            modality: contract.modality,
+            is_contract_active: contract.status === 'Ativo'
+          })
+          .eq('id', editContract.id);
+        
+        if (leadErr) throw leadErr;
+      } else if (editContract) {
         const { error: contractErr } = await supabase
           .from('contracts')
           .update(contractPayload)

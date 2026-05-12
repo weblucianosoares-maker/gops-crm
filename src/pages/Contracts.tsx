@@ -122,7 +122,10 @@ export default function Contracts() {
       is_pending_lead: true,
       first_invoice_date: l.first_invoice_date,
       is_first_invoice_paid: l.is_first_invoice_paid,
-      is_contract_active: l.is_contract_active
+      is_paid: l.is_first_invoice_paid,
+      is_contract_active: l.is_contract_active,
+      is_anticipated: l.is_anticipated,
+      sale_date: l.first_invoice_date || l.created_at?.substring(0, 10)
     }));
 
     const allItems = [...contracts, ...pendingAsContracts];
