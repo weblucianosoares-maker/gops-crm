@@ -13,7 +13,6 @@ const menuItems = [
   { icon: Icons.Dashboard, label: "Dashboard", path: "/" },
   { icon: Icons.Leads, label: "Leads", path: "/leads" },
   { icon: Icons.Funnel, label: "Funil de Vendas", path: "/funnel" },
-  { icon: Icons.Sparkles, label: "Entrevista IA", path: "/interview" },
   { icon: Icons.Contracts, label: "Contratos", path: "/contracts" },
   { icon: Icons.CreditCard, label: "Financeiro", path: "/finance" },
   { icon: Icons.MessageSquare, label: "WhatsApp", path: "/whatsapp" },
@@ -38,7 +37,7 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, onToggleCollapse }: { 
       )}
       
       <aside className={cn(
-        "flex flex-col h-screen fixed left-0 top-0 bg-slate-50 border-r border-slate-200 py-6 z-50 transition-all duration-300 md:translate-x-0 overflow-hidden",
+        "flex flex-col h-screen fixed left-0 top-0 bg-slate-50 border-r border-slate-200 py-6 z-50 transition-all duration-300 md:translate-x-0 overflow-y-auto custom-neon-scrollbar",
         isCollapsed ? "w-20" : "w-64",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>

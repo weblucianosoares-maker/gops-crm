@@ -253,11 +253,11 @@ export default function Funnel() {
     <div className="flex flex-col h-full w-full overflow-hidden">
       {/* Kanban Header */}
       <header className="w-full px-8 py-5 bg-white border-b shrink-0 z-20 shadow-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
           
-          <div className="flex flex-wrap items-center gap-4 lg:gap-8 flex-1">
+          <div className="flex flex-wrap items-center gap-6 lg:gap-10 flex-1">
             {/* Card: Oportunidades Totais */}
-            <div className="flex flex-col p-3 px-4 bg-slate-50 border border-slate-100 rounded-2xl min-w-[180px]">
+            <div className="flex flex-col p-3 px-4 bg-slate-50 border border-slate-100 rounded-2xl min-w-[170px] shrink-0">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total em Aberto</span>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-black text-slate-800">{activeCount}</span>
@@ -267,11 +267,8 @@ export default function Funnel() {
               </div>
             </div>
 
-            {/* Divisor Vertical */}
-            <div className="hidden lg:block h-10 w-px bg-slate-100"></div>
-
             {/* Card: Pipeline de Vendas */}
-            <div className="flex flex-col gap-1 flex-1 min-w-[240px]">
+            <div className="flex flex-col gap-1 min-w-[220px]">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pipeline de Cotação</span>
               <div className="flex items-center gap-6">
                 <div className="flex flex-col">
@@ -292,11 +289,8 @@ export default function Funnel() {
               </div>
             </div>
 
-            {/* Divisor Vertical */}
-            <div className="hidden lg:block h-10 w-px bg-slate-100"></div>
-
             {/* Card: Status de Implantação */}
-            <div className="flex flex-col gap-1 flex-1 min-w-[300px]">
+            <div className="flex flex-col gap-1 min-w-[340px]">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Fluxo de Implantação</span>
               <div className="flex items-center gap-6">
                 <div className="flex flex-col">
@@ -304,15 +298,15 @@ export default function Funnel() {
                   <span className="text-xs font-black text-slate-700">{formatCurrency(stats.inCarrier)}</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[9px] font-black text-slate-400 uppercase mb-0.5 text-emerald-500">Liberado</span>
+                  <span className="text-[9px] font-black text-slate-500 uppercase mb-0.5 text-emerald-500">Liberado</span>
                   <span className="text-xs font-black text-emerald-700">{formatCurrency(stats.contractReleased)}</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[9px] font-black text-slate-400 uppercase mb-0.5 text-orange-500">Boleto Gerado</span>
+                  <span className="text-[9px] font-black text-orange-500 uppercase mb-0.5">Boleto Gerado</span>
                   <span className="text-xs font-black text-orange-700">{formatCurrency(stats.invoiceGenerated)}</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[9px] font-black text-slate-400 uppercase mb-0.5 text-blue-500">Ativo</span>
+                  <span className="text-[9px] font-black text-blue-500 uppercase mb-0.5">Ativo</span>
                   <span className="text-xs font-black text-blue-700">{formatCurrency(stats.activeDeployment)}</span>
                 </div>
               </div>
