@@ -100,7 +100,8 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
      resp_con_marriage_date: '', resp_con_cpf: '', resp_con_rg: '', resp_con_whatsapp: '', 
      resp_con_phone: '', resp_con_email: '',
      temperature: 'Morno',
-     interaction_status: 'Sem Status'
+     interaction_status: 'Sem Status',
+     client_objective: ''
    });
 
    // Reset component when opening
@@ -267,6 +268,7 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
       interaction_status: newLead.interaction_status || 'Sem Status',
       modality: newLead.modality || 'PME',
       administrator: newLead.administrator,
+      client_objective: newLead.client_objective,
       status_updated_at: new Date().toISOString()
     }]).select();
       
@@ -565,6 +567,20 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
                      </div>
                    </div>
                  )}
+
+                  {/* OBJETIVO DO CLIENTE */}
+                  <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                    <SectionHeader icon={Icons.Target} title="Objetivo do Cliente / Situação Atual" colorClass="bg-blue-50 text-blue-600" />
+                    <div className="space-y-2">
+                      <label className="block text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">O que o cliente busca? (Resumo principal)</label>
+                      <textarea 
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300 resize-none min-h-[120px]"
+                        placeholder="Descreva aqui o resumo principal do que o cliente busca e sua situação atual..."
+                        value={newLead.client_objective}
+                        onChange={(e) => setNewLead({...newLead, client_objective: e.target.value})}
+                      />
+                    </div>
+                  </div>
 
                  {/* ================= COMMON SECTIONS (Plano Atual & Proposta) ================= */}
                  <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">

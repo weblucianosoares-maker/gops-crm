@@ -591,7 +591,8 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       do_not_contact: lead.do_not_contact || false,
       profile_picture_url: lead.profile_picture_url,
       modality: lead.modality || "PME",
-      administrator: lead.administrator
+      administrator: lead.administrator,
+      client_objective: lead.client_objective
     };
     
     console.log("Salvando lead:", updates);
@@ -705,6 +706,19 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                 </div>
                 <div className="md:col-span-3 lg:col-span-4">
                   <DetailField label="Complemento" value={lead.address_complement} onChange={(v:any) => setLead({...lead, address_complement: v})} />
+                </div>
+
+                {/* LINHA 4 - OBJETIVO DO CLIENTE */}
+                <div className="md:col-span-6 lg:col-span-12 mt-4">
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">Objetivo do Cliente / Situação Atual</label>
+                    <textarea 
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-900 placeholder:text-slate-300 resize-none min-h-[100px]"
+                      placeholder="Descreva o que o cliente busca e sua situação atual..."
+                      value={lead.client_objective || ''}
+                      onChange={(e) => setLead({...lead, client_objective: e.target.value})}
+                    />
+                  </div>
                 </div>
               </div>
             </section>

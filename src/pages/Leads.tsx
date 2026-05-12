@@ -780,6 +780,15 @@ export default function Leads() {
                         </div>
                         
                         <p className="text-[10px] text-slate-400 truncate max-w-[150px] leading-tight" title={lead.email}>{lead.email}</p>
+
+                        {lead.client_objective && (
+                          <div className="flex items-center gap-1.5 mt-0.5 max-w-[200px] md:max-w-[300px]">
+                            <Icons.Target className="w-2.5 h-2.5 text-blue-500 shrink-0" />
+                            <p className="text-[9px] text-blue-600 font-bold italic truncate" title={lead.client_objective}>
+                              {lead.client_objective}
+                            </p>
+                          </div>
+                        )}
                         
                         {lead.phone && (
                           <div className="flex items-center gap-1.5 mt-0.5">

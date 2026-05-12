@@ -81,6 +81,8 @@ export const processInterviewStep = async (chatHistory: { role: "user" | "model"
     - has_current_plan, current_carrier, current_product, current_value, current_lives
     - preferred_hospital (hospitais de preferência)
     - pre_existing_condition (doenças/cirurgias)
+    - client_objective (Resumo principal do que o cliente busca e sua situação atual)
+    - motivation (motivação da troca/compra)
 
     SAÍDA ESPERADA (JSON apenas):
     {
