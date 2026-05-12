@@ -51,6 +51,7 @@ export default function Funnel() {
     quotesApproved: leads.filter(l => l.status === 'Cotação Aprovada').reduce((sum, l) => sum + Number(l.deal_value || l.current_value || 0), 0),
     inCarrier: leads.filter(l => l.status === 'Proposta Operadora').reduce((sum, l) => sum + Number(l.deal_value || l.current_value || 0), 0),
     contractReleased: leads.filter(l => l.status === 'Contrato').reduce((sum, l) => sum + Number(l.deal_value || l.current_value || 0), 0),
+    invoiceGenerated: leads.filter(l => l.status === 'Boleto Pago').reduce((sum, l) => sum + Number(l.deal_value || l.current_value || 0), 0),
     activeDeployment: leads.filter(l => l.status === 'Plano Ativo').reduce((sum, l) => sum + Number(l.deal_value || l.current_value || 0), 0)
   };
   
@@ -305,6 +306,10 @@ export default function Funnel() {
                 <div className="flex flex-col">
                   <span className="text-[9px] font-black text-slate-400 uppercase mb-0.5 text-emerald-500">Liberado</span>
                   <span className="text-xs font-black text-emerald-700">{formatCurrency(stats.contractReleased)}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-black text-slate-400 uppercase mb-0.5 text-orange-500">Boleto Gerado</span>
+                  <span className="text-xs font-black text-orange-700">{formatCurrency(stats.invoiceGenerated)}</span>
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[9px] font-black text-slate-400 uppercase mb-0.5 text-blue-500">Ativo</span>
