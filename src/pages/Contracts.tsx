@@ -9,6 +9,7 @@ import { ContractCreateDrawer } from "../components/ContractCreateDrawer";
 
 export default function Contracts() {
   const [contracts, setContracts] = useState<any[]>([]);
+  const [pendingLeads, setPendingLeads] = useState<any[]>([]);
   const [beneficiaries, setBeneficiaries] = useState<any[]>([]);
   const [financials, setFinancials] = useState<any[]>([]);
   const [selectedContract, setSelectedContract] = useState<any>(null);
@@ -104,7 +105,27 @@ export default function Contracts() {
   // Contratos filtrados por período + busca (para a tabela)
   const filteredContracts = useMemo(() => {
     const { start, end } = periodDates;
-    return contracts.filter(c => {
+    
+    // Preparar leads pendentes como objetos compatíveis com a tabela de contratos
+    const pendingAsContracts = pendingLeads.map(l => ({
+      id: l.id,
+      client_name: l.name,
+      carrier: l.carrier,
+      product: l.product,
+      lives: l.interested_lives,
+      start_date: l.contract_start_date || l.created_at?.substring(0, 10),
+      sale_date: l.created_at?.substring(0, 10),
+      monthly_fee: l.deal_value,
+      type: l.lead_type,
+      modality: l.modality,
+      status: 'Aguardando Pagamento',
+      is_pending_lead: true,
+      first_invoice_date: l.first_invoice_date
+    }));
+
+    const allItems = [...contracts, ...pendingAsContracts];
+
+    return allItems.filter(c => {
       const d = parseLocalDate(c.sale_date || c.start_date);
       const matchesPeriod = d >= start && d <= end;
       const matchesSearch = !searchTerm ||
@@ -112,7 +133,7 @@ export default function Contracts() {
         c.carrier?.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesPeriod && matchesSearch;
     });
-  }, [contracts, periodDates, searchTerm]);
+  }, [contracts, pendingLeads, periodDates, searchTerm]);
 
   const totalCommissions = useMemo(() => {
     const { start, end } = periodDates;
@@ -137,13 +158,15 @@ export default function Contracts() {
   }, []);
 
   const fetchContractsData = async () => {
-    const [cRes, bRes, fRes] = await Promise.all([
+    const [cRes, bRes, fRes, lRes] = await Promise.all([
       supabase.from('contracts').select('*').order('created_at', { ascending: false }),
       supabase.from('beneficiaries').select('*'),
-      supabase.from('financial_history').select('*').order('created_at', { ascending: false })
+      supabase.from('financial_history').select('*').order('created_at', { ascending: false }),
+      supabase.from('leads').select('*').eq('is_proposal_approved', true)
     ]);
     
     setContracts(cRes.data || []);
+    setPendingLeads(lRes.data || []);
     setBeneficiaries(bRes.data || []);
     setFinancials(fRes.data || []);
     if (cRes.data && cRes.data.length > 0 && !selectedContract) setSelectedContract(cRes.data[0]);
@@ -314,12 +337,14 @@ export default function Contracts() {
                     setIsDrawerOpen(true);
                   }}
                   className={cn(
-                    "cursor-pointer transition-colors",
-                    selectedContract?.id === contract.id ? "bg-blue-50/50" : "hover:bg-slate-50"
+                    "cursor-pointer transition-colors border-l-4",
+                    selectedContract?.id === contract.id ? "bg-blue-50/50" : "hover:bg-slate-50",
+                    contract.is_pending_lead ? (contract.first_invoice_date ? "border-emerald-400" : "border-red-500") : "border-transparent",
+                    contract.is_pending_lead && !contract.first_invoice_date && "text-red-600"
                   )}
                 >
                   <td className="px-6 py-4">
-                    <p className="text-sm font-bold text-slate-900">{contract.client_name}</p>
+                    <p className={cn("text-sm font-bold", contract.is_pending_lead && !contract.first_invoice_date ? "text-red-600" : "text-slate-900")}>{contract.client_name}</p>
                     <p className="text-xs text-slate-400">{contract.type || 'PF'} • Docs: {contract.cnpj || '---'}</p>
                   </td>
                   <td className="px-6 py-4">
@@ -408,8 +433,10 @@ export default function Contracts() {
                   <td className="px-6 py-4">
                     <span className={cn(
                       "px-2 py-1 rounded text-[10px] font-bold uppercase",
-                      contract.status === 'Ativo' ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"
-                    )}>{contract.status}</span>
+                      contract.is_pending_lead 
+                        ? (contract.first_invoice_date ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700")
+                        : (contract.status === 'Ativo' ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500")
+                    )}>{contract.is_pending_lead ? (contract.first_invoice_date ? 'Boleto Pago' : 'Pendente Pgto') : contract.status}</span>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button 
