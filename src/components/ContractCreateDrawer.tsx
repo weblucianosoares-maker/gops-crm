@@ -109,7 +109,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         administrator: editContract.administrator || "",
         first_contact_date: editContract.first_contact_date || "",
         is_paid: editContract.is_paid || false,
-        is_anticipated: editContract.is_anticipated || false
+        is_anticipated: editContract.is_anticipated || false,
+        commission_received_date: editContract.commission_received_date || ""
       });
       setIsNewLead(!!editContract.client_name && !editContract.lead_id);
       fetchBeneficiaries(editContract.id);
@@ -135,7 +136,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         administrator: "",
         first_contact_date: "",
         is_paid: false,
-        is_anticipated: false
+        is_anticipated: false,
+        commission_received_date: ""
       });
       setBeneficiaries([{ name: "", type: "Titular", birth_date: "", cpf: "" }]);
     }
@@ -249,7 +251,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         administrator: contract.administrator,
         first_contact_date: contract.first_contact_date || null,
         is_paid: contract.is_paid,
-        is_anticipated: contract.is_anticipated
+        is_anticipated: contract.is_anticipated,
+        commission_received_date: contract.commission_received_date || null
       };
 
       let currentContractId = editContract?.id;
@@ -400,6 +403,7 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
                                  type: l.lead_type || 'PF',
                                  modality: l.modality || 'PME',
                                  is_anticipated: l.is_anticipated || false,
+                                 commission_received_date: l.commission_received_date || "",
                                  first_contact_date: leadCreatedAt
                                });
                                success(`Cliente ${l.name} selecionado!`);
@@ -531,6 +535,7 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
                     </div>
                   </div>
                 </div>
+               <InputField label="Data que caiu na conta" type="date" value={contract.commission_received_date} onChange={(v:any) => setContract({...contract, commission_received_date: v})} />
                <InputField label="Início da Vigência" type="date" required value={contract.start_date} onChange={(v:any) => setContract({...contract, start_date: v})} />
                <InputField label="Número do Contrato" value={contract.contract_number} onChange={(v:any) => setContract({...contract, contract_number: v})} />
 

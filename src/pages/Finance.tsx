@@ -108,11 +108,25 @@ export default function Finance() {
     const avgTicketPf = pfSales.length > 0 ? pfSales.reduce((acc, c) => acc + (Number(c.monthly_fee) || 0), 0) / pfSales.length : 0;
     const avgTicketPme = pmeSales.length > 0 ? pmeSales.reduce((acc, c) => acc + (Number(c.monthly_fee) || 0), 0) / pmeSales.length : 0;
 
-    // 3. FLUXO DE CAIXA: Encontrar todas as parcelas que caem neste mês
+    // 3. FLUXO DE CAIXA: Encontrar todas as parcelas que caem neste mês (Contratos + Leads Pagos)
     const upcomingCommissions: any[] = [];
     let totalNetFlow = 0;
 
-    contracts.forEach(c => {
+    const allConfirmed = [
+      ...contracts.map(c => ({ ...c, source: 'contract' })),
+      ...leads.filter(l => l.is_first_invoice_paid).map(l => ({ 
+        ...l, 
+        source: 'lead',
+        client_name: l.name,
+        monthly_fee: l.deal_value,
+        lives: l.interested_lives,
+        type: l.lead_type,
+        start_date: l.contract_start_date || l.first_invoice_date,
+        is_paid: l.is_first_invoice_paid
+      }))
+    ];
+
+    allConfirmed.forEach(c => {
       try {
         const calc = calculateNetCommission(
           String(c.carrier || ''), 
@@ -125,15 +139,23 @@ export default function Finance() {
         );
 
         calc.installments.forEach((inst: any) => {
-          const startDate = new Date(c.start_date);
-          const paymentDate = new Date(startDate.getFullYear(), startDate.getMonth() + inst.relativeMonth, 1);
+          let paymentDate: Date;
+          
+          if (inst.index === 1 && c.is_paid && c.commission_received_date) {
+            const [y, m, d] = c.commission_received_date.split('-').map(Number);
+            paymentDate = new Date(y, m - 1, d);
+          } else {
+            const startDate = new Date(c.start_date);
+            paymentDate = new Date(startDate.getFullYear(), startDate.getMonth() + inst.relativeMonth, 1);
+          }
 
           if (paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear) {
             totalNetFlow += inst.netAmount;
             upcomingCommissions.push({
               ...c,
               installment: inst,
-              fullCommission: calc
+              fullCommission: calc,
+              display_date: paymentDate.toLocaleDateString('pt-BR')
             });
           }
         });
@@ -142,12 +164,12 @@ export default function Finance() {
       }
     });
 
-    // 4. PREVISÕES FUTURAS (Leads aprovados mas ainda não convertidos em contrato pago)
+    // 4. PREVISÕES FUTURAS (Leads aprovados mas ainda não pagos)
     const futureForecasts: any[] = [];
     let totalForecastValue = 0;
 
-    leads.forEach(l => {
-      if ((l.contract_start_date || l.first_invoice_date) && !l.is_first_invoice_paid) {
+    leads.filter(l => !l.is_first_invoice_paid).forEach(l => {
+      if (l.contract_start_date || l.first_invoice_date) {
         try {
           const calc = calculateNetCommission(
             String(l.carrier || ''), 
@@ -159,7 +181,6 @@ export default function Finance() {
             l.is_anticipated || false
           );
 
-          // Pegamos apenas a 1ª parcela como previsão imediata
           const firstInst = calc.installments[0];
           totalForecastValue += firstInst.netAmount;
           
@@ -353,7 +374,7 @@ export default function Finance() {
                   <td className="px-6 py-4">
                     <p className="text-sm font-bold text-slate-900">{safe(c.client_name)}</p>
                     <p className="text-[10px] text-slate-400 uppercase font-bold tracking-tight">
-                      Vigência: {c.start_date.split('-').reverse().join('/')} • {c.installment.description}
+                      {c.display_date ? `Recebido em: ${c.display_date}` : `Previsão: ${c.start_date?.split('-').reverse().join('/')}`} • {c.installment.description}
                     </p>
                   </td>
                   <td className="px-6 py-4">

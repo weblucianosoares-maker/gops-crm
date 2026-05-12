@@ -616,7 +616,8 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       first_invoice_date: lead.first_invoice_date || null,
       is_first_invoice_paid: lead.is_first_invoice_paid || false,
       is_contract_active: lead.is_contract_active || false,
-      is_anticipated: lead.is_anticipated || false
+      is_anticipated: lead.is_anticipated || false,
+      commission_received_date: lead.commission_received_date || null
     };
     
     console.log("Salvando lead:", updates);
@@ -1066,6 +1067,18 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                             {lead.is_anticipated && <Icons.Zap className="w-3.5 h-3.5 text-amber-500" />}
                           </div>
                           <span className="text-[10px] font-black uppercase tracking-widest">Antecipação Total</span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">Data que caiu na conta</label>
+                          <input 
+                            type="date"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:bg-white focus:ring-4 focus:ring-blue-100/10 focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
+                            value={lead.commission_received_date || ""}
+                            onChange={e => setLead({...lead, commission_received_date: e.target.value})}
+                          />
                         </div>
                       </div>
                     )}
