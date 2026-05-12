@@ -114,7 +114,6 @@ export default function Contracts() {
       product: l.product,
       lives: l.interested_lives,
       start_date: l.contract_start_date || l.created_at?.substring(0, 10),
-      sale_date: l.created_at?.substring(0, 10),
       monthly_fee: l.deal_value,
       type: l.lead_type,
       modality: l.modality,
