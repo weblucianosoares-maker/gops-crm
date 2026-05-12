@@ -615,7 +615,8 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       is_proposal_approved: lead.is_proposal_approved || false,
       first_invoice_date: lead.first_invoice_date || null,
       is_first_invoice_paid: lead.is_first_invoice_paid || false,
-      is_contract_active: lead.is_contract_active || false
+      is_contract_active: lead.is_contract_active || false,
+      is_anticipated: lead.is_anticipated || false
     };
     
     console.log("Salvando lead:", updates);
@@ -1047,6 +1048,24 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                             {lead.is_contract_active && <Icons.Zap className="w-3.5 h-3.5 text-blue-600" />}
                           </div>
                           <span className="text-[10px] font-black uppercase tracking-widest">Contrato Ativo</span>
+                        </div>
+
+                        <div 
+                          className={cn(
+                            "flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all cursor-pointer",
+                            lead.is_anticipated 
+                              ? "bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-100" 
+                              : "bg-white border-slate-200 text-slate-500 hover:border-amber-300"
+                          )}
+                          onClick={() => setLead({...lead, is_anticipated: !lead.is_anticipated})}
+                        >
+                          <div className={cn(
+                            "w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all",
+                            lead.is_anticipated ? "bg-white border-white" : "border-slate-300"
+                          )}>
+                            {lead.is_anticipated && <Icons.Zap className="w-3.5 h-3.5 text-amber-500" />}
+                          </div>
+                          <span className="text-[10px] font-black uppercase tracking-widest">Antecipação Total</span>
                         </div>
                       </div>
                     )}

@@ -379,6 +379,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
                                  client_name: l.name, 
                                  cnpj: l.lead_type === 'PJ' ? (l.cnpj || "") : (l.cpf || ""),
                                  type: l.lead_type || 'PF',
+                                 modality: l.modality || 'PME',
+                                 is_anticipated: l.is_anticipated || false,
                                  first_contact_date: leadCreatedAt
                                });
                                success(`Cliente ${l.name} selecionado!`);

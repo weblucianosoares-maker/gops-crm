@@ -155,7 +155,8 @@ export default function Finance() {
             stone.name,
             l.lead_type as any,
             Number(l.interested_lives || 1),
-            l.modality || 'PME'
+            l.modality || 'PME',
+            l.is_anticipated || false
           );
 
           // Pegamos apenas a 1ª parcela como previsão imediata
