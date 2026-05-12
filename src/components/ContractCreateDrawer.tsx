@@ -73,7 +73,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
     previous_plan_value: 0,
     modality: "PME",
     administrator: "",
-    first_contact_date: ""
+    first_contact_date: "",
+    is_paid: false
   });
 
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([
@@ -105,7 +106,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         previous_plan_value: editContract.previous_plan_value || 0,
         modality: editContract.modality || "PME",
         administrator: editContract.administrator || "",
-        first_contact_date: editContract.first_contact_date || ""
+        first_contact_date: editContract.first_contact_date || "",
+        is_paid: editContract.is_paid || false
       });
       setIsNewLead(!!editContract.client_name && !editContract.lead_id);
       fetchBeneficiaries(editContract.id);
@@ -129,7 +131,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         previous_plan_value: 0,
         modality: "PME",
         administrator: "",
-        first_contact_date: ""
+        first_contact_date: "",
+        is_paid: false
       });
       setBeneficiaries([{ name: "", type: "Titular", birth_date: "", cpf: "" }]);
     }
@@ -240,7 +243,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         previous_plan_value: contract.previous_plan_value,
         modality: contract.modality,
         administrator: contract.administrator,
-        first_contact_date: contract.first_contact_date || null
+        first_contact_date: contract.first_contact_date || null,
+        is_paid: contract.is_paid
       };
 
       let currentContractId = editContract?.id;
@@ -398,7 +402,18 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
 
           {/* Plano & Valores */}
           <section>
-            <SectionHeader icon={Icons.Target} title="Plano & Vigência" colorClass="bg-amber-100 text-amber-700" />
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-amber-100 text-amber-700">
+                  <Icons.Target className="w-4 h-4" />
+                </div>
+                <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Plano & Vigência</h4>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-full">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest">Contrato Ativo</span>
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                <div>
                   <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Modalidade</label>
@@ -434,7 +449,26 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
                  mask={formatCurrencyValue}
                  onChange={(v:any) => setContract({...contract, monthly_fee: parseCurrencyValue(v)})} 
                />
-               <InputField label="Data do Pagamento / Taxa de Adesão" type="date" required value={contract.sale_date} onChange={(v:any) => setContract({...contract, sale_date: v})} />
+                               <div className="relative group">
+                  <InputField label="Data do Pagamento / Taxa de Adesão" type="date" required value={contract.sale_date} onChange={(v:any) => setContract({...contract, sale_date: v})} />
+                  <div 
+                    className={cn(
+                      "absolute right-2 top-[26px] flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer",
+                      contract.is_paid 
+                        ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-100" 
+                        : "bg-white border-slate-200 text-slate-400 hover:border-emerald-300"
+                    )}
+                    onClick={() => setContract({...contract, is_paid: !contract.is_paid})}
+                  >
+                    <div className={cn(
+                      "w-4 h-4 rounded border-2 flex items-center justify-center transition-all",
+                      contract.is_paid ? "bg-white border-white" : "border-slate-200"
+                    )}>
+                      {contract.is_paid && <Icons.Check className="w-3 h-3 text-white" />}
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest">Boleto Pago</span>
+                  </div>
+                </div>
                <InputField label="Início da Vigência" type="date" required value={contract.start_date} onChange={(v:any) => setContract({...contract, start_date: v})} />
                <InputField label="Número do Contrato" value={contract.contract_number} onChange={(v:any) => setContract({...contract, contract_number: v})} />
 
