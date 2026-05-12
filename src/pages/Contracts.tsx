@@ -120,7 +120,9 @@ export default function Contracts() {
       modality: l.modality,
       status: 'Aguardando Pagamento',
       is_pending_lead: true,
-      first_invoice_date: l.first_invoice_date
+      first_invoice_date: l.first_invoice_date,
+      is_first_invoice_paid: l.is_first_invoice_paid,
+      is_contract_active: l.is_contract_active
     }));
 
     const allItems = [...contracts, ...pendingAsContracts];
@@ -431,12 +433,21 @@ export default function Contracts() {
                     })()}
                   </td>
                   <td className="px-6 py-4">
-                    <span className={cn(
-                      "px-2 py-1 rounded text-[10px] font-bold uppercase",
-                      contract.is_pending_lead 
-                        ? (contract.first_invoice_date ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700")
-                        : (contract.status === 'Ativo' ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500")
-                    )}>{contract.is_pending_lead ? (contract.first_invoice_date ? 'Boleto Pago' : 'Pendente Pgto') : contract.status}</span>
+                    {contract.is_pending_lead ? (
+                      <span className={cn(
+                        "px-2 py-1 rounded text-[10px] font-bold uppercase",
+                        contract.is_first_invoice_paid ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+                      )}>
+                        {contract.is_first_invoice_paid ? 'Boleto Pago' : 'Aguardando pagamento'}
+                      </span>
+                    ) : (
+                      <span className={cn(
+                        "px-2 py-1 rounded text-[10px] font-bold uppercase",
+                        contract.is_contract_active ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"
+                      )}>
+                        {contract.is_contract_active ? 'ATIVO' : contract.status || 'Implantado'}
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button 

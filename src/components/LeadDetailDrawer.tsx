@@ -613,7 +613,9 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       client_objective: lead.client_objective,
       current_situation: lead.current_situation,
       is_proposal_approved: lead.is_proposal_approved || false,
-      first_invoice_date: lead.first_invoice_date || null
+      first_invoice_date: lead.first_invoice_date || null,
+      is_first_invoice_paid: lead.is_first_invoice_paid || false,
+      is_contract_active: lead.is_contract_active || false
     };
     
     console.log("Salvando lead:", updates);
@@ -1006,6 +1008,46 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                           value={lead.first_invoice_date} 
                           onChange={(v:any) => setLead({...lead, first_invoice_date: v || null})} 
                         />
+                      </div>
+                    )}
+
+                    {lead.is_proposal_approved && (
+                      <div className="flex flex-wrap gap-4 pt-4 mt-2 border-t border-slate-200/50">
+                        <div 
+                          className={cn(
+                            "flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all cursor-pointer",
+                            lead.is_first_invoice_paid 
+                              ? "bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-100" 
+                              : "bg-white border-slate-200 text-slate-500 hover:border-emerald-300"
+                          )}
+                          onClick={() => setLead({...lead, is_first_invoice_paid: !lead.is_first_invoice_paid})}
+                        >
+                          <div className={cn(
+                            "w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all",
+                            lead.is_first_invoice_paid ? "bg-white border-white" : "border-slate-300"
+                          )}>
+                            {lead.is_first_invoice_paid && <Icons.Check className="w-3.5 h-3.5 text-emerald-600" />}
+                          </div>
+                          <span className="text-[10px] font-black uppercase tracking-widest">Boleto Pago</span>
+                        </div>
+
+                        <div 
+                          className={cn(
+                            "flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all cursor-pointer",
+                            lead.is_contract_active 
+                              ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100" 
+                              : "bg-white border-slate-200 text-slate-500 hover:border-blue-300"
+                          )}
+                          onClick={() => setLead({...lead, is_contract_active: !lead.is_contract_active})}
+                        >
+                          <div className={cn(
+                            "w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all",
+                            lead.is_contract_active ? "bg-white border-white" : "border-slate-300"
+                          )}>
+                            {lead.is_contract_active && <Icons.Zap className="w-3.5 h-3.5 text-blue-600" />}
+                          </div>
+                          <span className="text-[10px] font-black uppercase tracking-widest">Contrato Ativo</span>
+                        </div>
                       </div>
                     )}
                   </div>
