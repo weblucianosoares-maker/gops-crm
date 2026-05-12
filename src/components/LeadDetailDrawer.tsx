@@ -205,7 +205,8 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
     stages, 
     contactTypes, 
     interactionStatuses,
-    carriers, 
+    carriers,
+    clientObjectives,
   } = useLeads();
   const { success, error: showError } = useToast();
   const [lead, setLead] = useState(initialLead);
@@ -592,7 +593,8 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       profile_picture_url: lead.profile_picture_url,
       modality: lead.modality || "PME",
       administrator: lead.administrator,
-      client_objective: lead.client_objective
+      client_objective: lead.client_objective,
+      current_situation: lead.current_situation
     };
     
     console.log("Salvando lead:", updates);
@@ -708,15 +710,22 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                   <DetailField label="Complemento" value={lead.address_complement} onChange={(v:any) => setLead({...lead, address_complement: v})} />
                 </div>
 
-                {/* LINHA 4 - OBJETIVO DO CLIENTE */}
-                <div className="md:col-span-6 lg:col-span-12 mt-4">
+                {/* LINHA 4 - OBJETIVO E SITUAÇÃO */}
+                <div className="md:col-span-6 lg:col-span-12 mt-4 space-y-5">
+                  <DetailField 
+                    label="Objetivo do Cliente" 
+                    value={lead.client_objective} 
+                    selectOptions={clientObjectives?.filter((o: any) => o.active).map((o: any) => o.name)}
+                    onChange={(v:any) => setLead({...lead, client_objective: v})} 
+                  />
+                  
                   <div className="space-y-1">
-                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">Objetivo do Cliente / Situação Atual</label>
+                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">Resumo da Situação Atual</label>
                     <textarea 
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:bg-white focus:border-blue-500 text-sm font-bold text-slate-900 placeholder:text-slate-300 resize-none min-h-[100px]"
-                      placeholder="Descreva o que o cliente busca e sua situação atual..."
-                      value={lead.client_objective || ''}
-                      onChange={(e) => setLead({...lead, client_objective: e.target.value})}
+                      placeholder="Descreva detalhadamente a situação atual do lead..."
+                      value={lead.current_situation || ''}
+                      onChange={(e) => setLead({...lead, current_situation: e.target.value})}
                     />
                   </div>
                 </div>

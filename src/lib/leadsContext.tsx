@@ -27,6 +27,9 @@ interface LeadsContextType {
   loadingProducts: boolean;
   fetchCarriers: () => Promise<void>;
   fetchProducts: () => Promise<void>;
+  clientObjectives: any[];
+  loadingClientObjectives: boolean;
+  fetchClientObjectives: () => Promise<void>;
 }
 
 const LeadsContext = createContext<LeadsContextType | undefined>(undefined);
@@ -48,6 +51,8 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useState<any[]>([]);
   const [loadingCarriers, setLoadingCarriers] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [clientObjectives, setClientObjectives] = useState<any[]>([]);
+  const [loadingClientObjectives, setLoadingClientObjectives] = useState(true);
 
   const fetchStages = async () => {
     setLoadingStages(true);
@@ -129,6 +134,20 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
     setLoadingProducts(false);
   };
 
+  const fetchClientObjectives = async () => {
+    setLoadingClientObjectives(true);
+    const { data, error } = await supabase
+      .from('client_objectives')
+      .select('*')
+      .eq('active', true)
+      .order('name', { ascending: true });
+    
+    if (!error && data) {
+      setClientObjectives(data);
+    }
+    setLoadingClientObjectives(false);
+  };
+
   const fetchLeads = async () => {
     let allLeads: any[] = [];
     let from = 0;
@@ -192,6 +211,7 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
     fetchJobTitles();
     fetchCarriers();
     fetchProducts();
+    fetchClientObjectives();
     fetchUnread();
 
     const channel = supabase
@@ -239,7 +259,10 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
       loadingCarriers,
       loadingProducts,
       fetchCarriers,
-      fetchProducts
+      fetchProducts,
+      clientObjectives,
+      loadingClientObjectives,
+      fetchClientObjectives
     }}>
       {children}
     </LeadsContext.Provider>

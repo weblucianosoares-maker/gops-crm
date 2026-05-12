@@ -145,7 +145,8 @@ export function AIGuidedLeadCreate({ isOpen, onClose, onSuccess }: AIGuidedLeadC
         current_carrier: extractedData.current_carrier,
         current_product: extractedData.current_product,
         current_value: extractedData.current_value,
-        client_objective: extractedData.client_objective || extractedData.motivation || extractedData.analysis,
+        client_objective: extractedData.client_objective,
+        current_situation: extractedData.current_situation || extractedData.motivation || extractedData.analysis,
         source: 'IA Interview',
         status: 'Novo',
         temperature: 'Morno'

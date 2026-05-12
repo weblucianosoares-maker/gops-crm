@@ -1033,6 +1033,254 @@ function ContactTypesSettingsSection({ isOpen, onToggle }: { isOpen: boolean, on
 );
 }
 
+// ─── Client Objectives Settings Section ─────────────────────
+function ClientObjectivesSettingsSection({ isOpen, onToggle }: { isOpen: boolean, onToggle: () => void }) {
+  const { clientObjectives, fetchClientObjectives, loadingClientObjectives } = useLeads();
+  const { success, error, toast: showToast } = useToast();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", active: true });
+  const [isAdding, setIsAdding] = useState(false);
+  const [newForm, setNewForm] = useState({ name: "", active: true });
+
+  const handleEdit = (obj: any) => {
+    setEditingId(obj.id);
+    setEditForm({ name: obj.name || "", active: obj.active ?? true });
+  };
+
+  const handleSave = async (id: string) => {
+    if (!editForm.name.trim()) { showToast("Nome do objetivo é obrigatório.", "warning"); return; }
+    const { error: supabaseError } = await supabase
+      .from('client_objectives')
+      .update({ name: editForm.name, active: editForm.active })
+      .eq('id', id);
+    if (!supabaseError) { success("Objetivo salvo!"); setEditingId(null); fetchClientObjectives(); }
+    else error("Erro ao salvar objetivo.");
+  };
+
+  const handleAdd = async () => {
+    if (!newForm.name.trim()) { showToast("Nome do objetivo é obrigatório.", "warning"); return; }
+    const isDuplicate = clientObjectives.some((c: any) => c.name.toLowerCase() === newForm.name.trim().toLowerCase());
+    if (isDuplicate) { showToast("Já existe um objetivo com este nome.", "warning"); return; }
+    const { error: supabaseError } = await supabase
+      .from('client_objectives')
+      .insert([{ name: newForm.name.trim(), active: newForm.active }]);
+    
+    if (!supabaseError) {
+      setIsAdding(false);
+      setNewForm({ name: "", active: true });
+      fetchClientObjectives();
+      success("Objetivo cadastrado!");
+    } else {
+      error("Erro ao adicionar objetivo: " + (supabaseError.message || "Erro desconhecido"));
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Tem certeza que deseja apagar este objetivo?")) return;
+    const { error: err } = await supabase.from('client_objectives').delete().eq('id', id);
+    if (!err) fetchClientObjectives();
+    else error("Erro ao apagar objetivo.");
+  };
+
+  const toggleActive = async (id: string, currentActive: boolean) => {
+    await supabase.from('client_objectives').update({ active: !currentActive }).eq('id', id);
+    fetchClientObjectives();
+  };
+
+  return (
+    <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <button 
+        onClick={onToggle}
+        className="w-full text-left p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50 hover:bg-slate-100/50 transition-colors group"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center text-white shadow-lg shadow-blue-200">
+            <Icons.Target className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="font-bold text-slate-900">Objetivos do Cliente</h2>
+            <p className="text-xs text-slate-500">Gerencie as opções de objetivos dos leads</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isOpen) onToggle();
+              setIsAdding(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white text-xs font-black uppercase tracking-wider rounded-lg hover:bg-blue-600 transition-all shadow-md shadow-blue-200"
+          >
+            <Icons.Plus className="w-3.5 h-3.5" /> Novo Objetivo
+          </button>
+          <Icons.ChevronDown className={cn(
+            "w-5 h-5 text-slate-400 transition-transform duration-300",
+            isOpen ? "rotate-180" : ""
+          )} />
+        </div>
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            <div className="p-6">
+        {loadingClientObjectives ? (
+          <div className="py-12 flex justify-center">
+            <div className="w-8 h-8 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {clientObjectives.map((obj: any) => (
+              <motion.div
+                layout
+                key={obj.id}
+                className={cn(
+                  "p-4 rounded-xl border transition-all",
+                  editingId === obj.id ? "border-blue-500 bg-blue-50/30 ring-2 ring-blue-500/10" : "border-slate-100 hover:border-slate-200"
+                )}
+              >
+                {editingId === obj.id ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1 space-y-0.5">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Objetivo</p>
+                        <input
+                          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold outline-none focus:border-blue-500"
+                          value={editForm.name}
+                          onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Status</p>
+                        <button
+                          onClick={() => setEditForm({ ...editForm, active: !editForm.active })}
+                          className={cn(
+                            "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
+                            editForm.active ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"
+                          )}
+                        >
+                          {editForm.active ? "Ativo" : "Inativo"}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 justify-end">
+                      <button
+                        onClick={() => handleSave(obj.id)}
+                        className="px-3 py-1.5 bg-green-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-green-700"
+                      >Salvar</button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="px-3 py-1.5 bg-slate-100 text-slate-600 text-[10px] font-black uppercase rounded-lg hover:bg-slate-200"
+                      >Cancelar</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
+                        {(obj.name || "O").substring(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-900">{obj.name}</h3>
+                        <div className="flex items-center gap-3 mt-0.5">
+                          <span className={cn(
+                            "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                            obj.active ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"
+                          )}>
+                            {obj.active ? "● Ativo" : "○ Inativo"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => toggleActive(obj.id, obj.active)}
+                        className={cn(
+                          "p-2 rounded-lg transition-all",
+                          obj.active
+                            ? "text-green-500 hover:text-slate-500 hover:bg-slate-50"
+                            : "text-slate-400 hover:text-green-500 hover:bg-green-50"
+                        )}
+                        title={obj.active ? "Desativar" : "Ativar"}
+                      >
+                        <Icons.CheckCircle className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleEdit(obj)}
+                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                      ><Icons.Edit className="w-4 h-4" /></button>
+                      <button
+                        onClick={() => handleDelete(obj.id)}
+                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                      ><Icons.Trash className="w-4 h-4" /></button>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        )}
+
+        <AnimatePresence>
+          {isAdding && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mt-6 p-6 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200"
+            >
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Nome do Objetivo</label>
+                  <input
+                    placeholder="Ex: Upgrade de Plano"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-blue-500"
+                    value={newForm.name}
+                    onChange={e => setNewForm({ ...newForm, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Status</label>
+                  <button
+                    onClick={() => setNewForm({ ...newForm, active: !newForm.active })}
+                    className={cn(
+                      "w-full px-4 py-2.5 rounded-xl text-sm font-bold transition-all border",
+                      newForm.active
+                        ? "bg-green-50 text-green-700 border-green-200"
+                        : "bg-slate-50 text-slate-500 border-slate-200"
+                    )}
+                  >
+                    {newForm.active ? "● Ativo" : "○ Inativo"}
+                  </button>
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => setIsAdding(false)}
+                  className="px-6 py-2.5 text-slate-600 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-slate-200 transition-all"
+                >Cancelar</button>
+                <button
+                  onClick={handleAdd}
+                  disabled={!newForm.name.trim()}
+                  className="px-6 py-2.5 bg-blue-500 text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-blue-600 transition-all shadow-lg shadow-blue-200 disabled:opacity-50"
+                >Cadastrar Objetivo</button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
+  );
+}
+
 // ─── Job Titles Section ─────────────────────────────
 function JobTitlesSettingsSection({ isOpen, onToggle }: { isOpen: boolean, onToggle: () => void }) {
   const { jobTitles, fetchJobTitles, loadingJobTitles } = useLeads();
@@ -2061,6 +2309,11 @@ export default function Settings() {
       <ContactTypesSettingsSection 
         isOpen={activeSection === "contact_types"} 
         onToggle={() => toggleSection("contact_types")} 
+      />
+
+      <ClientObjectivesSettingsSection 
+        isOpen={activeSection === "client_objectives"} 
+        onToggle={() => toggleSection("client_objectives")} 
       />
 
       {/* ── Section 4.5: Regras de Comissão ── */}
