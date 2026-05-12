@@ -615,7 +615,9 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       modality: lead.modality || "PME",
       administrator: lead.administrator,
       client_objective: lead.client_objective,
-      current_situation: lead.current_situation
+      current_situation: lead.current_situation,
+      is_proposal_approved: lead.is_proposal_approved || false,
+      first_invoice_date: lead.first_invoice_date || null
     };
     
     console.log("Salvando lead:", updates);
@@ -978,6 +980,38 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                   />
                   <div className="lg:col-span-2">
                     <DetailField label="Link Documentos (Drive)" value={lead.docs_link} onChange={(v:any) => setLead({...lead, docs_link: v})} placeholder="https://..." />
+                  </div>
+                  
+                  <div className="lg:col-span-12 flex flex-col gap-4 p-4 bg-slate-50 border border-slate-100 rounded-2xl mt-2">
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className={cn(
+                          "w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all cursor-pointer",
+                          lead.is_proposal_approved ? "bg-emerald-500 border-emerald-500 shadow-sm" : "bg-white border-slate-200 hover:border-emerald-300"
+                        )}
+                        onClick={() => setLead({...lead, is_proposal_approved: !lead.is_proposal_approved})}
+                      >
+                        {lead.is_proposal_approved && <Icons.Check className="w-4 h-4 text-white" />}
+                      </div>
+                      <span className="text-xs font-black text-slate-700 uppercase tracking-wider">Cotação Aprovada pelo Cliente</span>
+                    </div>
+
+                    {lead.is_proposal_approved && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2 border-t border-slate-200/50">
+                        <DetailField 
+                          label="Data de Vigência (Contratos)" 
+                          type="date" 
+                          value={lead.contract_start_date} 
+                          onChange={(v:any) => setLead({...lead, contract_start_date: v || null})} 
+                        />
+                        <DetailField 
+                          label="1º Boleto (Financeiro)" 
+                          type="date" 
+                          value={lead.first_invoice_date} 
+                          onChange={(v:any) => setLead({...lead, first_invoice_date: v || null})} 
+                        />
+                      </div>
+                    )}
                   </div>
                </div>
             </section>
