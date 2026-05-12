@@ -216,7 +216,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
            cpf: contract.type === 'PF' ? cnpj.replace(/\D/g, '') : null,
            lead_type: contract.type,
            status: 'Vendido',
-           source: 'Conversão'
+           source: 'Conversão',
+           email: '' // Campo obrigatório no banco
         }]).select().single();
         
         if (leadErr) throw leadErr;
@@ -413,9 +414,22 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
                 </div>
                 <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Plano & Vigência</h4>
               </div>
-              <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-full">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest">Contrato Ativo</span>
+              <div 
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all cursor-pointer",
+                  contract.status === 'Ativo' 
+                    ? "bg-emerald-50 border-emerald-100 text-emerald-700" 
+                    : "bg-slate-50 border-slate-200 text-slate-400 hover:border-emerald-200"
+                )}
+                onClick={() => setContract({...contract, status: contract.status === 'Ativo' ? 'Inativo' : 'Ativo'})}
+              >
+                <div className={cn(
+                  "w-1.5 h-1.5 rounded-full transition-all",
+                  contract.status === 'Ativo' ? "bg-emerald-500 animate-pulse" : "bg-slate-300"
+                )} />
+                <span className="text-[9px] font-black uppercase tracking-widest">
+                  {contract.status === 'Ativo' ? 'Contrato Ativo' : 'Contrato Inativo'}
+                </span>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
