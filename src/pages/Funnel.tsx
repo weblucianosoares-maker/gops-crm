@@ -268,7 +268,7 @@ export default function Funnel() {
             </div>
 
             {/* Card: Pipeline de Vendas */}
-            <div className="flex flex-col gap-1 min-w-[200px] shrink-0">
+            <div className="flex flex-col p-3 px-4 bg-slate-50 border border-slate-100 rounded-2xl min-w-[220px] shrink-0">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pipeline de Cotação</span>
               <div className="flex items-center gap-6">
                 <div className="flex flex-col">
@@ -290,11 +290,11 @@ export default function Funnel() {
             </div>
 
             {/* Card: Status de Implantação */}
-            <div className="flex flex-col gap-1 min-w-[320px] shrink-0">
+            <div className="flex flex-col p-3 px-4 bg-slate-50 border border-slate-100 rounded-2xl min-w-[340px] shrink-0">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Fluxo de Implantação</span>
               <div className="flex items-center gap-6">
                 <div className="flex flex-col">
-                  <span className="text-[9px] font-black text-slate-400 uppercase mb-0.5">Na Operadora</span>
+                  <span className="text-[9px] font-black text-slate-400 uppercase mb-0.5">Na Op</span>
                   <span className="text-xs font-black text-slate-700">{formatCurrency(stats.inCarrier)}</span>
                 </div>
                 <div className="flex flex-col">
@@ -302,7 +302,7 @@ export default function Funnel() {
                   <span className="text-xs font-black text-emerald-700">{formatCurrency(stats.contractReleased)}</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[9px] font-black text-orange-500 uppercase mb-0.5">Boleto Gerado</span>
+                  <span className="text-[9px] font-black text-orange-500 uppercase mb-0.5">Boleto</span>
                   <span className="text-xs font-black text-orange-700">{formatCurrency(stats.invoiceGenerated)}</span>
                 </div>
                 <div className="flex flex-col">
