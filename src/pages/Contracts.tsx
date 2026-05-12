@@ -17,7 +17,7 @@ export default function Contracts() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [contractToEdit, setContractToEdit] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedPeriod, setSelectedPeriod] = useState<'mês' | 'trimestre' | 'semestre' | 'ano' | 'custom'>('mês');
+  const [selectedPeriod, setSelectedPeriod] = useState<'mês' | 'trimestre' | 'semestre' | 'ano' | 'custom'>('ano');
   // Datas temporárias (enquanto o usuário edita no modo personalizado)
   const [pendingStart, setPendingStart] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
   const [pendingEnd, setPendingEnd] = useState(new Date().toISOString().split('T')[0]);
