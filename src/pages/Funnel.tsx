@@ -40,7 +40,7 @@ export default function Funnel() {
 
   const openStatuses = stages.map(s => s.name);
   const openOpportunities = leads.filter(l => 
-    openStatuses.includes(l.status)
+    openStatuses.includes(l.status) && l.status !== 'Perdido' && l.status !== 'Plano Ativo'
   );
   
   const activeCount = openOpportunities.length;
