@@ -24,10 +24,29 @@ export const DatePicker = ({
   const [viewMode, setViewMode] = useState<'days' | 'months' | 'years'>('days');
   const [displayValue, setDisplayValue] = useState("");
   const [isFocused, setIsFocused] = useState(false);
+  const [actualPlacement, setActualPlacement] = useState<'top' | 'bottom'>(placement);
   const containerRef = useRef<HTMLDivElement>(null);
   
   // Internal state for calendar navigation
   const [viewDate, setViewDate] = useState(new Date());
+
+  // Calculate placement dynamically when opening
+  useEffect(() => {
+    if (isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const calendarHeight = 320; // Estimated height of the calendar popup
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+
+      if (placement === 'bottom' && spaceBelow < calendarHeight && spaceAbove > spaceBelow) {
+        setActualPlacement('top');
+      } else if (placement === 'top' && spaceAbove < calendarHeight && spaceBelow > spaceAbove) {
+        setActualPlacement('bottom');
+      } else {
+        setActualPlacement(placement);
+      }
+    }
+  }, [isOpen, placement]);
 
   // Sync internal display value when external value changes
   useEffect(() => {
@@ -163,12 +182,12 @@ export const DatePicker = ({
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: placement === 'top' ? 5 : 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: placement === 'top' ? 0 : 5, scale: 1 }}
-            exit={{ opacity: 0, y: placement === 'top' ? 5 : 10, scale: 0.95 }}
+            initial={{ opacity: 0, y: actualPlacement === 'top' ? 5 : 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: actualPlacement === 'top' ? 0 : 5, scale: 1 }}
+            exit={{ opacity: 0, y: actualPlacement === 'top' ? 5 : 10, scale: 0.95 }}
             className={cn(
               "absolute z-[300] right-0 bg-white rounded-2xl shadow-2xl border border-slate-100 p-4 w-[280px]",
-              placement === 'top' ? "bottom-full mb-2 origin-bottom" : "top-full mt-2 origin-top"
+              actualPlacement === 'top' ? "bottom-full mb-2 origin-bottom" : "top-full mt-2 origin-top"
             )}
           >
             {/* Header */}
