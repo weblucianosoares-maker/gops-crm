@@ -295,7 +295,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
       }
 
       if (editContract) {
-        await supabase.from('beneficiaries').delete().eq('contract_id', editContract.id);
+        const { error: delErr } = await supabase.from('beneficiaries').delete().eq('contract_id', editContract.id);
+        if (delErr) throw delErr;
       }
 
       if (beneficiaries.length > 0) {
