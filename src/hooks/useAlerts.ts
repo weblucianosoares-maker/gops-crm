@@ -199,6 +199,53 @@ export function useAlerts() {
               });
            }
         }
+
+        // 6. Amil Dental Cancellation Alerts (10 and 11 months)
+        if (contract.start_date && contract.has_amil_dental) {
+           const lead = (leadsRes.data as any[])?.find((l: any)=>l.id===contract.lead_id);
+           
+           // 10 months alert
+           const d10 = new Date(contract.start_date);
+           d10.setMonth(d10.getMonth() + 10);
+           const daysTo10 = getDiffDays(d10.toISOString());
+           
+           if (daysTo10 !== null && daysTo10 >= -15 && daysTo10 <= 15) {
+              newAlerts.push({
+                id: `amil-dental-10-${contract.id}`,
+                type: 'contract',
+                title: `Aviso Amil Dental (10m): ${contract.client_name}`,
+                description: daysTo10 === 0 ? "O contrato completou 10 meses HOJE. Prepare-se para o cancelamento no mês que vem." : daysTo10 < 0 ? `Passou do 10º mês!` : `Faltam ${daysTo10} dias para o 10º mês.`,
+                date: d10,
+                isToday: daysTo10 === 0,
+                severity: 'warning',
+                entityId: contract.lead_id || '',
+                leadData: lead,
+                typeLabel: 'Amil Dental',
+                statusLabel: daysTo10 === 0 ? 'Hoje' : 'Atenção'
+              });
+           }
+
+           // 11 months alert
+           const d11 = new Date(contract.start_date);
+           d11.setMonth(d11.getMonth() + 11);
+           const daysTo11 = getDiffDays(d11.toISOString());
+           
+           if (daysTo11 !== null && daysTo11 >= -15 && daysTo11 <= 15) {
+              newAlerts.push({
+                id: `amil-dental-11-${contract.id}`,
+                type: 'contract',
+                title: `CANCELAR AMIL DENTAL: ${contract.client_name}`,
+                description: daysTo11 === 0 ? "O contrato completou 11 meses HOJE! Cancele o plano odontológico agora para evitar cobranças." : daysTo11 < 0 ? `Passou do prazo do 11º mês!` : `Faltam ${daysTo11} dias para cancelar.`,
+                date: d11,
+                isToday: daysTo11 === 0,
+                severity: 'urgent',
+                entityId: contract.lead_id || '',
+                leadData: lead,
+                typeLabel: 'Amil Dental',
+                statusLabel: daysTo11 === 0 ? 'Hoje' : 'Cancelar'
+              });
+           }
+        }
       });
 
       setAlerts(newAlerts);

@@ -617,7 +617,8 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
       is_first_invoice_paid: lead.is_first_invoice_paid || false,
       is_contract_active: lead.is_contract_active || false,
       is_anticipated: lead.is_anticipated || false,
-      commission_received_date: lead.commission_received_date || null
+      commission_received_date: lead.commission_received_date || null,
+      has_amil_dental: lead.has_amil_dental || false
     };
     
     console.log("Salvando lead:", updates);
@@ -648,22 +649,30 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                   <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Identificação do Lead</h4>
                 </div>
                 
-                <label className="flex items-center gap-2 cursor-pointer group select-none">
-                  <div className={cn(
-                    "w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
-                    lead.do_not_contact ? "bg-red-500 border-red-500 shadow-sm" : "bg-white border-slate-200 group-hover:border-red-300"
+                <div className="flex items-center gap-4">
+                  {lead.has_amil_dental && (
+                    <div className="flex items-center gap-2 bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-100">
+                      <Icons.AlertCircle className="w-4 h-4 text-purple-600" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-purple-700">Amil Dental (11m)</span>
+                    </div>
                   )}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setLead({ ...lead, do_not_contact: !lead.do_not_contact });
-                  }}>
-                    {lead.do_not_contact && <Icons.Check className="w-3.5 h-3.5 text-white" />}
-                  </div>
-                  <span className={cn(
-                    "text-[10px] font-black uppercase tracking-wider transition-colors",
-                    lead.do_not_contact ? "text-red-600" : "text-slate-400 group-hover:text-red-400"
-                  )}>Não realizar contato</span>
-                </label>
+                  <label className="flex items-center gap-2 cursor-pointer group select-none">
+                    <div className={cn(
+                      "w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
+                      lead.do_not_contact ? "bg-red-500 border-red-500 shadow-sm" : "bg-white border-slate-200 group-hover:border-red-300"
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLead({ ...lead, do_not_contact: !lead.do_not_contact });
+                    }}>
+                      {lead.do_not_contact && <Icons.Check className="w-3.5 h-3.5 text-white" />}
+                    </div>
+                    <span className={cn(
+                      "text-[10px] font-black uppercase tracking-wider transition-colors",
+                      lead.do_not_contact ? "text-red-600" : "text-slate-400 group-hover:text-red-400"
+                    )}>Não realizar contato</span>
+                  </label>
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-4">
                 {/* LINHA 1 */}
@@ -953,32 +962,46 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
             {/* NOVA PROPOSTA */}
             <section className="pt-10 border-t border-slate-100">
                <SectionHeader icon={Icons.FileText} title="Proposta / Planejamento" colorClass="bg-emerald-50 text-emerald-600" />
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                  <DetailField label="Tipo de Plano" value={lead.plan_type} selectOptions={['Saúde', 'Odonto', 'Saúde + Odonto']} onChange={(v:any) => setLead({...lead, plan_type: v})} />
-                  <DetailField 
-                    label="Modalidade" 
-                    value={lead.modality || "PME"} 
-                    selectOptions={['Individual', 'Adesão', 'PME', 'Empresarial']}
-                    onChange={(v:any) => setLead({...lead, modality: v, administrator: v === 'Adesão' ? lead.administrator : ""})} 
-                  />
+               <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-5">
+                  <div className="md:col-span-3 lg:col-span-3">
+                    <DetailField label="Tipo de Plano" value={lead.plan_type} selectOptions={['Saúde', 'Odonto', 'Saúde + Odonto']} onChange={(v:any) => setLead({...lead, plan_type: v})} />
+                  </div>
+                  <div className="md:col-span-3 lg:col-span-3">
+                    <DetailField 
+                      label="Modalidade" 
+                      value={lead.modality || "PME"} 
+                      selectOptions={['Individual', 'Adesão', 'PME', 'Empresarial']}
+                      onChange={(v:any) => setLead({...lead, modality: v, administrator: v === 'Adesão' ? lead.administrator : ""})} 
+                    />
+                  </div>
                   {lead.modality === 'Adesão' && (
-                    <DetailField label="Administradora" value={lead.administrator} onChange={(v:any) => setLead({...lead, administrator: v})} />
+                    <div className="md:col-span-3 lg:col-span-3">
+                      <DetailField label="Administradora" value={lead.administrator} onChange={(v:any) => setLead({...lead, administrator: v})} />
+                    </div>
                   )}
-                  <DetailField 
-                    label="Operadora Proposta" 
-                    value={lead.carrier} 
-                    selectOptions={carriers.map(c => c.name)}
-                    onChange={(v:any) => setLead({...lead, carrier: v})} 
-                  />
-                  <DetailField label="Produto Proposta" value={lead.product} onChange={(v:any) => setLead({...lead, product: v})} />
-                  <DetailField label="Vidas Proposta" type="number" value={lead.interested_lives} onChange={(v:any) => setLead({...lead, interested_lives: Number(v)})} />
-                  <DetailField 
-                    label="Valor Proposta" 
-                    value={lead.deal_value ? Math.round(lead.deal_value * 100).toString() : ""} 
-                    mask={formatCurrencyValue}
-                    onChange={(v:any) => setLead({...lead, deal_value: parseCurrencyValue(v)})} 
-                  />
-                  <div className="lg:col-span-2">
+                  <div className="md:col-span-3 lg:col-span-3">
+                    <DetailField 
+                      label="Operadora Proposta" 
+                      value={lead.carrier} 
+                      selectOptions={carriers.map(c => c.name)}
+                      onChange={(v:any) => setLead({...lead, carrier: v})} 
+                    />
+                  </div>
+                  <div className="md:col-span-3 lg:col-span-3">
+                    <DetailField label="Produto Proposta" value={lead.product} onChange={(v:any) => setLead({...lead, product: v})} />
+                  </div>
+                  <div className="md:col-span-3 lg:col-span-2">
+                    <DetailField label="Vidas Proposta" type="number" value={lead.interested_lives} onChange={(v:any) => setLead({...lead, interested_lives: Number(v)})} />
+                  </div>
+                  <div className="md:col-span-3 lg:col-span-2">
+                    <DetailField 
+                      label="Valor Proposta" 
+                      value={lead.deal_value ? Math.round(lead.deal_value * 100).toString() : ""} 
+                      mask={formatCurrencyValue}
+                      onChange={(v:any) => setLead({...lead, deal_value: parseCurrencyValue(v)})} 
+                    />
+                  </div>
+                  <div className="md:col-span-6 lg:col-span-5">
                     <DetailField label="Link Documentos (Drive)" value={lead.docs_link} onChange={(v:any) => setLead({...lead, docs_link: v})} placeholder="https://..." />
                   </div>
                   

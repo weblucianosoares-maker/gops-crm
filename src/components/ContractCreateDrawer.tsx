@@ -75,7 +75,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
     administrator: "",
     first_contact_date: "",
     is_paid: false,
-    is_anticipated: false
+    is_anticipated: false,
+    has_amil_dental: false
   });
 
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([
@@ -110,7 +111,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         first_contact_date: editContract.first_contact_date || "",
         is_paid: editContract.is_paid || false,
         is_anticipated: editContract.is_anticipated || false,
-        commission_received_date: editContract.commission_received_date || ""
+        commission_received_date: editContract.commission_received_date || "",
+        has_amil_dental: editContract.has_amil_dental || false
       });
       setIsNewLead(!!editContract.client_name && !editContract.lead_id);
       fetchBeneficiaries(editContract.id);
@@ -137,7 +139,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         first_contact_date: "",
         is_paid: false,
         is_anticipated: false,
-        commission_received_date: ""
+        commission_received_date: "",
+        has_amil_dental: false
       });
       setBeneficiaries([{ name: "", type: "Titular", birth_date: "", cpf: "" }]);
     }
@@ -252,7 +255,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
         first_contact_date: contract.first_contact_date || null,
         is_paid: contract.is_paid,
         is_anticipated: contract.is_anticipated,
-        commission_received_date: contract.commission_received_date || null
+        commission_received_date: contract.commission_received_date || null,
+        has_amil_dental: contract.has_amil_dental
       };
 
       let currentContractId = editContract?.id;
@@ -271,7 +275,8 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
             interested_lives: beneficiaries.length,
             lead_type: contract.type,
             modality: contract.modality,
-            is_contract_active: contract.status === 'Ativo'
+            is_contract_active: contract.status === 'Ativo',
+            has_amil_dental: contract.has_amil_dental
           })
           .eq('id', editContract.id);
         
@@ -531,7 +536,29 @@ export function ContractCreateDrawer({ isOpen, onClose, onSuccess, editContract 
                     </div>
                     <div>
                        <p className="text-[10px] font-black uppercase tracking-widest">Antecipação Total</p>
-                       <p className={cn("text-[8px] font-bold", contract.is_anticipated ? "text-blue-100" : "text-slate-400")}>Receber 100% da 2ª parcela no 1º mês</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="relative group">
+                   <div 
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all cursor-pointer h-full",
+                      contract.has_amil_dental 
+                        ? "bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-100" 
+                        : "bg-slate-50 border-slate-200 text-slate-500 hover:border-purple-300"
+                    )}
+                    onClick={() => setContract({...contract, has_amil_dental: !contract.has_amil_dental})}
+                  >
+                    <div className={cn(
+                      "w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all",
+                      contract.has_amil_dental ? "bg-white border-white" : "border-slate-300"
+                    )}>
+                      {contract.has_amil_dental && <Icons.AlertCircle className="w-3.5 h-3.5 text-purple-600" />}
+                    </div>
+                    <div>
+                       <p className="text-[10px] font-black uppercase tracking-widest">Monitorar Amil Dental</p>
+                       <p className={cn("text-[8px] font-bold", contract.has_amil_dental ? "text-purple-100" : "text-slate-400")}>Gerar alerta de cancelamento aos 11 meses</p>
                     </div>
                   </div>
                 </div>
