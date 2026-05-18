@@ -23,7 +23,9 @@ export default function Finance() {
     setIsRefreshing(true);
     const [cRes, lRes] = await Promise.all([
       supabase.from('contracts').select('*').order('start_date', { ascending: false }),
-      supabase.from('leads').select('*').eq('is_proposal_approved', true)
+      supabase.from('leads').select('*')
+        .eq('is_proposal_approved', true)
+        .in('status', ['Boleto Pago', 'Contrato', 'Plano Ativo', 'Vendido'])
     ]);
     
     if (!cRes.error) setContracts(cRes.data || []);
@@ -112,9 +114,12 @@ export default function Finance() {
     const upcomingCommissions: any[] = [];
     let totalNetFlow = 0;
 
+    // Filtrar leads que já possuem contrato real vinculado para evitar duplicidade
+    const leadsFiltered = leads.filter(l => !contracts.some(c => c.lead_id === l.id));
+
     const allConfirmed = [
       ...contracts.map(c => ({ ...c, source: 'contract' })),
-      ...leads.filter(l => l.is_first_invoice_paid).map(l => ({ 
+      ...leadsFiltered.filter(l => l.is_first_invoice_paid).map(l => ({ 
         ...l, 
         source: 'lead',
         client_name: l.name,
@@ -168,7 +173,7 @@ export default function Finance() {
     const futureForecasts: any[] = [];
     let totalForecastValue = 0;
 
-    leads.filter(l => !l.is_first_invoice_paid).forEach(l => {
+    leadsFiltered.filter(l => !l.is_first_invoice_paid).forEach(l => {
       if (l.contract_start_date || l.first_invoice_date) {
         try {
           const calc = calculateNetCommission(

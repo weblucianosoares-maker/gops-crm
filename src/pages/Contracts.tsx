@@ -106,8 +106,11 @@ export default function Contracts() {
   const filteredContracts = useMemo(() => {
     const { start, end } = periodDates;
     
+    // Remover pendingLeads que já possuem um contrato real na tabela contracts
+    const pendingLeadsWithoutContracts = pendingLeads.filter(l => !contracts.some(c => c.lead_id === l.id));
+
     // Preparar leads pendentes como objetos compatíveis com a tabela de contratos
-    const pendingAsContracts = pendingLeads.map(l => ({
+    const pendingAsContracts = pendingLeadsWithoutContracts.map(l => ({
       id: l.id,
       client_name: l.name,
       carrier: l.carrier,
@@ -166,7 +169,9 @@ export default function Contracts() {
       supabase.from('contracts').select('*').order('created_at', { ascending: false }),
       supabase.from('beneficiaries').select('*'),
       supabase.from('financial_history').select('*').order('created_at', { ascending: false }),
-      supabase.from('leads').select('*').eq('is_proposal_approved', true)
+      supabase.from('leads').select('*')
+        .eq('is_proposal_approved', true)
+        .in('status', ['Boleto Pago', 'Contrato', 'Plano Ativo', 'Vendido'])
     ]);
     
     setContracts(cRes.data || []);
