@@ -248,10 +248,23 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
     if (cleanCNPJ.length === 14 && !isSearchingCNPJ) {
       setIsSearchingCNPJ(true);
       try {
-        let response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCNPJ}`);
-        let data = await response.json();
-        
-        if (!response.ok || data.error) {
+        let data: any = null;
+        let isSuccess = false;
+
+        try {
+          const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCNPJ}`);
+          if (response.ok) {
+            const temp = await response.json();
+            if (!temp.error && !temp.message) {
+              data = temp;
+              isSuccess = true;
+            }
+          }
+        } catch (brasilApiError) {
+          console.log("BrasilAPI falhou (erro de rede/CORS):", brasilApiError);
+        }
+
+        if (!isSuccess) {
           console.log("BrasilAPI falhou, tentando fallback publica.cnpj.ws...");
           try {
             const fallbackRes = await fetch(`https://publica.cnpj.ws/cnpj/${cleanCNPJ}`);
@@ -285,39 +298,39 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                  data_opcao_pelo_mei: fallbackData.simples?.data_opcao_mei,
                  data_exclusao_do_mei: fallbackData.simples?.data_exclusao_mei
                };
-               response = { ok: true } as Response;
+               isSuccess = true;
             }
           } catch (fallbackError) {
              console.error("Fallback também falhou", fallbackError);
           }
         }
 
-        if (response.ok && !data.error && !data.message) {
+        if (isSuccess && data) {
           setLead((prev: any) => ({
-            ...prev,
-            company_name: data.razao_social || data.nome_empresarial || prev.company_name,
-            nickname: data.nome_fantasia || prev.nickname,
-            address_zip: data.cep ? formatCEP(data.cep) : prev.address_zip,
-            address_street: data.logradouro || prev.address_street,
-            address_neighborhood: data.bairro || prev.address_neighborhood,
-            address_city: data.municipio || data.municipio_descricao || prev.address_city,
-            company_city: data.municipio || data.municipio_descricao || prev.company_city,
-            address_state: data.uf || prev.address_state,
-            company_state: data.uf || prev.company_state,
-            address_number: data.numero || prev.address_number,
-            cnae: data.cnae_fiscal_descricao || data.cnae_fiscal || prev.cnae,
-            opening_date: formatDateToISO(data.data_abertura || data.abertura || data.data_inicio_atividade) || prev.opening_date,
-            email: data.email || prev.email,
-            phone: data.ddd_telefone_1 ? formatPhone(data.ddd_telefone_1) : (data.telefone || prev.phone),
-            share_capital: data.capital_social || prev.share_capital,
-            simples_entry_date: data.data_opcao_pelo_simples || null,
-            simples_exit_date: data.data_exclusao_do_simples || null,
-            mei_entry_date: data.data_opcao_pelo_mei || null,
-            mei_exit_date: data.data_exclusao_do_mei || null,
-            partner_name: data.qsa?.map((s: any) => s.nome_socio).join('; ') || prev.partner_name,
-            qualification: data.qsa?.map((s: any) => s.qualificacao_socio).join('; ') || prev.qualification,
-            age_range: data.qsa?.map((s: any) => s.faixa_etaria).join('; ') || prev.age_range,
-            lead_type: 'PJ'
+             ...prev,
+             company_name: data.razao_social || data.nome_empresarial || prev.company_name,
+             nickname: data.nome_fantasia || prev.nickname,
+             address_zip: data.cep ? formatCEP(data.cep) : prev.address_zip,
+             address_street: data.logradouro || prev.address_street,
+             address_neighborhood: data.bairro || prev.address_neighborhood,
+             address_city: data.municipio || data.municipio_descricao || prev.address_city,
+             company_city: data.municipio || data.municipio_descricao || prev.company_city,
+             address_state: data.uf || prev.address_state,
+             company_state: data.uf || prev.company_state,
+             address_number: data.numero || prev.address_number,
+             cnae: data.cnae_fiscal_descricao || data.cnae_fiscal || prev.cnae,
+             opening_date: formatDateToISO(data.data_abertura || data.abertura || data.data_inicio_atividade) || prev.opening_date,
+             email: data.email || prev.email,
+             phone: data.ddd_telefone_1 ? formatPhone(data.ddd_telefone_1) : (data.telefone || prev.phone),
+             share_capital: data.capital_social || prev.share_capital,
+             simples_entry_date: data.data_opcao_pelo_simples || null,
+             simples_exit_date: data.data_exclusao_do_simples || null,
+             mei_entry_date: data.data_opcao_pelo_mei || null,
+             mei_exit_date: data.data_exclusao_do_mei || null,
+             partner_name: data.qsa?.map((s: any) => s.nome_socio).join('; ') || prev.partner_name,
+             qualification: data.qsa?.map((s: any) => s.qualificacao_socio).join('; ') || prev.qualification,
+             age_range: data.qsa?.map((s: any) => s.faixa_etaria).join('; ') || prev.age_range,
+             lead_type: 'PJ'
           }));
           success("Dados detalhados da empresa carregados!");
         } else {

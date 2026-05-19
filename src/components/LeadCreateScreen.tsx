@@ -165,10 +165,23 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
     if (cleanCNPJ.length === 14 && !isSearchingCNPJ) {
       setIsSearchingCNPJ(true);
       try {
-        let response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCNPJ}`);
-        let data = await response.json();
-        
-        if (!response.ok || data.error) {
+        let data: any = null;
+        let isSuccess = false;
+
+        try {
+          const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCNPJ}`);
+          if (response.ok) {
+            const temp = await response.json();
+            if (!temp.error && !temp.message) {
+              data = temp;
+              isSuccess = true;
+            }
+          }
+        } catch (brasilApiError) {
+          console.log("BrasilAPI falhou (erro de rede/CORS):", brasilApiError);
+        }
+
+        if (!isSuccess) {
           console.log("BrasilAPI falhou, tentando fallback publica.cnpj.ws...");
           try {
             const fallbackRes = await fetch(`https://publica.cnpj.ws/cnpj/${cleanCNPJ}`);
@@ -202,14 +215,14 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
                  data_opcao_pelo_mei: fallbackData.simples?.data_opcao_mei,
                  data_exclusao_do_mei: fallbackData.simples?.data_exclusao_mei
                };
-               response = { ok: true } as Response;
+               isSuccess = true;
             }
           } catch (fallbackError) {
              console.error("Fallback também falhou", fallbackError);
           }
         }
 
-        if (response.ok && !data.error && !data.message) {
+        if (isSuccess && data) {
           setNewLead(prev => ({
             ...prev,
             company_name: data.razao_social || data.nome_empresarial || prev.company_name,
