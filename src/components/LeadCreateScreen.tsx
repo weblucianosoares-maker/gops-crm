@@ -169,9 +169,44 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
         let data = await response.json();
         
         if (!response.ok || data.error) {
-          console.log("BrasilAPI falhou, tentando fallback...");
-          response = await fetch(`https://minhareceita.org/${cleanCNPJ}`);
-          data = await response.json();
+          console.log("BrasilAPI falhou, tentando fallback publica.cnpj.ws...");
+          try {
+            const fallbackRes = await fetch(`https://publica.cnpj.ws/cnpj/${cleanCNPJ}`);
+            const fallbackData = await fallbackRes.json();
+            if (fallbackRes.ok && fallbackData.estabelecimento) {
+               data = {
+                 razao_social: fallbackData.razao_social,
+                 nome_fantasia: fallbackData.estabelecimento.nome_fantasia,
+                 cep: fallbackData.estabelecimento.cep,
+                 logradouro: fallbackData.estabelecimento.logradouro,
+                 bairro: fallbackData.estabelecimento.bairro,
+                 municipio: fallbackData.estabelecimento.cidade?.nome,
+                 uf: fallbackData.estabelecimento.estado?.sigla,
+                 numero: fallbackData.estabelecimento.numero,
+                 cnae_fiscal_descricao: fallbackData.estabelecimento.atividade_principal?.descricao,
+                 cnae_fiscal: fallbackData.estabelecimento.atividade_principal?.id,
+                 data_abertura: fallbackData.estabelecimento.data_inicio_atividade,
+                 email: fallbackData.estabelecimento.email,
+                 ddd_telefone_1: fallbackData.estabelecimento.ddd1 ? fallbackData.estabelecimento.ddd1 + fallbackData.estabelecimento.telefone1 : null,
+                 situacao_cadastral: fallbackData.estabelecimento.situacao_cadastral,
+                 capital_social: fallbackData.capital_social,
+                 porte: fallbackData.porte?.descricao,
+                 natureza_juridica: fallbackData.natureza_juridica?.descricao,
+                 qsa: fallbackData.socios?.map((s:any) => ({ nome_socio: s.nome, qualificacao_socio: s.qualificacao_socio?.descricao })),
+                 cnaes_secundarios: fallbackData.estabelecimento.atividades_secundarias?.map((a:any) => ({ codigo: a.id, descricao: a.descricao })),
+                 data_situacao_cadastral: fallbackData.estabelecimento.data_situacao_cadastral,
+                 opcao_pelo_simples: fallbackData.simples?.simples === 'Sim',
+                 opcao_pelo_mei: fallbackData.simples?.mei === 'Sim',
+                 data_opcao_pelo_simples: fallbackData.simples?.data_opcao_simples,
+                 data_exclusao_do_simples: fallbackData.simples?.data_exclusao_simples,
+                 data_opcao_pelo_mei: fallbackData.simples?.data_opcao_mei,
+                 data_exclusao_do_mei: fallbackData.simples?.data_exclusao_mei
+               };
+               response = { ok: true } as Response;
+            }
+          } catch (fallbackError) {
+             console.error("Fallback também falhou", fallbackError);
+          }
         }
 
         if (response.ok && !data.error && !data.message) {

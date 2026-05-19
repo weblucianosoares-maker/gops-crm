@@ -89,24 +89,55 @@ export function AIGuidedLeadCreate({ isOpen, onClose, onSuccess }: AIGuidedLeadC
       try {
         const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${clean}`);
         const data = await res.json();
-        if (res.ok) {
+        let finalData = res.ok && !data.error ? data : null;
+
+        if (!finalData) {
+          try {
+            const fallbackRes = await fetch(`https://publica.cnpj.ws/cnpj/${clean}`);
+            const fallbackData = await fallbackRes.json();
+            if (fallbackRes.ok && fallbackData.estabelecimento) {
+                finalData = {
+                    razao_social: fallbackData.razao_social,
+                    nome_fantasia: fallbackData.estabelecimento.nome_fantasia,
+                    data_abertura: fallbackData.estabelecimento.data_inicio_atividade,
+                    cnae_fiscal: fallbackData.estabelecimento.atividade_principal?.id,
+                    cnae_fiscal_descricao: fallbackData.estabelecimento.atividade_principal?.descricao,
+                    logradouro: fallbackData.estabelecimento.logradouro,
+                    numero: fallbackData.estabelecimento.numero,
+                    municipio: fallbackData.estabelecimento.cidade?.nome,
+                    uf: fallbackData.estabelecimento.estado?.sigla,
+                    descricao_situacao_cadastral: fallbackData.estabelecimento.situacao_cadastral,
+                    capital_social: fallbackData.capital_social,
+                    porte: fallbackData.porte?.descricao,
+                    natureza_juridica: fallbackData.natureza_juridica?.descricao,
+                    qsa: fallbackData.socios?.map((s:any) => ({ nome_socio: s.nome, qualificacao_socio: s.qualificacao_socio?.descricao }))
+                };
+            }
+          } catch (e) {}
+        }
+
+        if (finalData) {
            setExtractedData(prev => ({
              ...prev,
-             company_name: data.razao_social,
-             nickname: data.nome_fantasia,
-             opening_date: data.data_abertura,
-             cnae: data.cnae_fiscal ? `${data.cnae_fiscal}${data.cnae_fiscal_descricao ? ' - ' + data.cnae_fiscal_descricao : ''}` : data.cnae_fiscal_descricao,
-             address: `${data.logradouro}, ${data.numero} - ${data.municipio}/${data.uf}`,
-             registration_status: data.descricao_situacao_cadastral || data.situacao_cadastral,
-             share_capital: data.capital_social,
-             company_size: data.porte || data.descricao_porte,
-             legal_nature: data.natureza_juridica || data.descricao_natureza_juridica,
-             partner_name: data.qsa ? data.qsa.map((s: any) => s.nome_socio || s.nome).join("; ") : "",
-             qualification: data.qsa ? data.qsa.map((s: any) => s.qualificacao_socio || s.qualificacao || s.funcao).join("; ") : "",
+             company_name: finalData.razao_social,
+             nickname: finalData.nome_fantasia,
+             opening_date: finalData.data_abertura,
+             cnae: finalData.cnae_fiscal ? `${finalData.cnae_fiscal}${finalData.cnae_fiscal_descricao ? ' - ' + finalData.cnae_fiscal_descricao : ''}` : finalData.cnae_fiscal_descricao,
+             address: `${finalData.logradouro}, ${finalData.numero} - ${finalData.municipio}/${finalData.uf}`,
+             registration_status: finalData.descricao_situacao_cadastral || finalData.situacao_cadastral,
+             share_capital: finalData.capital_social,
+             company_size: finalData.porte || finalData.descricao_porte,
+             legal_nature: finalData.natureza_juridica || finalData.descricao_natureza_juridica,
+             partner_name: finalData.qsa ? finalData.qsa.map((s: any) => s.nome_socio || s.nome).join("; ") : "",
+             qualification: finalData.qsa ? finalData.qsa.map((s: any) => s.qualificacao_socio || s.qualificacao || s.funcao).join("; ") : "",
            }));
            success("Dados da empresa carregados via CNPJ!");
+        } else {
+           showError("Não foi possível localizar os dados desta empresa.");
         }
-      } catch (e) {}
+      } catch (e) {
+        showError("Erro ao consultar o serviço de CNPJ.");
+      }
     }
   };
 
