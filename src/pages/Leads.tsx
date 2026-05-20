@@ -297,7 +297,11 @@ export default function Leads() {
     }
     
     if (statusFilter !== "Todos") {
-      result = result.filter((l: any) => l.status === statusFilter);
+      if (statusFilter === "NÃO ESTÁ NO FUNIL") {
+        result = result.filter((l: any) => !l.status || l.status.trim() === "");
+      } else {
+        result = result.filter((l: any) => l.status === statusFilter);
+      }
     }
     
     if (whatsappFilter !== "Todos") {
@@ -617,6 +621,7 @@ export default function Leads() {
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 transition-all text-sm font-bold text-slate-700 cursor-pointer"
                 >
                   <option value="Todos">Todos os Status</option>
+                  <option value="NÃO ESTÁ NO FUNIL">NÃO ESTÁ NO FUNIL</option>
                   {stages.map((stage: any) => (
                     <option key={stage.id} value={stage.name}>{stage.label}</option>
                   ))}
