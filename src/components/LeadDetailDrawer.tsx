@@ -762,7 +762,12 @@ export function LeadDetailDrawer({ lead: initialLead, isOpen, onClose, onUpdate,
                   <DetailField label="Cidade" value={lead.address_city} onChange={(v:any) => setLead({...lead, address_city: v})} />
                 </div>
                 <div className="md:col-span-1 lg:col-span-1">
-                  <DetailField label="UF" value={lead.address_state} onChange={(v:any) => setLead({...lead, address_state: v})} />
+                  <DetailField 
+                    label="UF" 
+                    value={lead.address_state} 
+                    selectOptions={['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO']} 
+                    onChange={(v:any) => setLead({...lead, address_state: v})} 
+                  />
                 </div>
                 <div className="md:col-span-3 lg:col-span-2">
                   <DetailField label="1º Contato" type="date" value={lead.first_contact_date || (lead.created_at ? lead.created_at.substring(0, 10) : '')} onChange={(v:any) => setLead({...lead, first_contact_date: v})} />

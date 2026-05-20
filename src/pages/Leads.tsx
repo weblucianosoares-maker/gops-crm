@@ -292,7 +292,7 @@ export default function Leads() {
       if (ufFilter === "Sem Estado") {
         result = result.filter((l: any) => !l.address_state || l.address_state.trim() === "");
       } else {
-        result = result.filter((l: any) => l.address_state === ufFilter);
+        result = result.filter((l: any) => l.address_state && l.address_state.toUpperCase().trim() === ufFilter);
       }
     }
     

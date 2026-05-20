@@ -534,7 +534,7 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
                            <InputField label="Logradouro / Rua" value={newLead.address_street} onChange={(v:any) => setNewLead({...newLead, address_street: v})} />
                          </div>
                          <InputField label="Número" value={newLead.address_number} onChange={(v:any) => setNewLead({...newLead, address_number: v})} />
-                         <InputField label="UF / Estado" value={newLead.address_state} onChange={(v:any) => setNewLead({...newLead, address_state: v})} />
+                         <InputField label="UF / Estado" value={newLead.address_state} onChange={(v:any) => setNewLead({...newLead, address_state: v.toUpperCase().substring(0, 2)})} />
                          <div className="lg:col-span-2">
                            <InputField label="Complemento / Apto / Bloco" value={newLead.address_complement} onChange={(v:any) => setNewLead({...newLead, address_complement: v})} />
                          </div>
@@ -651,7 +651,7 @@ export function LeadCreateScreen({ isOpen, onClose, onSuccess }: LeadCreateScree
                            <InputField label="Logradouro / Rua" value={newLead.address_street} onChange={(v:any) => setNewLead({...newLead, address_street: v})} />
                          </div>
                          <InputField label="Número" value={newLead.address_number} onChange={(v:any) => setNewLead({...newLead, address_number: v})} />
-                         <InputField label="UF / Estado" value={newLead.address_state} onChange={(v:any) => setNewLead({...newLead, address_state: v})} />
+                         <InputField label="UF / Estado" value={newLead.address_state} onChange={(v:any) => setNewLead({...newLead, address_state: v.toUpperCase().substring(0, 2)})} />
                          <div className="lg:col-span-2">
                            <InputField label="Complemento / Apto / Bloco" value={newLead.address_complement} onChange={(v:any) => setNewLead({...newLead, address_complement: v})} />
                          </div>
