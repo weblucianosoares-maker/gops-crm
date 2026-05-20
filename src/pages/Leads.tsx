@@ -308,9 +308,15 @@ export default function Leads() {
 
     if (contactFilter !== "Todos") {
       if (contactFilter === "Sem Contato") {
-        result = result.filter((l: any) => !l.lastcontact && !l.lastContact && !l.last_contact && !l.last_app_message_at);
+        result = result.filter((l: any) => {
+          const vals = [l.lastcontact, l.lastContact, l.last_contact, l.last_app_message_at];
+          return vals.every(v => !v || String(v).toLowerCase().trim() === 'sem contato');
+        });
       } else if (contactFilter === "Com Contato") {
-        result = result.filter((l: any) => l.lastcontact || l.lastContact || l.last_contact || l.last_app_message_at);
+        result = result.filter((l: any) => {
+          const vals = [l.lastcontact, l.lastContact, l.last_contact, l.last_app_message_at];
+          return vals.some(v => v && String(v).toLowerCase().trim() !== 'sem contato');
+        });
       }
     }
 
